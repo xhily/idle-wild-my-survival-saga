@@ -1,94 +1,10 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
+import { ElNotification } from 'element-plus'
+import { weatherTypes, selectRandomWeather, getWeatherDuration, processWeatherEvents } from '../plugins/weatherTypes'
 
 const gameStore = useGameStore()
-
-// 天气类型及其在不同季节的概率
-const weatherTypes = {
-  clear: { name: '晴朗', icon: '☀️', effect: '视野良好，采集效率+10%', animation: 'weather-clear' },
-  cloudy: { name: '多云', icon: '⛅', effect: '温度适宜，体力消耗-5%', animation: 'weather-cloudy' },
-  rainy: { name: '小雨', icon: '🌧️', effect: '水资源收集+20%，移动速度-10%', animation: 'weather-rainy' },
-  heavyRain: { name: '暴雨', icon: '⛈️', effect: '水资源收集+50%，采集效率-30%，有触发洪水风险', animation: 'weather-heavy-rain' },
-  foggy: { name: '雾天', icon: '🌫️', effect: '视野受限，探索效率-20%', animation: 'weather-foggy' },
-  windy: { name: '大风', icon: '🌬️', effect: '体力消耗+10%，有机会发现特殊资源', animation: 'weather-windy' },
-  hot: { name: '酷热', icon: '🔥', effect: '水分消耗+30%，体力恢复-20%', animation: 'weather-hot' },
-  cold: { name: '寒冷', icon: '❄️', effect: '食物消耗+30%，体力恢复-20%', animation: 'weather-cold' },
-  snow: { name: '降雪', icon: '🌨️', effect: '移动速度-30%，采集效率-20%', animation: 'weather-snow' },
-  storm: { name: '风暴', icon: '🌪️', effect: '无法外出，有触发灾害风险', animation: 'weather-storm' },
-  rainbow: { name: '彩虹', icon: '🌈', effect: '精神恢复+20%，有机会发现稀有资源', animation: 'weather-rainbow' },
-  hail: { name: '冰雹', icon: '🧊', effect: '外出危险，作物损失风险+30%', animation: 'weather-hail' },
-  sandstorm: { name: '沙尘暴', icon: '🏜️', effect: '视野严重受限，体力消耗+40%', animation: 'weather-sandstorm' },
-  aurora: { name: '极光', icon: '✨', effect: '精神恢复+30%，研究效率+15%', animation: 'weather-aurora' }
-}
-
-// 季节天气概率配置
-const seasonWeatherProbability = {
-  spring: {
-    clear: 0.22,
-    cloudy: 0.22,
-    rainy: 0.22,
-    foggy: 0.08,
-    windy: 0.05,
-    heavyRain: 0.08,
-    hot: 0.0,
-    cold: 0.02,
-    snow: 0.0,
-    storm: 0.0,
-    rainbow: 0.08,
-    hail: 0.03,
-    sandstorm: 0.0,
-    aurora: 0.0
-  },
-  summer: {
-    clear: 0.30,
-    cloudy: 0.12,
-    rainy: 0.08,
-    foggy: 0.03,
-    windy: 0.05,
-    heavyRain: 0.1,
-    hot: 0.15,
-    cold: 0.0,
-    snow: 0.0,
-    storm: 0.05,
-    rainbow: 0.05,
-    hail: 0.02,
-    sandstorm: 0.05,
-    aurora: 0.0
-  },
-  autumn: {
-    clear: 0.18,
-    cloudy: 0.22,
-    rainy: 0.18,
-    foggy: 0.12,
-    windy: 0.1,
-    heavyRain: 0.05,
-    hot: 0.0,
-    cold: 0.05,
-    snow: 0.0,
-    storm: 0.0,
-    rainbow: 0.07,
-    hail: 0.0,
-    sandstorm: 0.03,
-    aurora: 0.0
-  },
-  winter: {
-    clear: 0.12,
-    cloudy: 0.12,
-    rainy: 0.0,
-    foggy: 0.08,
-    windy: 0.08,
-    heavyRain: 0.0,
-    hot: 0.0,
-    cold: 0.25,
-    snow: 0.15,
-    storm: 0.05,
-    rainbow: 0.0,
-    hail: 0.08,
-    sandstorm: 0.0,
-    aurora: 0.07
-  }
-}
 
 // 当前天气
 const currentWeather = ref(weatherTypes.clear)
@@ -114,26 +30,23 @@ const currentSeasonKey = computed(() => {
 // 根据季节和时间生成天气
 const generateWeather = () => {
   const season = currentSeasonKey.value
-  const probabilities = seasonWeatherProbability[season]
   const hour = gameStore.gameTime.hour
   const day = gameStore.gameTime.day
   // 特殊季节性天气事件
-  // 季节特定事件概率
-  let seasonalEventChance = 0.05 // 基础概率5%
   // 满月特殊天气事件 (每30天一次满月)
   if (day % 30 === 15) { // 假设第15天是满月
     if (hour >= 19 || hour <= 5) { // 夜间
       if (Math.random() < 0.4) { // 40%概率触发满月特殊天气
         if (season === 'winter') {
           // 冬季满月可能出现极光
-          currentWeather.value = weatherTypes.aurora
-          weatherDuration.value = 4 + Math.floor(Math.random() * 3) // 4-6小时
-          gameStore.addToEventLog(`冬季满月之夜，${weatherTypes.aurora.name}在天空中舞动，${weatherTypes.aurora.effect}`)
+          currentWeather.value = weatherTypes.auroral
+          weatherDuration.value = getWeatherDuration('auroral')
+          gameStore.addToEventLog(`冬季满月之夜，${weatherTypes.auroral.name}在天空中舞动，${weatherTypes.auroral.description}`)
           return
         } else {
           // 其他季节满月可能带来清澈的夜空
           currentWeather.value = weatherTypes.clear
-          weatherDuration.value = 6 + Math.floor(Math.random() * 3) // 6-8小时
+          weatherDuration.value = getWeatherDuration('clear')
           gameStore.addToEventLog(`满月之夜，天空格外${weatherTypes.clear.name}，月光照亮了四周`)
           // 满月之夜精神恢复加成
           gameStore.player.mental = Math.min(gameStore.player.mental + 5, gameStore.player.maxMental)
@@ -143,115 +56,39 @@ const generateWeather = () => {
     }
   }
   // 雨后彩虹特殊事件
-  if ((currentWeather.value.name === '小雨' || currentWeather.value.name === '暴雨') &&
+  if ((currentWeather.value === weatherTypes.rainy || currentWeather.value === weatherTypes.stormy) &&
     hour >= 7 && hour <= 18 && Math.random() < 0.3) {
     currentWeather.value = weatherTypes.rainbow
-    weatherDuration.value = 1 + Math.floor(Math.random() * 2) // 1-2小时
-    gameStore.addToEventLog(`雨过天晴，${weatherTypes.rainbow.name}出现在天空中，${weatherTypes.rainbow.effect}`)
+    weatherDuration.value = getWeatherDuration('rainbow')
+    gameStore.addToEventLog(`雨过天晴，${weatherTypes.rainbow.name}出现在天空中，${weatherTypes.rainbow.description}`)
     return
   }
-  // 根据季节和时间调整特殊事件概率
-  if (season === 'spring' && hour >= 5 && hour <= 10) {
-    // 春季早晨更容易起雾
-    if (Math.random() < 0.15) {
-      currentWeather.value = weatherTypes.foggy
-      weatherDuration.value = 2 + Math.floor(Math.random() * 3) // 2-4小时
-      gameStore.addToEventLog(`春季清晨，${weatherTypes.foggy.name}笼罩了四周，${weatherTypes.foggy.effect}`)
-      return
-    }
-    // 春季雨后可能出现彩虹
-    if (hour >= 8 && currentWeather.value.name === '小雨' && Math.random() < 0.25) {
-      currentWeather.value = weatherTypes.rainbow
-      weatherDuration.value = 2 + Math.floor(Math.random() * 2) // 2-3小时
-      gameStore.addToEventLog(`春雨过后，美丽的${weatherTypes.rainbow.name}挂在天空，${weatherTypes.rainbow.effect}`)
-      return
-    }
-  } else if (season === 'summer' && hour >= 12 && hour <= 15) {
-    // 夏季中午更容易出现酷热
-    if (Math.random() < 0.2) {
-      currentWeather.value = weatherTypes.hot
-      weatherDuration.value = 3 + Math.floor(Math.random() * 4) // 3-6小时
-      gameStore.addToEventLog(`夏季正午，${weatherTypes.hot.name}难以忍受，${weatherTypes.hot.effect}`)
-      return
-    }
-    // 夏季午后可能出现沙尘暴
-    if (day > 15 && Math.random() < 0.1) { // 夏季后半段
-      currentWeather.value = weatherTypes.sandstorm
-      weatherDuration.value = 2 + Math.floor(Math.random() * 3) // 2-4小时
-      gameStore.addToEventLog(`夏季干燥的空气中，${weatherTypes.sandstorm.name}突然袭来，${weatherTypes.sandstorm.effect}`)
-      return
-    }
-  } else if (season === 'autumn' && hour >= 16 && hour <= 19) {
-    // 秋季傍晚更容易起风
-    if (Math.random() < 0.15) {
-      currentWeather.value = weatherTypes.windy
-      weatherDuration.value = 3 + Math.floor(Math.random() * 3) // 3-5小时
-      gameStore.addToEventLog(`秋季傍晚，${weatherTypes.windy.name}呼啸而过，${weatherTypes.windy.effect}`)
-      return
-    }
-    // 秋季可能出现沙尘暴
-    if (day > 20 && Math.random() < 0.08) { // 秋季末期
-      currentWeather.value = weatherTypes.sandstorm
-      weatherDuration.value = 3 + Math.floor(Math.random() * 2) // 3-4小时
-      gameStore.addToEventLog(`秋季干燥的空气中，${weatherTypes.sandstorm.name}席卷而来，${weatherTypes.sandstorm.effect}`)
-      return
-    }
-  } else if (season === 'winter' && (hour <= 6 || hour >= 18)) {
-    // 冬季夜间更容易变得寒冷
-    if (Math.random() < 0.25) {
-      currentWeather.value = weatherTypes.cold
-      weatherDuration.value = 4 + Math.floor(Math.random() * 5) // 4-8小时
-      gameStore.addToEventLog(`冬季夜晚，${weatherTypes.cold.name}刺骨，${weatherTypes.cold.effect}`)
-      return
-    }
-    // 冬季夜间可能出现极光
-    if (hour >= 20 && Math.random() < 0.1) {
-      currentWeather.value = weatherTypes.aurora
-      weatherDuration.value = 3 + Math.floor(Math.random() * 4) // 3-6小时
-      gameStore.addToEventLog(`冬季夜空中，神秘的${weatherTypes.aurora.name}绽放开来，${weatherTypes.aurora.effect}`)
-      return
-    }
+  // 使用新的天气选择系统
+  const newWeatherType = selectRandomWeather(season, Object.keys(weatherTypes).find(key => weatherTypes[key] === currentWeather.value))
+  currentWeather.value = weatherTypes[newWeatherType]
+  weatherDuration.value = getWeatherDuration(newWeatherType)
+  // 记录天气变化
+  gameStore.addToEventLog(`天气变为${currentWeather.value.name}，${currentWeather.value.description}`)
+  // 处理天气特殊事件
+  processWeatherEvents(gameStore, newWeatherType)
+}
+
+// 更新天气效果
+const updateWeatherEffects = () => {
+  if (!currentWeather.value || !currentWeather.value.effects) return
+  // 应用天气效果到游戏状态
+  const effects = currentWeather.value.effects
+  gameStore.weather.effects = {
+    gatheringEfficiency: effects.gatheringEfficiency || 1.0,
+    energyConsumption: effects.energyConsumption || 1.0,
+    waterConsumption: effects.waterConsumption || 1.0,
+    foodConsumption: effects.foodConsumption || 1.0,
+    movementSpeed: effects.movementSpeed || 1.0,
+    explorationEfficiency: effects.explorationEfficiency || 1.0,
+    mentalRecovery: effects.mentalRecovery || 1.0
   }
-  // 特殊事件：冰雹 (主要在冬季和春季末尾)
-  const hailChance = season === 'winter' ? 0.08 :
-    (season === 'spring' && day > 25) ? 0.05 : 0.01
-  if (Math.random() < hailChance) {
-    currentWeather.value = weatherTypes.hail
-    weatherDuration.value = 1 + Math.floor(Math.random() * 3) // 冰雹持续1-3小时
-    gameStore.addToEventLog(`突然间，${weatherTypes.hail.name}从天而降，${weatherTypes.hail.effect}！`)
-    return
-  }
-  // 特殊事件：风暴 (根据季节调整概率)
-  const stormChance = season === 'winter' ? 0.05 : season === 'summer' ? 0.05 : 0.01
-  if (Math.random() < stormChance) {
-    currentWeather.value = weatherTypes.storm
-    weatherDuration.value = 2 + Math.floor(Math.random() * 4) // 风暴持续2-5小时
-    gameStore.addToEventLog(`一场${weatherTypes.storm.name}来袭，${weatherTypes.storm.effect}！`)
-    return
-  }
-  // 正常天气生成
-  let random = Math.random()
-  let cumulativeProbability = 0
-  for (const [type, probability] of Object.entries(probabilities)) {
-    cumulativeProbability += probability
-    if (random <= cumulativeProbability) {
-      const newWeather = weatherTypes[type]
-      // 只有当天气变化时才记录日志
-      if (currentWeather.value.name !== newWeather.name) {
-        currentWeather.value = newWeather
-        gameStore.addToEventLog(`天气变为${newWeather.name}，${newWeather.effect}`)
-      } else {
-        currentWeather.value = newWeather
-      }
-      break
-    }
-  }
-  // 设置天气持续时间（根据季节调整）
-  const baseDuration = 4
-  let durationVariation = 5
-  // 冬季和夏季的天气持续时间更长
-  if (season === 'winter' || season === 'summer') durationVariation = 8
-  weatherDuration.value = baseDuration + Math.floor(Math.random() * durationVariation)
+  // 更新游戏状态中的当前天气
+  gameStore.weather.current = Object.keys(weatherTypes).find(key => weatherTypes[key] === currentWeather.value) || 'clear'
 }
 
 // 更新下次天气变化时间
@@ -490,6 +327,18 @@ const formattedNextChange = computed(() => {
 // 监听游戏时间变化
 watch(() => [gameStore.gameTime.day, gameStore.gameTime.hour], () => checkWeatherChange())
 
+// 初始化时更新天气效果
+onMounted(() => {
+  updateWeatherEffects()
+  // 显示初始天气通知
+  ElNotification({
+    title: '当前天气',
+    message: `${currentWeather.value.name}：${currentWeather.value.description}`,
+    type: 'info',
+    duration: 4500
+  })
+})
+
 // 获取当前季节的图标
 const getSeasonIcon = () => {
   const season = currentSeasonKey.value
@@ -514,6 +363,14 @@ const getSeasonName = () => {
   }
 }
 
+// 获取效果样式类名
+const getEffectClass = (value, isConsumption = false) => {
+  // 对于消耗类效果，大于1是负面的（红色），小于1是正面的（绿色）
+  // 对于其他效果，大于1是正面的（绿色），小于1是负面的（红色）
+  if (isConsumption) return value > 1 ? 'negative-effect' : value < 1 ? 'positive-effect' : ''
+  else return value > 1 ? 'positive-effect' : value < 1 ? 'negative-effect' : ''
+}
+
 // 初始化天气
 generateWeather()
 updateNextWeatherChangeTime()
@@ -536,8 +393,31 @@ updateNextWeatherChangeTime()
       <div class="weather-animation-elements"></div>
     </div>
     <div class="current-season-indicator">
-      <span class="season-icon">{{ getSeasonIcon() }}</span>
-      <span class="season-name">{{ getSeasonName() }}</span>
+      <div class="weather-effects">
+        <div class="effects-list">
+          <span v-if="currentWeather.effects && currentWeather.effects.gatheringEfficiency !== 1.0">
+            采集效率: x{{ currentWeather.effects.gatheringEfficiency.toFixed(1) }}
+          </span>
+          <span v-if="currentWeather.effects && currentWeather.effects.energyConsumption !== 1.0">
+            体力消耗: x{{ currentWeather.effects.energyConsumption.toFixed(1) }}
+          </span>
+          <span v-if="currentWeather.effects && currentWeather.effects.waterConsumption !== 1.0">
+            水分消耗: x{{ currentWeather.effects.waterConsumption.toFixed(1) }}
+          </span>
+          <span v-if="currentWeather.effects && currentWeather.effects.foodConsumption !== 1.0">
+            食物消耗: x{{ currentWeather.effects.foodConsumption.toFixed(1) }}
+          </span>
+          <span v-if="currentWeather.effects && currentWeather.effects.movementSpeed !== 1.0">
+            移动速度: x{{ currentWeather.effects.movementSpeed.toFixed(1) }}
+          </span>
+          <span v-if="currentWeather.effects && currentWeather.effects.explorationEfficiency !== 1.0">
+            探索效率: x{{ currentWeather.effects.explorationEfficiency.toFixed(1) }}
+          </span>
+          <span v-if="currentWeather.effects && currentWeather.effects.mentalRecovery !== 1.0">
+            精神恢复: x{{ currentWeather.effects.mentalRecovery.toFixed(1) }}
+          </span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -617,6 +497,21 @@ updateNextWeatherChangeTime()
   font-size: 0.9em;
   color: var(--el-text-color-secondary);
   z-index: 2;
+}
+
+.weather-effects {
+  width: 100%;
+}
+
+.effects-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.effects-list span {
+  width: 33%;
+  margin-top: 5px;
 }
 
 .season-icon {

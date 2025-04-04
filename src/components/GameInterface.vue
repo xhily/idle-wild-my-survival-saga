@@ -12,6 +12,8 @@ import TimeControl from './TimeControl.vue'
 import WeatherSystem from './WeatherSystem.vue'
 import AchievementSystem from './AchievementSystem.vue'
 import RandomEventSystem from './RandomEventSystem.vue'
+import TradingSystem from './TradingSystem.vue'
+import QuestSystem from './QuestSystem.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { saveAs } from 'file-saver'
 
@@ -202,6 +204,12 @@ onUnmounted(() => {
 					</el-tab-pane>
 					<el-tab-pane label="探索" name="exploration">
 						<ExplorationPanel />
+					</el-tab-pane>
+					<el-tab-pane label="交易" name="trading">
+						<TradingSystem />
+					</el-tab-pane>
+					<el-tab-pane label="任务" name="quests">
+						<QuestSystem />
 					</el-tab-pane>
 					<el-tab-pane label="成就" name="achievements">
 						<AchievementSystem />

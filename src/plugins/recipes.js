@@ -204,3 +204,208 @@ export const technologies = () => {
 		},
 	]
 }
+
+export const availableBuildings = () => {
+	return [
+		{
+			id: 'shelter',
+			name: '简易庇护所',
+			description: '提供基本的居住场所，增加体力恢复速度',
+			levels: [
+				{
+					level: 1,
+					cost: { wood: 10, stone: 5 },
+					effects: { energyRecovery: 1 },
+					requirements: { survival: 1 }
+				},
+				{
+					level: 2,
+					cost: { wood: 20, stone: 15, metal: 5 },
+					effects: { energyRecovery: 2, mentalRecovery: 1 },
+					requirements: { survival: 2, crafting: 1 }
+				},
+				{
+					level: 3,
+					cost: { wood: 40, stone: 30, metal: 15, tools: 2 },
+					effects: { energyRecovery: 3, mentalRecovery: 2, maxHealth: 10 },
+					requirements: { survival: 3, crafting: 2 }
+				}
+			]
+		},
+		{
+			id: 'storage',
+			name: '储物区',
+			description: '增加资源存储上限',
+			levels: [
+				{
+					level: 1,
+					cost: { wood: 15, stone: 5 },
+					effects: { storageMultiplier: 1.2 },
+					requirements: { gathering: 1 }
+				},
+				{
+					level: 2,
+					cost: { wood: 30, stone: 15, metal: 5 },
+					effects: { storageMultiplier: 1.5 },
+					requirements: { gathering: 2, crafting: 1 }
+				},
+				{
+					level: 3,
+					cost: { wood: 50, stone: 30, metal: 15, tools: 3 },
+					effects: { storageMultiplier: 2 },
+					requirements: { gathering: 3, crafting: 2 }
+				}
+			]
+		},
+		{
+			id: 'workshop',
+			name: '工作坊',
+			description: '提高制作效率，解锁更多制作配方',
+			levels: [
+				{
+					level: 1,
+					cost: { wood: 20, stone: 10, metal: 5 },
+					effects: { craftingEfficiency: 1.1 },
+					requirements: { crafting: 1 }
+				},
+				{
+					level: 2,
+					cost: { wood: 35, stone: 20, metal: 15, tools: 2 },
+					effects: { craftingEfficiency: 1.25 },
+					requirements: { crafting: 2 }
+				},
+				{
+					level: 3,
+					cost: { wood: 60, stone: 40, metal: 30, tools: 5, parts: 3 },
+					effects: { craftingEfficiency: 1.5 },
+					requirements: { crafting: 3, research: 1 }
+				}
+			]
+		},
+		{
+			id: 'garden',
+			name: '菜园',
+			description: '提供稳定的食物来源',
+			levels: [
+				{
+					level: 1,
+					cost: { wood: 10, stone: 5, water: 10 },
+					effects: { foodPerDay: 3 },
+					requirements: { gathering: 2 }
+				},
+				{
+					level: 2,
+					cost: { wood: 20, stone: 10, water: 20, tools: 1 },
+					effects: { foodPerDay: 6 },
+					requirements: { gathering: 3 }
+				},
+				{
+					level: 3,
+					cost: { wood: 40, stone: 20, water: 30, tools: 3 },
+					effects: { foodPerDay: 10 },
+					requirements: { gathering: 4 }
+				}
+			]
+		},
+		{
+			id: 'well',
+			name: '水井',
+			description: '提供稳定的水源',
+			levels: [
+				{
+					level: 1,
+					cost: { wood: 5, stone: 15 },
+					effects: { waterPerDay: 3 },
+					requirements: { survival: 2 }
+				},
+				{
+					level: 2,
+					cost: { wood: 10, stone: 30, tools: 1 },
+					effects: { waterPerDay: 6 },
+					requirements: { survival: 3 }
+				},
+				{
+					level: 3,
+					cost: { wood: 20, stone: 50, metal: 10, tools: 2 },
+					effects: { waterPerDay: 10 },
+					requirements: { survival: 4 }
+				}
+			]
+		},
+		{
+			id: 'laboratory',
+			name: '实验室',
+			description: '提高研究效率，解锁高级技术',
+			levels: [
+				{
+					level: 1,
+					cost: { wood: 20, stone: 15, metal: 10 },
+					effects: { researchEfficiency: 1.1, mentalRecovery: 1 },
+					requirements: { research: 2 }
+				},
+				{
+					level: 2,
+					cost: { wood: 30, stone: 25, metal: 20, tools: 3 },
+					effects: { researchEfficiency: 1.25, mentalRecovery: 2 },
+					requirements: { research: 3 }
+				},
+				{
+					level: 3,
+					cost: { wood: 50, stone: 40, metal: 30, tools: 5, parts: 5 },
+					effects: { researchEfficiency: 1.5, mentalRecovery: 3 },
+					requirements: { research: 4 }
+				}
+			]
+		},
+		{
+			id: 'medicinalGarden',
+			name: '药草园',
+			description: '种植和培育草药',
+			levels: [
+				{
+					level: 1,
+					cost: { wood: 15, water: 15, herb: 5 },
+					effects: { herbPerDay: 2 },
+					requirements: { gathering: 3 }
+				},
+				{
+					level: 2,
+					cost: { wood: 25, water: 25, herb: 10, tools: 2 },
+					effects: { herbPerDay: 4, medicinePerDay: 1 },
+					requirements: { gathering: 4, research: 2 }
+				},
+				{
+					level: 3,
+					cost: { wood: 40, water: 40, herb: 20, tools: 4 },
+					effects: { herbPerDay: 7, medicinePerDay: 2 },
+					requirements: { gathering: 5, research: 3 }
+				}
+			]
+		},
+		{
+			id: 'forge',
+			name: '锻造坊',
+			description: '加工金属，制作工具和零件',
+			levels: [
+				{
+					level: 1,
+					cost: { wood: 20, stone: 30, metal: 15 },
+					effects: { toolsPerDay: 1 },
+					requirements: { crafting: 3 }
+				},
+				{
+					level: 2,
+					cost: { wood: 30, stone: 50, metal: 30, tools: 3 },
+					effects: { toolsPerDay: 2, partsPerDay: 1 },
+					requirements: { crafting: 4, research: 2 }
+				},
+				{
+					level: 3,
+					cost: { wood: 50, stone: 80, metal: 50, tools: 5, fuel: 10 },
+					effects: { toolsPerDay: 3, partsPerDay: 2 },
+					requirements: { crafting: 5, research: 3 }
+				}
+			]
+		}
+	]
+}

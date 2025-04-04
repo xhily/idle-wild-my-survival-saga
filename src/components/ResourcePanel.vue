@@ -12,35 +12,43 @@ const basicResources = computed(() => [
   { key: 'stone', name: '石头', icon: '🗿' },
   { key: 'metal', name: '金属', icon: '⚙️' },
   { key: 'herb', name: '草药', icon: '🌿' },
+  { key: 'rare_herb', name: '稀有草药', icon: '🌱' },
 ])
 
 const advancedResources = computed(() => [
   { key: 'medicine', name: '药品', icon: '💊' },
+  { key: 'rope', name: '绳索', icon: '🧶' },
   { key: 'tools', name: '工具', icon: '🔨' },
-  { key: 'parts', name: '零件', icon: '🔧' },
+  { key: 'parts', name: '零件', icon: '⚙️' },
+  { key: 'advanced_parts', name: '高级零件', icon: '🔧' },
+  { key: 'electronic_components', name: '电子元件', icon: '🔌' },
   { key: 'fuel', name: '燃料', icon: '⛽' },
 ])
 
 const specialResources = computed(() => [
+  { key: 'crystal', name: '水晶', icon: '💎' },
   { key: 'ancientRelic', name: '古代遗物', icon: '🏺' },
   { key: 'techFragment', name: '科技碎片', icon: '💾' },
 ])
 
 // 获取资源数量
 const getResourceAmount = (key) => {
-  return gameStore.resources[key]
+  return gameStore.resources[key] || 0
 }
 
 // 获取资源上限
 const getResourceLimit = (key) => {
-  return gameStore.resourceLimits[key]
+  return gameStore.resourceLimits[key] || 0
 }
 
 // 计算资源百分比
 const getResourcePercentage = (key) => {
   const amount = getResourceAmount(key)
   const limit = getResourceLimit(key)
-  return (amount / limit) * 100
+  // 防止除以零或未定义值导致NaN
+  if (!limit || limit <= 0) return 0
+  // 确保百分比不超过100
+  return Math.min((amount / limit) * 100, 100)
 }
 </script>
 
@@ -61,7 +69,7 @@ const getResourcePercentage = (key) => {
         </div>
       </div>
     </div>
-    <div class="resource-section" v-if="gameStore.skills.crafting >= 2">
+    <div class="resource-section">
       <h4>高级资源</h4>
       <div class="resource-grid">
         <div v-for="resource in advancedResources" :key="resource.key" class="resource-item">
@@ -75,10 +83,7 @@ const getResourcePercentage = (key) => {
         </div>
       </div>
     </div>
-    <div class="resource-section" v-else>
-      <h4>高级资源(制作 Lv.2 解锁)</h4>
-    </div>
-    <div class="resource-section" v-if="gameStore.skills.research >= 3">
+    <div class="resource-section">
       <h4>特殊资源</h4>
       <div class="resource-grid">
         <div v-for="resource in specialResources" :key="resource.key" class="resource-item">
@@ -91,9 +96,6 @@ const getResourcePercentage = (key) => {
           </div>
         </div>
       </div>
-    </div>
-    <div class="resource-section" v-else>
-      <h4>特殊资源(研究 Lv.3 解锁)</h4>
     </div>
   </div>
 </template>

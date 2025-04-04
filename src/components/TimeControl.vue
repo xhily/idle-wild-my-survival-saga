@@ -50,49 +50,21 @@ const currentSeason = computed(() => {
     {
       name: '春季',
       icon: '🌱',
-      effect: '植物生长加速，草药和食物采集+20%',
-      detailedEffects: [
-        '草药生长速度提升50%',
-        '食物采集效率+20%',
-        '雨天概率增加，有利于植物生长',
-        '早晨容易起雾，影响视野'
-      ],
       progress: seasonProgress.toFixed(0)
     },
     {
       name: '夏季',
       icon: '☀️',
-      effect: '高温增加水分消耗，热浪风险增加',
-      detailedEffects: [
-        '水分消耗+30%',
-        '中午时段酷热概率增加',
-        '暴雨可能引发洪水风险',
-        '风暴概率增加，带来资源损失风险'
-      ],
       progress: seasonProgress.toFixed(0)
     },
     {
       name: '秋季',
       icon: '🍂',
-      effect: '收获季节，食物产量+30%',
-      detailedEffects: [
-        '食物采集产量+30%',
-        '傍晚大风概率增加，可能带来额外资源',
-        '雾天更加浓重，探索效率降低',
-        '温度逐渐降低，体力消耗略微增加'
-      ],
       progress: seasonProgress.toFixed(0)
     },
     {
       name: '冬季',
       icon: '❄️',
-      effect: '寒冷增加食物消耗，降雪减缓移动速度',
-      detailedEffects: [
-        '食物消耗+50%',
-        '移动速度-30%（雪天）',
-        '夜间寒冷概率大幅增加',
-        '风暴和暴风雪风险增加，可能损坏建筑'
-      ],
       progress: seasonProgress.toFixed(0)
     }
   ]
@@ -131,19 +103,6 @@ const currentSeason = computed(() => {
           <div class="season-progress-bar">
             <div class="progress-fill" :style="{ width: currentSeason.progress + '%' }"></div>
           </div>
-          <el-popover placement="bottom" :width="200" trigger="hover" popper-class="season-popover">
-            <template #reference>
-              <span class="season-effect">{{ currentSeason.effect }}</span>
-            </template>
-            <template #default>
-              <div class="detailed-effects">
-                <el-descriptions title="季节效果详情" :column="1" size="small">
-                  <el-descriptions-item v-for="(effect, index) in currentSeason.detailedEffects" :key="index"
-                    :label="effect"></el-descriptions-item>
-                </el-descriptions>
-              </div>
-            </template>
-          </el-popover>
         </div>
       </div>
       <div class="time-of-day">
@@ -231,18 +190,6 @@ const currentSeason = computed(() => {
   height: 100%;
   background-color: var(--el-color-primary);
   border-radius: 2px;
-}
-
-.season-effect {
-  font-size: 0.8em;
-  color: var(--el-text-color-secondary);
-  font-style: italic;
-  cursor: pointer;
-  text-decoration: underline dotted;
-}
-
-.detailed-effects {
-  padding: 5px;
 }
 
 .time-scale-control {

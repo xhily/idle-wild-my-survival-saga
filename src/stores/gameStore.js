@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { omit } from 'lodash-es'
 import { encryptData, decryptData } from '../plugins/crypto'
-import { recipes } from '../plugins/recipes'
+import { recipes, availableBuildings } from '../plugins/recipes'
 
 export const useGameStore = defineStore('game', {
   state: () => ({
@@ -43,7 +43,7 @@ export const useGameStore = defineStore('game', {
       nextChangeHour: 6, // 下次变化的小时
       effects: {
         gatheringEfficiency: 1.0, // 采集效率修正
-        energyConsumption: 1.0, // 能量消耗修正
+        energyConsumption: 1.0, // 体力消耗修正
         waterConsumption: 1.0, // 水消耗修正
         foodConsumption: 1.0, // 食物消耗修正
         movementSpeed: 1.0, // 移动速度修正
@@ -58,11 +58,16 @@ export const useGameStore = defineStore('game', {
       stone: 0,
       metal: 0,
       herb: 0,
+      rare_herb: 0,
       // 高级资源
       medicine: 0,
       tools: 0,
+      rope: 0,
       parts: 0,
+      advanced_parts: 0,
+      electronic_components: 0,
       fuel: 0,
+      crystal: 0,
       // 特殊资源
       ancientRelic: 0,
       techFragment: 0,
@@ -75,9 +80,14 @@ export const useGameStore = defineStore('game', {
       stone: 50,
       metal: 50,
       herb: 30,
+      rare_herb: 30,
       medicine: 20,
       tools: 10,
+      rope: 10,
       parts: 10,
+      advanced_parts: 10,
+      electronic_components: 10,
+      crystal: 10,
       fuel: 20,
       ancientRelic: 5,
       techFragment: 5,
@@ -101,6 +111,12 @@ export const useGameStore = defineStore('game', {
       minute: 0,
       // 时间流逝速度，实际秒:游戏分钟
       timeScale: 1, // 1秒 = 1分钟游戏时间
+      // 游戏开始的时间戳
+      startTime: Date.now(),
+      // 当前游戏时间戳
+      get timestamp() {
+        return Date.now();
+      }
     },
     // 游戏设置
     settings: {
@@ -131,6 +147,9 @@ export const useGameStore = defineStore('game', {
     },
     // 游戏状态
     gameState: 'playing', // playing, paused, gameover
+    // 任务系统
+    activeQuests: [], // 进行中的任务
+    completedQuests: [] // 已完成的任务
   }),
   getters: {
     // 计算玩家总体实力
@@ -164,7 +183,7 @@ export const useGameStore = defineStore('game', {
     },
     // 保存游戏
     saveGame() {
-      const filteredState = omit(this.$state, ['eventLog', 'currentActivities']);
+      const filteredState = omit(this.$state, ['eventLog', 'currentActivities'])
       const encryptedData = encryptData(filteredState)
       if (encryptedData) {
         try {
@@ -183,6 +202,8 @@ export const useGameStore = defineStore('game', {
       if (saveData) {
         try {
           this.$state = decryptData(saveData)
+          // 重新初始化建筑效果
+          this.initBuildingEffects()
           this.addToEventLog('游戏已加载')
           return true
         } catch (error) {
@@ -198,6 +219,104 @@ export const useGameStore = defineStore('game', {
       const newAmount = this.resources[resource] + amount
       this.resources[resource] = Math.min(newAmount, this.resourceLimits[resource])
       return true
+    },
+    // 任务系统相关方法
+    // 接受任务
+    acceptQuest(quest) {
+      // 检查任务是否已经在进行中
+      if (this.activeQuests.some(q => q.id === quest.id)) {
+        this.addToEventLog(`任务 ${quest.name} 已经在进行中`)
+        return false
+      }
+      // 检查任务是否已经完成
+      if (this.completedQuests.some(q => q.id === quest.id)) {
+        this.addToEventLog(`任务 ${quest.name} 已经完成`)
+        return false
+      }
+      // 添加任务到进行中列表
+      this.activeQuests.push(quest)
+      this.addToEventLog(`接受了任务: ${quest.name}`)
+      return true
+    },
+    // 完成任务
+    completeQuest(quest) {
+      // 查找任务在进行中列表的索引
+      const questIndex = this.activeQuests.findIndex(q => q.id === quest.id)
+      if (questIndex === -1) {
+        this.addToEventLog(`任务 ${quest.name} 不在进行中`)
+        return false
+      }
+      // 从进行中列表移除任务
+      const completedQuest = this.activeQuests.splice(questIndex, 1)[0]
+      // 添加到已完成列表
+      this.completedQuests.push(completedQuest)
+      // 发放奖励
+      this.giveQuestRewards(completedQuest)
+      this.addToEventLog(`完成了任务: ${completedQuest.name}`)
+      return true
+    },
+    // 放弃任务
+    abandonQuest(quest) {
+      // 查找任务在进行中列表的索引
+      const questIndex = this.activeQuests.findIndex(q => q.id === quest.id)
+      if (questIndex === -1) {
+        this.addToEventLog(`任务 ${quest.name} 不在进行中`)
+        return false
+      }
+      // 从进行中列表移除任务
+      this.activeQuests.splice(questIndex, 1)
+      this.addToEventLog(`放弃了任务: ${quest.name}`)
+      return true
+    },
+    // 发放任务奖励
+    giveQuestRewards(quest) {
+      if (!quest.rewards) return
+      // 处理各种类型的奖励
+      for (const [rewardType, amount] of Object.entries(quest.rewards)) {
+        switch (rewardType) {
+          case 'exp':
+            // 增加经验值
+            this.player.exp += amount
+            this.checkLevelUp()
+            break
+          case 'maxHealth':
+            // 增加最大健康值
+            this.player.maxHealth += amount
+            this.player.health += amount
+            break
+          case 'maxEnergy':
+            // 增加最大体力值
+            this.player.maxEnergy += amount
+            this.player.energy += amount
+            break
+          case 'maxMental':
+            // 增加最大精神值
+            this.player.maxMental += amount
+            this.player.mental += amount
+            break
+          default:
+            // 如果是资源类型的奖励
+            if (this.resources.hasOwnProperty(rewardType)) this.addResource(rewardType, amount)
+            break
+        }
+      }
+    },
+    // 检查玩家是否可以升级
+    checkLevelUp() {
+      while (this.player.exp >= this.player.expToNextLevel) {
+        this.player.exp -= this.player.expToNextLevel
+        this.player.level += 1
+        // 增加下一级所需经验
+        this.player.expToNextLevel = Math.floor(this.player.expToNextLevel * 1.5)
+        // 升级奖励
+        this.player.maxHealth += 5
+        this.player.health = this.player.maxHealth
+        this.player.maxEnergy += 5
+        this.player.energy = this.player.maxEnergy
+        this.player.maxMental += 5
+        this.player.mental = this.player.maxMental
+        this.addToEventLog(`升级了！当前等级: ${this.player.level}`)
+      }
     },
     // 消耗资源
     consumeResource(resource, amount) {
@@ -221,7 +340,7 @@ export const useGameStore = defineStore('game', {
       for (const [resource, amount] of Object.entries(recipe.inputs)) {
         if (resource === 'energy') {
           if (this.player.energy < amount) {
-            this.addToEventLog('你的能量不足')
+            this.addToEventLog('你的体力不足')
             return false
           }
           this.player.energy -= amount
@@ -293,7 +412,7 @@ export const useGameStore = defineStore('game', {
           switch (skill) {
             case 'gathering':
               this.player.maxEnergy += 5
-              this.addToEventLog('你的采集技能提高，增加了最大能量值！')
+              this.addToEventLog('你的采集技能提高，增加了最大体力值！')
               break
             case 'crafting':
               // 解锁新的制作配方
@@ -302,7 +421,7 @@ export const useGameStore = defineStore('game', {
             case 'combat':
               this.player.maxHealth += 10
               this.player.health += 10
-              this.addToEventLog('你的战斗技能提高，增加了最大生命值！')
+              this.addToEventLog('你的战斗技能提高，增加了最大健康值！')
               break
             case 'survival':
               // 提高资源上限
@@ -342,61 +461,36 @@ export const useGameStore = defineStore('game', {
     // 每小时更新
     hourlyUpdate() {
       // 应用天气效果
-      this.applyWeatherEffects();
+      this.applyWeatherEffects()
       // 消耗基本资源（考虑天气影响）
-      const waterConsumption = Math.ceil(1 * this.weather.effects.waterConsumption);
-      const foodConsumption = Math.ceil(1 * this.weather.effects.foodConsumption);
-      this.consumeResource('water', waterConsumption);
-      this.consumeResource('food', foodConsumption);
-      // 计算建筑提供的能量恢复加成
-      let energyRecoveryBonus = 0;
-      let mentalRecoveryBonus = 0;
-      // 遍历所有建筑获取加成
-      for (const building of this.buildings) {
-        if (building.effects) {
-          if (building.effects.energyRecovery) energyRecoveryBonus += building.effects.energyRecovery;
-          if (building.effects.mentalRecovery) mentalRecoveryBonus += building.effects.mentalRecovery;
-        }
-      }
-      // 恢复能量（考虑天气影响）
-      let energyRecovery = 0;
-      if (this.gameTime.hour >= 22 || this.gameTime.hour <= 6) {
-        // 夜间休息恢复更多能量
-        energyRecovery = 5 + energyRecoveryBonus;
-      } else {
-        energyRecovery = 1 + energyRecoveryBonus;
-      }
-      // 应用天气对能量恢复的影响
-      if (this.weather.current === 'hot' || this.weather.current === 'cold') energyRecovery *= 0.8; // 极端天气减少能量恢复
-      this.player.energy = Math.min(this.player.energy + energyRecovery, this.player.maxEnergy);
-      // 恢复精神（考虑天气影响）
-      if (mentalRecoveryBonus > 0) {
-        // 恶劣天气对精神状态有负面影响
-        let mentalEffect = 1.0;
-        if (['storm', 'heavyRain', 'cold'].includes(this.weather.current)) {
-          mentalEffect = 0.5; // 恶劣天气减半精神恢复
-        } else if (this.weather.current === 'clear') {
-          mentalEffect = 1.2; // 晴朗天气增加精神恢复
-        }
-        this.player.mental = Math.min(
-          this.player.mental + (mentalRecoveryBonus * mentalEffect),
-          this.player.maxMental
-        );
-      }
+      const waterConsumption = Math.ceil(1 * this.weather.effects.waterConsumption)
+      const foodConsumption = Math.ceil(1 * this.weather.effects.foodConsumption)
+      this.consumeResource('water', waterConsumption)
+      this.consumeResource('food', foodConsumption)
+      // 应用建筑的小时效果
+      this.applyBuildingEffectsHourly()
+      // 根据时间段自然恢复体力
+      let baseEnergyRecovery = 0
+      // 夜间休息恢复更多体力
+      baseEnergyRecovery = this.gameTime.hour >= 22 || this.gameTime.hour <= 6 ? 5 : 1
+      // 应用天气对体力恢复的影响
+      if (this.weather.current === 'hot' || this.weather.current === 'cold') baseEnergyRecovery *= 0.8 // 极端天气减少体力恢复
+      // 应用基础体力恢复
+      this.player.energy = Math.min(this.player.energy + baseEnergyRecovery, this.player.maxEnergy)
       // 检查资源状态并影响健康
       if (this.resources.food <= 0 || this.resources.water <= 0) {
         // 极端天气下，缺乏资源的影响更严重
-        let healthPenalty = 5;
+        let healthPenalty = 5
         if (['hot', 'cold', 'storm'].includes(this.weather.current)) {
-          healthPenalty = 8;
-          this.addToEventLog(`在${this.getWeatherName()}天气下，缺乏基本资源使你的健康迅速恶化！`);
+          healthPenalty = 8
+          this.addToEventLog(`在${this.getWeatherName()}天气下，缺乏基本资源使你的健康迅速恶化！`)
         } else {
-          this.addToEventLog('你感到饥饿和口渴，健康下降了');
+          this.addToEventLog('你感到饥饿和口渴，健康下降了')
         }
-        this.player.health -= healthPenalty;
+        this.player.health -= healthPenalty
       }
       // 检查游戏结束条件
-      if (this.player.health <= 0) this.gameOver();
+      if (this.player.health <= 0) this.gameOver()
     },
     // 每日更新
     dailyUpdate() {
@@ -417,6 +511,65 @@ export const useGameStore = defineStore('game', {
       this.addToEventLog(`第${this.gameTime.day}天开始了`)
       // 自动保存
       if (this.settings.autoSave) this.saveGame()
+    },
+    // 建造新建筑
+    buildNewBuilding(buildingId, level) {
+      // 查找建筑配置
+      const buildingConfig = availableBuildings().find(b => b.id === buildingId)
+      if (!buildingConfig) {
+        this.addToEventLog(`未找到建筑: ${buildingId}`)
+        return false
+      }
+      // 获取指定等级的配置
+      const levelConfig = buildingConfig.levels.find(l => l.level === level)
+      if (!levelConfig) {
+        this.addToEventLog(`未找到建筑等级配置: ${buildingId} 等级 ${level}`)
+        return false
+      }
+      // 检查技能要求
+      for (const [skill, requiredLevel] of Object.entries(levelConfig.requirements)) {
+        if (this.skills[skill] < requiredLevel) {
+          this.addToEventLog(`你的${skill}技能等级不足，需要达到${requiredLevel}级`)
+          return false
+        }
+      }
+      // 检查并消耗资源
+      for (const [resource, amount] of Object.entries(levelConfig.cost)) {
+        if (!this.consumeResource(resource, amount)) {
+          this.addToEventLog(`资源不足: ${resource}`)
+          return false
+        }
+      }
+      // 检查是否已有该建筑
+      const existingBuildingIndex = this.buildings.findIndex(b => b.id === buildingId)
+      if (existingBuildingIndex !== -1) {
+        // 已有建筑，检查是否可以升级
+        const existingBuilding = this.buildings[existingBuildingIndex]
+        if (existingBuilding.level >= level) {
+          this.addToEventLog(`${buildingConfig.name}已经是等级${existingBuilding.level}，无需重复建造`)
+          return false
+        }
+        // 升级建筑
+        this.buildings[existingBuildingIndex] = {
+          id: buildingId,
+          name: buildingConfig.name,
+          level: level,
+          effects: { ...levelConfig.effects }
+        }
+        this.addToEventLog(`${buildingConfig.name}已升级到等级${level}`)
+      } else {
+        // 新建建筑
+        this.buildings.push({
+          id: buildingId,
+          name: buildingConfig.name,
+          level: level,
+          effects: { ...levelConfig.effects }
+        })
+        this.addToEventLog(`建造了${buildingConfig.name}(等级${level})`)
+      }
+      // 重新初始化建筑效果
+      this.initBuildingEffects()
+      return true
     },
     // 应用季节性效果
     applySeasonalEffects() {
@@ -571,6 +724,13 @@ export const useGameStore = defineStore('game', {
     // 获取资源名称
     getResourceName(resourceKey) {
       const resourceNames = {
+        exp: '幸存者经验',
+        maxMental: '最大精神值',
+        maxHealth: '最大健康值',
+        maxEnergy: '最大体力值',
+        mental: '精神值',
+        health: '健康值',
+        energy: '体力值',
         food: '食物',
         water: '水',
         wood: '木材',
@@ -647,7 +807,6 @@ export const useGameStore = defineStore('game', {
           windy: 0.1
         }
       }
-
       // 获取当前季节的天气概率
       const probabilities = weatherProbabilities[currentSeason]
       // 随机选择天气
@@ -696,16 +855,33 @@ export const useGameStore = defineStore('game', {
       }
       return weatherNames[this.weather.current] || '未知'
     },
+    // 获取天气对建筑效果的影响
+    getWeatherBuildingMultiplier() {
+      // 不同天气对建筑效果的影响
+      const weatherEffects = {
+        clear: { production: 1.2, waterCollection: 0.8, protection: 1.0 },
+        cloudy: { production: 1.0, waterCollection: 1.0, protection: 1.0 },
+        rainy: { production: 0.9, waterCollection: 1.5, protection: 0.9 },
+        foggy: { production: 0.8, waterCollection: 1.0, protection: 0.8 },
+        windy: { production: 0.9, waterCollection: 1.2, protection: 0.7 },
+        hot: { production: 0.8, waterCollection: 0.5, protection: 0.8 },
+        cold: { production: 0.7, waterCollection: 0.7, protection: 0.7 },
+        snow: { production: 0.6, waterCollection: 0.6, protection: 0.6 },
+        storm: { production: 0.5, waterCollection: 1.8, protection: 0.5 },
+        heavyRain: { production: 0.7, waterCollection: 2.0, protection: 0.7 }
+      }
+      return weatherEffects[this.weather.current] || { production: 1.0, waterCollection: 1.0, protection: 1.0 }
+    },
     // 获取天气效果描述
     getWeatherEffect() {
       const weatherEffects = {
         clear: '视野良好，采集效率+10%',
-        cloudy: '温度适宜，能量消耗-5%',
+        cloudy: '温度适宜，体力消耗-5%',
         rainy: '水资源收集+20%，移动速度-10%',
         foggy: '视野受限，探索效率-20%',
-        windy: '能量消耗+10%，有机会发现特殊资源',
-        hot: '水分消耗+30%，能量恢复-20%',
-        cold: '食物消耗+30%，能量恢复-20%',
+        windy: '体力消耗+10%，有机会发现特殊资源',
+        hot: '水分消耗+30%，体力恢复-20%',
+        cold: '食物消耗+30%，体力恢复-20%',
         snow: '移动速度-30%，采集效率-20%',
         storm: '无法外出，有触发灾害风险',
         heavyRain: '水资源收集+50%，采集效率-30%，有触发洪水风险'
@@ -729,144 +905,242 @@ export const useGameStore = defineStore('game', {
       // 根据当前天气应用不同效果
       switch (this.weather.current) {
         case 'clear':
-          this.weather.effects.gatheringEfficiency = 1.1; // 采集效率+10%
-          break;
+          this.weather.effects.gatheringEfficiency = 1.1 // 采集效率+10%
+          break
         case 'cloudy':
-          this.weather.effects.energyConsumption = 0.95; // 能量消耗-5%
-          break;
+          this.weather.effects.energyConsumption = 0.95 // 体力消耗-5%
+          break
         case 'rainy':
           // 下雨时随机增加水资源
           if (Math.random() < 0.2) {
-            const waterAmount = Math.floor(Math.random() * 3) + 1;
-            this.addResource('water', waterAmount);
+            const waterAmount = Math.floor(Math.random() * 3) + 1
+            this.addResource('water', waterAmount)
           }
-          this.weather.effects.movementSpeed = 0.9; // 移动速度-10%
-          break;
+          this.weather.effects.movementSpeed = 0.9 // 移动速度-10%
+          break
         case 'heavyRain':
           // 暴雨时更多水资源，但有洪水风险
           if (Math.random() < 0.4) {
-            const waterAmount = Math.floor(Math.random() * 5) + 2;
-            this.addResource('water', waterAmount);
+            const waterAmount = Math.floor(Math.random() * 5) + 2
+            this.addResource('water', waterAmount)
           }
           // 洪水风险
           if (Math.random() < 0.05) {
-            this.addToEventLog('暴雨引发了洪水，你损失了一些资源！');
+            this.addToEventLog('暴雨引发了洪水，你损失了一些资源！')
             // 随机损失资源
-            const resources = ['food', 'wood', 'herb'];
-            const randomResource = resources[Math.floor(Math.random() * resources.length)];
-            const lossAmount = Math.floor(Math.random() * 5) + 1;
-            this.consumeResource(randomResource, lossAmount);
+            const resources = ['food', 'wood', 'herb']
+            const randomResource = resources[Math.floor(Math.random() * resources.length)]
+            const lossAmount = Math.floor(Math.random() * 5) + 1
+            this.consumeResource(randomResource, lossAmount)
           }
-          this.weather.effects.gatheringEfficiency = 0.7; // 采集效率-30%
-          this.weather.effects.movementSpeed = 0.7; // 移动速度-30%
+          this.weather.effects.gatheringEfficiency = 0.7 // 采集效率-30%
+          this.weather.effects.movementSpeed = 0.7 // 移动速度-30%
           // 极端天气成就跟踪
-          this.achievements.extremeWeatherSurvived = true;
-          break;
+          this.achievements.extremeWeatherSurvived = true
+          break
         case 'foggy':
-          this.weather.effects.explorationEfficiency = 0.8; // 探索效率-20%
-          break;
+          this.weather.effects.explorationEfficiency = 0.8 // 探索效率-20%
+          break
         case 'windy':
-          this.weather.effects.energyConsumption = 1.1; // 能量消耗+10%
+          this.weather.effects.energyConsumption = 1.1 // 体力消耗+10%
           // 有机会发现特殊资源
           if (Math.random() < 0.1) {
-            const specialResources = ['metal', 'parts', 'techFragment'];
-            const randomResource = specialResources[Math.floor(Math.random() * specialResources.length)];
-            this.addResource(randomResource, 1);
-            this.addToEventLog(`大风带来了一些特殊资源，你获得了1单位${randomResource}！`);
+            const specialResources = ['metal', 'parts', 'techFragment']
+            const randomResource = specialResources[Math.floor(Math.random() * specialResources.length)]
+            this.addResource(randomResource, 1)
+            this.addToEventLog(`大风带来了一些特殊资源，你获得了1单位${randomResource}！`)
           }
-          break;
+          break
         case 'hot':
-          this.weather.effects.waterConsumption = 1.3; // 水分消耗+30%
+          this.weather.effects.waterConsumption = 1.3 // 水分消耗+30%
           // 有中暑风险
           if (Math.random() < 0.1 && this.resources.water < 5) {
-            this.player.health -= 5;
-            this.addToEventLog('酷热天气导致你中暑，健康下降了！');
+            this.player.health -= 5
+            this.addToEventLog('酷热天气导致你中暑，健康下降了！')
           }
           // 极端天气成就跟踪
-          this.achievements.extremeWeatherSurvived = true;
-          break;
+          this.achievements.extremeWeatherSurvived = true
+          break
         case 'cold':
-          this.weather.effects.foodConsumption = 1.3; // 食物消耗+30%
+          this.weather.effects.foodConsumption = 1.3 // 食物消耗+30%
           // 有冻伤风险
           if (Math.random() < 0.1 && this.resources.food < 5) {
-            this.player.health -= 5;
-            this.addToEventLog('寒冷天气导致你受冻，健康下降了！');
+            this.player.health -= 5
+            this.addToEventLog('寒冷天气导致你受冻，健康下降了！')
           }
           // 极端天气成就跟踪
-          this.achievements.extremeWeatherSurvived = true;
-          break;
+          this.achievements.extremeWeatherSurvived = true
+          break
         case 'snow':
-          this.weather.effects.movementSpeed = 0.7; // 移动速度-30%
-          this.weather.effects.gatheringEfficiency = 0.8; // 采集效率-20%
-          this.weather.effects.foodConsumption = 1.2; // 食物消耗+20%
-          break;
+          this.weather.effects.movementSpeed = 0.7 // 移动速度-30%
+          this.weather.effects.gatheringEfficiency = 0.8 // 采集效率-20%
+          this.weather.effects.foodConsumption = 1.2 // 食物消耗+20%
+          break
         case 'storm':
           // 风暴天气有灾害风险
           if (Math.random() < 0.2) {
             // 检查是否有庇护所
-            const hasShelter = this.buildings.some(b => b.id === 'shelter' && b.level >= 1);
+            const hasShelter = this.buildings.some(b => b.id === 'shelter' && b.level >= 1)
             if (hasShelter) {
-              this.addToEventLog('风暴肆虐，但你的庇护所提供了保护。');
-              this.player.mental -= 5; // 仍有轻微影响
+              this.addToEventLog('风暴肆虐，但你的庇护所提供了保护。')
+              this.player.mental -= 5 // 仍有轻微影响
             } else {
-              this.addToEventLog('风暴肆虐，你的健康和精神都受到了严重影响！');
-              this.player.health -= 10;
-              this.player.mental -= 15;
+              this.addToEventLog('风暴肆虐，你的健康和精神都受到了严重影响！')
+              this.player.health -= 10
+              this.player.mental -= 15
               // 随机损失资源
-              const resources = ['food', 'water', 'wood', 'herb'];
+              const resources = ['food', 'water', 'wood', 'herb']
               for (let i = 0; i < 2; i++) {
-                const randomResource = resources[Math.floor(Math.random() * resources.length)];
-                const lossAmount = Math.floor(Math.random() * 5) + 3;
-                this.consumeResource(randomResource, lossAmount);
+                const randomResource = resources[Math.floor(Math.random() * resources.length)]
+                const lossAmount = Math.floor(Math.random() * 5) + 3
+                this.consumeResource(randomResource, lossAmount)
               }
             }
           }
           // 极端天气成就跟踪
-          this.achievements.extremeWeatherSurvived = true;
-          break;
+          this.achievements.extremeWeatherSurvived = true
+          break
       }
     },
     // 应用建筑效果(每天)
     applyBuildingEffectsDay() {
+      // 获取季节对建筑生产的影响
+      const seasonMultiplier = this.calculateSeasonBuildingMultiplier()
+      // 获取天气对建筑生产的影响
+      const weatherMultiplier = this.getWeatherBuildingMultiplier()
       // 遍历所有建筑
       for (const building of this.buildings) {
-        if (!building.effects) continue;
-        // 应用每日资源生产
+        if (!building.effects) continue
+        // 应用每日资源生产（考虑季节和天气影响）
         if (building.effects.foodPerDay) {
-          this.addResource('food', building.effects.foodPerDay);
-          this.addToEventLog(`${building.name}提供了${building.effects.foodPerDay}单位食物`);
+          const amount = Math.ceil(building.effects.foodPerDay * seasonMultiplier.production * weatherMultiplier.production)
+          this.addResource('food', amount)
+          this.addToEventLog(`${building.name}提供了${amount}单位食物`)
         }
         if (building.effects.waterPerDay) {
-          this.addResource('water', building.effects.waterPerDay);
-          this.addToEventLog(`${building.name}提供了${building.effects.waterPerDay}单位水`);
+          const amount = Math.ceil(building.effects.waterPerDay * weatherMultiplier.waterCollection)
+          this.addResource('water', amount)
+          this.addToEventLog(`${building.name}提供了${amount}单位水`)
+        }
+        // 应用其他资源生产
+        if (building.effects.woodPerDay) {
+          const amount = Math.ceil(building.effects.woodPerDay * seasonMultiplier.production)
+          this.addResource('wood', amount)
+          this.addToEventLog(`${building.name}提供了${amount}单位木材`)
+        }
+        if (building.effects.stonePerDay) {
+          const amount = Math.ceil(building.effects.stonePerDay * seasonMultiplier.production)
+          this.addResource('stone', amount)
+          this.addToEventLog(`${building.name}提供了${amount}单位石头`)
+        }
+        if (building.effects.metalPerDay) {
+          const amount = Math.ceil(building.effects.metalPerDay * seasonMultiplier.production)
+          this.addResource('metal', amount)
+          this.addToEventLog(`${building.name}提供了${amount}单位金属`)
+        }
+        if (building.effects.herbPerDay) {
+          const amount = Math.ceil(building.effects.herbPerDay * seasonMultiplier.production)
+          this.addResource('herb', amount)
+          this.addToEventLog(`${building.name}提供了${amount}单位草药`)
+        }
+        // 高级资源生产
+        if (building.effects.medicinePerDay) {
+          this.addResource('medicine', building.effects.medicinePerDay)
+          this.addToEventLog(`${building.name}提供了${building.effects.medicinePerDay}单位药品`)
+        }
+        if (building.effects.toolsPerDay) {
+          this.addResource('tools', building.effects.toolsPerDay)
+          this.addToEventLog(`${building.name}提供了${building.effects.toolsPerDay}单位工具`)
+        }
+        if (building.effects.partsPerDay) {
+          this.addResource('parts', building.effects.partsPerDay)
+          this.addToEventLog(`${building.name}提供了${building.effects.partsPerDay}单位零件`)
+        }
+        if (building.effects.fuelPerDay) {
+          this.addResource('fuel', building.effects.fuelPerDay)
+          this.addToEventLog(`${building.name}提供了${building.effects.fuelPerDay}单位燃料`)
         }
       }
     },
-    applyBuildingEffects() {
-      // 遍历所有建筑
+    // 初始化建筑效果（在建造或加载游戏时调用）
+    initBuildingEffects() {
+      // 重置资源上限到基础值
+      this.resetResourceLimits()
+      // 遍历所有建筑应用永久效果
       for (const building of this.buildings) {
-        if (!building.effects) continue;
+        if (!building.effects) continue
         // 应用存储上限效果
         if (building.effects.storageMultiplier) {
           for (const resource in this.resourceLimits) {
-            this.resourceLimits[resource] *= building.effects.storageMultiplier;
+            this.resourceLimits[resource] *= building.effects.storageMultiplier
           }
-          this.addToEventLog(`${building.name}增加了资源存储上限`);
         }
-        // 应用其他效果，如恢复速度等
+        // 应用最大健康值效果
+        if (building.effects.maxHealth) this.player.maxHealth += building.effects.maxHealth
+        // 应用最大体力效果
+        if (building.effects.maxEnergy) this.player.maxEnergy += building.effects.maxEnergy
+        // 应用最大精神值效果
+        if (building.effects.maxMental) this.player.maxMental += building.effects.maxMental
+      }
+    },
+    // 重置资源上限到基础值
+    resetResourceLimits() {
+      this.resourceLimits = {
+        food: 50,
+        water: 50,
+        wood: 50,
+        stone: 50,
+        metal: 50,
+        herb: 30,
+        medicine: 20,
+        tools: 10,
+        parts: 10,
+        fuel: 20,
+        ancientRelic: 5,
+        techFragment: 5,
+      }
+    },
+    // 应用建筑的小时效果（在hourlyUpdate中调用）
+    applyBuildingEffectsHourly() {
+      // 计算季节对建筑效果的影响
+      const seasonMultiplier = this.calculateSeasonBuildingMultiplier()
+      // 遍历所有建筑
+      for (const building of this.buildings) {
+        if (!building.effects) continue
+        // 应用体力恢复效果（考虑季节影响）
         if (building.effects.energyRecovery) {
-          this.player.energy = Math.min(this.player.energy + building.effects.energyRecovery, this.player.maxEnergy);
-          this.addToEventLog(`${building.name}增加了体力恢复速度`);
+          const recovery = building.effects.energyRecovery * seasonMultiplier.energy
+          this.player.energy = Math.min(this.player.energy + recovery, this.player.maxEnergy)
         }
+        // 应用精神恢复效果（考虑季节影响）
         if (building.effects.mentalRecovery) {
-          this.player.mental = Math.min(this.player.mental + building.effects.mentalRecovery, this.player.maxMental);
-          this.addToEventLog(`${building.name}增加了精神恢复速度`);
+          const recovery = building.effects.mentalRecovery * seasonMultiplier.mental
+          this.player.mental = Math.min(this.player.mental + recovery, this.player.maxMental)
         }
-        if (building.effects.maxHealth) {
-          this.player.maxHealth = Math.min(this.player.maxHealth + building.effects.maxHealth, this.player.maxHealth);
-          this.addToEventLog(`${building.name}增加了健康值上限`);
+        // 应用健康恢复效果
+        if (building.effects.healthRecovery) {
+          const recovery = building.effects.healthRecovery * seasonMultiplier.health
+          this.player.health = Math.min(this.player.health + recovery, this.player.maxHealth)
         }
       }
+    },
+    // 计算季节对建筑效果的影响
+    calculateSeasonBuildingMultiplier() {
+      const day = this.gameTime.day
+      const seasonLength = this.season.seasonLength
+      const seasonIndex = Math.floor((day - 1) % (seasonLength * 4) / seasonLength)
+      // 季节对建筑效果的影响
+      const seasonMultipliers = [
+        // 春季 - 适中
+        { energy: 1.1, mental: 1.2, health: 1.1, production: 1.2 },
+        // 夏季 - 体力消耗高，生产高
+        { energy: 0.9, mental: 1.0, health: 1.0, production: 1.3 },
+        // 秋季 - 生产最高
+        { energy: 1.0, mental: 0.9, health: 1.0, production: 1.4 },
+        // 冬季 - 各方面都受限
+        { energy: 0.8, mental: 0.7, health: 0.9, production: 0.7 }
+      ]
+      return seasonMultipliers[seasonIndex]
     },
     // 触发随机事件
     triggerRandomEvent() {
@@ -1016,8 +1290,6 @@ export const useGameStore = defineStore('game', {
     gameOver() {
       this.gameState = 'gameover'
       this.addToEventLog('你没能生存下来...')
-      // 提供重生选项
-      // ...
     },
     // 添加事件日志
     addToEventLog(message) {

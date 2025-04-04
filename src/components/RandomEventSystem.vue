@@ -453,7 +453,7 @@ onMounted(() => {
       <span class="event-title">{{ activeEvent.title }}</span>
     </div>
     <el-dialog v-model="showEventPanel"
-      :title="activeEvent ? `${eventTypes[activeEvent.type].icon} ${activeEvent.title}` : '事件'" width="500px"
+      :title="activeEvent ? `${eventTypes[activeEvent.type].icon} ${activeEvent.title}` : '事件'" width="412px"
       :close-on-click-modal="false" :show-close="true" custom-class="event-dialog">
       <div v-if="activeEvent" class="event-panel" :class="`event-type-${activeEvent.type}`">
         <div class="event-header">
@@ -462,7 +462,7 @@ onMounted(() => {
         <div class="event-content">
           <p class="event-description">{{ activeEvent.description }}</p>
           <div class="event-options">
-            <el-button v-for="(option, index) in activeEvent.options" :key="index"
+            <el-button class="button" v-for="(option, index) in activeEvent.options" :key="index"
               :disabled="option.condition && !option.condition(gameStore)"
               :type="option.condition && !option.condition(gameStore) ? 'info' : 'primary'"
               @click="selectOption(option)">
@@ -577,6 +577,16 @@ onMounted(() => {
 .event-description {
   margin-bottom: 15px;
   line-height: 1.5;
+}
+
+.event-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.event-options .button {
+  margin-bottom: 10px;
 }
 
 .option-locked {
