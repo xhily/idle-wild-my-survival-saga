@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { ElMessage } from 'element-plus'
+import { recipes } from '../plugins/recipes'
 
 const gameStore = useGameStore()
 
@@ -13,21 +14,21 @@ const activityTabs = ref('gathering')
 
 // 按类型分组的活动
 const gatheringActivities = computed(() => {
-  return gameStore.recipes.filter(recipe =>
+  return recipes().filter(recipe =>
     recipe.id.startsWith('gather_') &&
     meetsSkillRequirements(recipe)
   )
 })
 
 const craftingActivities = computed(() => {
-  return gameStore.recipes.filter(recipe =>
+  return recipes().filter(recipe =>
     recipe.id.startsWith('craft_') &&
     meetsSkillRequirements(recipe)
   )
 })
 
 const explorationActivities = computed(() => {
-  return gameStore.recipes.filter(recipe =>
+  return recipes().filter(recipe =>
     recipe.id.startsWith('explore_') &&
     meetsSkillRequirements(recipe)
   )
@@ -205,31 +206,6 @@ onUnmounted(() => {
         <el-tab-pane label="制作" name="crafting">
           <div class="activity-list">
             <div v-for="recipe in craftingActivities" :key="recipe.id" class="activity-card">
-              <div class="activity-header">
-                <div class="activity-name">{{ recipe.name }}</div>
-                <div class="activity-time">{{ getActivityDuration(recipe.duration) }}</div>
-              </div>
-              <div class="activity-details">
-                <div class="activity-resources">
-                  <div class="activity-inputs">消耗: {{ getInputText(recipe.inputs) }}</div>
-                  <div class="activity-outputs">产出: {{ getOutputText(recipe.outputs) }}</div>
-                </div>
-                <div class="activity-requirements">
-                  需求: {{ getSkillRequirementText(recipe.skillRequired) }}
-                </div>
-              </div>
-              <div class="activity-actions">
-                <el-button type="primary" size="small" @click="startActivity(recipe.id)"
-                  :disabled="!hasEnoughResources(recipe) || gameStore.gameState !== 'playing'">
-                  {{ hasEnoughResources(recipe) ? '开始' : '资源不足' }}
-                </el-button>
-              </div>
-            </div>
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="探索" name="exploration">
-          <div class="activity-list">
-            <div v-for="recipe in explorationActivities" :key="recipe.id" class="activity-card">
               <div class="activity-header">
                 <div class="activity-name">{{ recipe.name }}</div>
                 <div class="activity-time">{{ getActivityDuration(recipe.duration) }}</div>

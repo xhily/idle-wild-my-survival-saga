@@ -75,6 +75,9 @@ const getResourcePercentage = (key) => {
         </div>
       </div>
     </div>
+    <div class="resource-section" v-else>
+      <h4>高级资源(制作 Lv.2 解锁)</h4>
+    </div>
     <div class="resource-section" v-if="gameStore.skills.research >= 3">
       <h4>特殊资源</h4>
       <div class="resource-grid">
@@ -88,6 +91,9 @@ const getResourcePercentage = (key) => {
           </div>
         </div>
       </div>
+    </div>
+    <div class="resource-section" v-else>
+      <h4>特殊资源(研究 Lv.3 解锁)</h4>
     </div>
   </div>
 </template>

@@ -174,7 +174,7 @@ onUnmounted(() => {
 				</el-button>
 				<el-popover class="box-item" content="QQ群:920930589" placement="top-start">
 					<template #reference>
-						<el-button class="button" @click="handleClose" size="small">
+						<el-button class="button" size="small">
 							<el-icon>
 								<Position />
 							</el-icon>

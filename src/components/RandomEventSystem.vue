@@ -427,11 +427,6 @@ const selectOption = async (option) => {
   activeEvent.value = null
 }
 
-// 关闭事件
-const closeEvent = () => {
-  activeEvent.value = null
-}
-
 // 监听游戏日期变化，触发随机事件
 watch(() => gameStore.gameTime.day, (newDay, oldDay) => {
   if (newDay > oldDay) triggerRandomEvent()
@@ -477,11 +472,6 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="closeEvent">关闭</el-button>
-        </span>
-      </template>
     </el-dialog>
   </div>
 </template>

@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { ElNotification } from 'element-plus'
+import { technologies } from '../plugins/recipes'
 
 const gameStore = useGameStore()
 
@@ -96,7 +97,7 @@ const achievements = [
     name: '科技爱好者',
     description: '解锁5项科技',
     icon: '💡',
-    condition: (store) => store.technologies.filter(tech => tech.researched).length >= 5,
+    condition: (store) => technologies().filter(tech => tech.researched).length >= 5,
     reward: { exp: 100 },
     unlocked: false
   },
@@ -152,12 +153,12 @@ const localAchievements = ref(achievements)
 
 // 已解锁的成就
 const unlockedAchievements = computed(() => {
-  return localAchievements.value.filter(a => a.unlocked)
+  return localAchievements.value.filter(a => gameStore.achievements.unlocked.includes(a.id))
 })
 
 // 未解锁的成就
 const lockedAchievements = computed(() => {
-  return localAchievements.value.filter(a => !a.unlocked)
+  return localAchievements.value.filter(a => !gameStore.achievements.unlocked.includes(a.id))
 })
 
 // 成就完成百分比
@@ -174,25 +175,25 @@ const checkAchievements = () => {
 
 // 解锁成就
 const unlockAchievement = (achievement) => {
+  if (gameStore.achievements.unlocked.includes(achievement.id)) return
   // 标记为已解锁
   achievement.unlocked = true
   // 添加到游戏存档中
-  if (!gameStore.achievements.unlocked.includes(achievement.id)) gameStore.achievements.unlocked.push(achievement.id)
+  gameStore.achievements.unlocked.push(achievement.id)
   // 发放奖励
-  if (achievement.reward) {
-    if (achievement.reward.exp) {
-      // 增加经验值
-      gameStore.player.exp += achievement.reward.exp
-      // 检查是否升级
-      if (gameStore.player.exp >= gameStore.player.expToNextLevel) {
-        gameStore.player.exp -= gameStore.player.expToNextLevel
-        gameStore.player.level += 1
-        gameStore.player.expToNextLevel = Math.floor(gameStore.player.expToNextLevel * 1.5)
-        gameStore.addToEventLog(`你升级了！当前等级: ${gameStore.player.level}`)
-      }
-    }
-    // 可以添加其他类型的奖励
+  if (!achievement.reward) return
+  if (!achievement.reward.exp) return
+  // 增加经验值
+  gameStore.player.exp += achievement.reward.exp
+  // 检查是否升级
+  if (gameStore.player.exp >= gameStore.player.expToNextLevel) {
+    gameStore.player.exp -= gameStore.player.expToNextLevel
+    gameStore.player.level += 1
+    gameStore.player.expToNextLevel = Math.floor(gameStore.player.expToNextLevel * 1.5)
+    gameStore.addToEventLog(`你升级了！当前等级: ${gameStore.player.level}`)
   }
+  // 可以添加其他类型的奖励
+
   // 记录到事件日志
   gameStore.addToEventLog(`成就解锁: ${achievement.name}`)
   // 显示通知
@@ -206,7 +207,7 @@ const unlockAchievement = (achievement) => {
 
 // 监听游戏状态变化，检查成就
 watch(
-  () => [gameStore.player.days, gameStore.resources, gameStore.skills, gameStore.buildings, gameStore.technologies],
+  () => [gameStore.player.days, gameStore.resources, gameStore.skills, gameStore.buildings, technologies()],
   () => checkAchievements(),
   { deep: true }
 )

@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { ElMessage } from 'element-plus'
+import { technologies } from '../plugins/recipes'
 
 const gameStore = useGameStore()
 
@@ -10,13 +11,13 @@ const selectedTech = ref(null)
 
 // 可研究的科技
 const availableTechnologies = computed(() => {
-  return gameStore.technologies.filter(tech => {
+  return technologies().filter(tech => {
     // 过滤未研究且满足前置条件的科技
     if (tech.researched) return false
     // 检查前置科技要求
     if (tech.requirements) {
       for (const reqTech of tech.requirements) {
-        const prerequisite = gameStore.technologies.find(t => t.id === reqTech)
+        const prerequisite = technologies().find(t => t.id === reqTech)
         if (!prerequisite || !prerequisite.researched) return false
       }
     }
@@ -26,13 +27,13 @@ const availableTechnologies = computed(() => {
 
 // 已研究的科技
 const researchedTechnologies = computed(() => {
-  return gameStore.technologies.filter(tech => tech.researched)
+  return technologies().filter(tech => tech.researched)
 })
 
 // 检查是否有足够的资源研究科技
 const canResearch = computed(() => {
   if (!selectedTech.value) return false
-  const tech = gameStore.technologies.find(t => t.id === selectedTech.value)
+  const tech = technologies().find(t => t.id === selectedTech.value)
   if (!tech || tech.researched) return false
   // 检查资源
   for (const [resource, amount] of Object.entries(tech.cost)) {
@@ -52,7 +53,7 @@ const getTechCost = (tech) => {
 // 研究选中的科技
 const researchTech = () => {
   if (!selectedTech.value || !canResearch.value) return
-  const tech = gameStore.technologies.find(t => t.id === selectedTech.value)
+  const tech = technologies().find(t => t.id === selectedTech.value)
   // 消耗资源
   for (const [resource, amount] of Object.entries(tech.cost)) {
     gameStore.consumeResource(resource, amount)
@@ -74,7 +75,7 @@ const getTechUnlocks = (tech) => {
   const unlockTexts = []
   for (const unlockId of tech.unlocks) {
     // 检查是否解锁了新科技
-    const unlockedTech = gameStore.technologies.find(t => t.id === unlockId)
+    const unlockedTech = technologies().find(t => t.id === unlockId)
     if (unlockedTech) {
       unlockTexts.push(`科技: ${unlockedTech.name}`)
       continue
@@ -122,17 +123,17 @@ const getTechUnlocks = (tech) => {
       <h4>科技详情</h4>
       <div class="selected-tech">
         <div class="tech-name">
-          {{gameStore.technologies.find(t => t.id === selectedTech).name}}
+          {{ technologies().find(t => t.id === selectedTech).name }}
         </div>
         <div class="tech-description">
-          {{gameStore.technologies.find(t => t.id === selectedTech).description}}
+          {{technologies().find(t => t.id === selectedTech).description}}
         </div>
         <div class="tech-requirements">
           <div class="tech-cost">
-            需要资源: {{getTechCost(gameStore.technologies.find(t => t.id === selectedTech))}}
+            需要资源: {{getTechCost(technologies().find(t => t.id === selectedTech))}}
           </div>
           <div class="tech-unlocks">
-            解锁: {{getTechUnlocks(gameStore.technologies.find(t => t.id === selectedTech))}}
+            解锁: {{getTechUnlocks(technologies().find(t => t.id === selectedTech))}}
           </div>
         </div>
         <div class="tech-actions">
