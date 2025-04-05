@@ -12,7 +12,7 @@ export default defineConfig({
     __APP_TITLE__: JSON.stringify(pkg.title),
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
-  base: process.env.NODE_ENV === 'production' ? '/idle-wild-my-survival-saga/' : './',
+  base: process.env.NODE_ENV === 'production' ? '/你的仓库名/' : './',
   build: {
     outDir: 'docs',
     minify: 'terser',
