@@ -47,11 +47,8 @@ const meetsSkillRequirements = (recipe) => {
 const hasEnoughResources = (recipe) => {
   if (!recipe.inputs) return true
   for (const [resource, amount] of Object.entries(recipe.inputs)) {
-    if (resource === 'energy') {
-      if (gameStore.player.energy < amount) return false
-    } else if (gameStore.resources[resource] < amount) {
-      return false
-    }
+    if (resource === 'energy') if (gameStore.player.energy < amount) return false
+    else if (gameStore.resources[resource] < amount) return false
   }
   return true
 }
@@ -99,6 +96,41 @@ const getSkillRequirementText = (skillRequired) => {
   return Object.entries(skillRequired).map(([skill, level]) => {
     return `${skillNames[skill] || skill} Lv.${level}`
   }).join(', ')
+}
+
+// 获取技能效果加成文本
+const getSkillEffectText = (recipe) => {
+  const effects = []
+  const category = recipe.category
+  if (category === 'gathering') {
+    // 采集效率加成
+    if (gameStore.skillTreeEffects.gatheringEfficiency > 0) effects.push(`采集效率 +${Math.round(gameStore.skillTreeEffects.gatheringEfficiency * 100)}%`)
+    // 采集产出加成
+    if (gameStore.skillTreeEffects.gatheringYield > 0) effects.push(`产出增加 +${Math.round(gameStore.skillTreeEffects.gatheringYield * 100)}%`)
+    // 能量消耗减少
+    if (gameStore.skillTreeEffects.gatheringEnergyCost < 0) effects.push(`能量消耗 ${Math.round(gameStore.skillTreeEffects.gatheringEnergyCost * 100)}%`)
+    // 稀有资源几率
+    if (recipe.id.includes('herb') && gameStore.skillTreeEffects.rareHerbChance > 0) effects.push(`稀有草药几率 +${Math.round(gameStore.skillTreeEffects.rareHerbChance * 100)}%`)
+  } else if (category === 'crafting') {
+    // 制作速度加成
+    if (gameStore.skillTreeEffects.craftingSpeed > 0) effects.push(`制作速度 +${Math.round(gameStore.skillTreeEffects.craftingSpeed * 100)}%`)
+    // 资源节约几率
+    if (gameStore.skillTreeEffects.resourceSaving > 0) effects.push(`资源节约几率 +${Math.round(gameStore.skillTreeEffects.resourceSaving * 100)}%`)
+    // 额外产出几率
+    if (gameStore.skillTreeEffects.extraCraftingOutput > 0) effects.push(`额外产出几率 +${Math.round(gameStore.skillTreeEffects.extraCraftingOutput * 100)}%`)
+    // 工具耐久度
+    if (recipe.id.includes('tool') && gameStore.skillTreeEffects.toolDurability > 0) effects.push(`工具耐久度 +${Math.round(gameStore.skillTreeEffects.toolDurability * 100)}%`)
+  } else if (category === 'research') {
+    // 研究速度加成
+    if (gameStore.skillTreeEffects.researchSpeed > 0) effects.push(`研究速度 +${Math.round(gameStore.skillTreeEffects.researchSpeed * 100)}%`)
+    // 科技碎片产出
+    if (gameStore.skillTreeEffects.techFragmentYield > 0) effects.push(`科技碎片产出 +${Math.round(gameStore.skillTreeEffects.techFragmentYield * 100)}%`)
+    // 突破性发现几率
+    if (gameStore.skillTreeEffects.breakthroughChance > 0) effects.push(`突破性发现几率 +${Math.round(gameStore.skillTreeEffects.breakthroughChance * 100)}%`)
+  }
+  // 通用能量消耗减少
+  if (gameStore.skillTreeEffects.energyConsumption < 0 && !effects.some(e => e.includes('能量消耗'))) effects.push(`能量消耗 ${Math.round(gameStore.skillTreeEffects.energyConsumption * 100)}%`)
+  return effects.length > 0 ? effects.join('，') : '无加成效果'
 }
 
 // 活动进度和时间的响应式数据
@@ -172,6 +204,12 @@ onUnmounted(() => {
             <div class="activity-time">剩余: {{ getActivityRemainingTime(activity) }}</div>
           </div>
           <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
+          <div class="activity-actions">
+            <el-button style="width: 100%;margin-top: 5px;" type="danger" size="small"
+              @click="gameStore.cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
+              取消
+            </el-button>
+          </div>
         </div>
       </div>
     </div>
@@ -192,6 +230,9 @@ onUnmounted(() => {
                 </div>
                 <div class="activity-requirements">
                   需求: {{ getSkillRequirementText(recipe.skillRequired) }}
+                </div>
+                <div class="activity-requirements" v-if="getSkillEffectText(recipe) !== '无加成效果'">
+                  加成: {{ getSkillEffectText(recipe) }}
                 </div>
               </div>
               <div class="activity-actions">
@@ -217,6 +258,9 @@ onUnmounted(() => {
                 </div>
                 <div class="activity-requirements">
                   需求: {{ getSkillRequirementText(recipe.skillRequired) }}
+                </div>
+                <div class="activity-skill-effects" v-if="getSkillEffectText(recipe) !== '无加成效果'">
+                  <el-tag size="small" type="success">技能加成: {{ getSkillEffectText(recipe) }}</el-tag>
                 </div>
               </div>
               <div class="activity-actions">

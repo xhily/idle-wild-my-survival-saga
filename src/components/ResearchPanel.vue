@@ -9,16 +9,25 @@ const gameStore = useGameStore()
 // 当前选中的科技
 const selectedTech = ref(null)
 
+// 确保gameStore中有researched数组
+if (!gameStore.researched) {
+  gameStore.researched = []
+  // 初始化已研究的科技
+  const initialTechs = technologies().filter(tech => tech.researched)
+  for (const tech of initialTechs) {
+    gameStore.researched.push(tech.id)
+  }
+}
+
 // 可研究的科技
 const availableTechnologies = computed(() => {
   return technologies().filter(tech => {
     // 过滤未研究且满足前置条件的科技
-    if (tech.researched) return false
+    if (gameStore.researched.includes(tech.id)) return false
     // 检查前置科技要求
     if (tech.requirements) {
       for (const reqTech of tech.requirements) {
-        const prerequisite = technologies().find(t => t.id === reqTech)
-        if (!prerequisite || !prerequisite.researched) return false
+        if (!gameStore.researched.includes(reqTech)) return false
       }
     }
     return true
@@ -27,14 +36,14 @@ const availableTechnologies = computed(() => {
 
 // 已研究的科技
 const researchedTechnologies = computed(() => {
-  return technologies().filter(tech => tech.researched)
+  return technologies().filter(tech => gameStore.researched.includes(tech.id))
 })
 
 // 检查是否有足够的资源研究科技
 const canResearch = computed(() => {
   if (!selectedTech.value) return false
   const tech = technologies().find(t => t.id === selectedTech.value)
-  if (!tech || tech.researched) return false
+  if (!tech || gameStore.researched.includes(tech.id)) return false
   // 检查资源
   for (const [resource, amount] of Object.entries(tech.cost)) {
     if (gameStore.resources[resource] < amount) return false
@@ -54,11 +63,23 @@ const getTechCost = (tech) => {
 const researchTech = () => {
   if (!selectedTech.value || !canResearch.value) return
   const tech = technologies().find(t => t.id === selectedTech.value)
-  // 消耗资源
+  // 消耗资源（应用研究资源节约效果）
   for (const [resource, amount] of Object.entries(tech.cost)) {
-    gameStore.consumeResource(resource, amount)
+    // 计算实际消耗量，应用研究资源节约效果
+    let actualAmount = amount
+    if (gameStore.skillTreeEffects.researchResourceSaving > 0) {
+      // 计算节约的资源量
+      const savedAmount = Math.floor(amount * gameStore.skillTreeEffects.researchResourceSaving)
+      actualAmount = Math.max(1, amount - savedAmount) // 确保至少消耗1个资源
+      if (savedAmount > 0) gameStore.addToEventLog(`研究技能帮你节约了 ${savedAmount} 个 ${gameStore.getResourceName(resource)}`)
+    }
+    gameStore.consumeResource(resource, actualAmount)
   }
-  // 标记为已研究
+  // 确保gameStore中有researched数组
+  if (!gameStore.researched) gameStore.researched = []
+  // 将研究ID添加到gameStore的已研究列表中
+  if (!gameStore.researched.includes(tech.id)) gameStore.researched.push(tech.id)
+  // 标记为已研究（同时更新本地状态）
   tech.researched = true
   // 增加研究技能经验
   gameStore.addSkillExp('research', 2)
@@ -67,6 +88,20 @@ const researchTech = () => {
   ElMessage.success(`研究成功：${tech.name}`)
   // 重置选中
   selectedTech.value = null
+}
+
+// 获取研究技能效果文本
+const getResearchSkillEffects = () => {
+  const effects = []
+  // 研究速度加成
+  if (gameStore.skillTreeEffects.researchSpeed > 0) effects.push(`研究速度 +${Math.round(gameStore.skillTreeEffects.researchSpeed * 100)}%`)
+  // 科技碎片产出
+  if (gameStore.skillTreeEffects.techFragmentYield > 0) effects.push(`科技碎片产出 +${Math.round(gameStore.skillTreeEffects.techFragmentYield * 100)}%`)
+  // 研究资源节约
+  if (gameStore.skillTreeEffects.researchResourceSaving > 0) effects.push(`研究资源节约 +${Math.round(gameStore.skillTreeEffects.researchResourceSaving * 100)}%`)
+  // 突破性发现几率
+  if (gameStore.skillTreeEffects.breakthroughChance > 0) effects.push(`突破性发现几率 +${Math.round(gameStore.skillTreeEffects.breakthroughChance * 100)}%`)
+  return effects.length > 0 ? effects.join('，') : '无加成效果'
 }
 
 // 获取科技解锁内容文本
@@ -93,6 +128,11 @@ const getTechUnlocks = (tech) => {
 <template>
   <el-scrollbar class="research-panel">
     <div class="tech-tree">
+      <div v-if="getResearchSkillEffects() !== '无加成效果'" class="research-skill-effects">
+        <el-alert title="当前研究技能效果" type="success" :closable="false" show-icon>
+          <div>{{ getResearchSkillEffects() }}</div>
+        </el-alert>
+      </div>
       <div class="tech-categories">
         <h4>可研究科技</h4>
         <div class="tech-list">
@@ -123,7 +163,7 @@ const getTechUnlocks = (tech) => {
       <h4>科技详情</h4>
       <div class="selected-tech">
         <div class="tech-name">
-          {{ technologies().find(t => t.id === selectedTech).name }}
+          {{technologies().find(t => t.id === selectedTech).name}}
         </div>
         <div class="tech-description">
           {{technologies().find(t => t.id === selectedTech).description}}

@@ -15,14 +15,14 @@ export const weatherTypes = {
       foodConsumption: 1.0,
       movementSpeed: 1.1,
       explorationEfficiency: 1.1,
-      mentalRecovery: 1.1
+      mentalRecovery: 1.1,
     },
     seasonModifiers: {
       spring: 1.0,
       summer: 1.5,
       autumn: 1.0,
-      winter: 0.5
-    }
+      winter: 0.5,
+    },
   },
   cloudy: {
     name: '多云',
@@ -39,14 +39,14 @@ export const weatherTypes = {
       foodConsumption: 1.0,
       movementSpeed: 1.0,
       explorationEfficiency: 1.0,
-      mentalRecovery: 0.9
+      mentalRecovery: 0.9,
     },
     seasonModifiers: {
       spring: 1.2,
       summer: 1.0,
       autumn: 1.2,
-      winter: 1.0
-    }
+      winter: 1.0,
+    },
   },
   rainy: {
     name: '雨天',
@@ -63,14 +63,14 @@ export const weatherTypes = {
       foodConsumption: 1.1,
       movementSpeed: 0.8,
       explorationEfficiency: 0.7,
-      mentalRecovery: 0.8
+      mentalRecovery: 0.8,
     },
     seasonModifiers: {
       spring: 1.5,
       summer: 1.0,
       autumn: 1.2,
-      winter: 0.3
-    }
+      winter: 0.3,
+    },
   },
   // 扩展天气类型
   foggy: {
@@ -88,14 +88,14 @@ export const weatherTypes = {
       foodConsumption: 1.0,
       movementSpeed: 0.6,
       explorationEfficiency: 0.5,
-      mentalRecovery: 0.7
+      mentalRecovery: 0.7,
     },
     seasonModifiers: {
       spring: 1.2,
       summer: 0.5,
       autumn: 1.5,
-      winter: 1.2
-    }
+      winter: 1.2,
+    },
   },
   windy: {
     name: '大风',
@@ -112,14 +112,14 @@ export const weatherTypes = {
       foodConsumption: 1.1,
       movementSpeed: 0.7,
       explorationEfficiency: 0.7,
-      mentalRecovery: 0.8
+      mentalRecovery: 0.8,
     },
     seasonModifiers: {
       spring: 1.3,
       summer: 0.8,
       autumn: 1.5,
-      winter: 1.0
-    }
+      winter: 1.0,
+    },
   },
   stormy: {
     name: '暴风雨',
@@ -136,13 +136,13 @@ export const weatherTypes = {
       foodConsumption: 1.2,
       movementSpeed: 0.5,
       explorationEfficiency: 0.3,
-      mentalRecovery: 0.6
+      mentalRecovery: 0.6,
     },
     seasonModifiers: {
       spring: 1.0,
       summer: 1.5,
       autumn: 1.0,
-      winter: 0.2
+      winter: 0.2,
     },
     events: [
       {
@@ -153,10 +153,12 @@ export const weatherTypes = {
           // 随机损失一些健康值
           const damage = Math.floor(Math.random() * 10) + 5
           store.player.health = Math.max(1, store.player.health - damage)
-          store.addToEventLog(`暴风雨中你被雷电击中，损失了${damage}点健康值！`)
-        }
-      }
-    ]
+          store.addToEventLog(
+            `暴风雨中你被雷电击中，损失了${damage}点健康值！`
+          )
+        },
+      },
+    ],
   },
   heatwave: {
     name: '热浪',
@@ -173,13 +175,13 @@ export const weatherTypes = {
       foodConsumption: 1.1,
       movementSpeed: 0.8,
       explorationEfficiency: 0.6,
-      mentalRecovery: 0.7
+      mentalRecovery: 0.7,
     },
     seasonModifiers: {
       spring: 0.2,
       summer: 2.0,
       autumn: 0.3,
-      winter: 0.0
+      winter: 0.0,
     },
     events: [
       {
@@ -191,11 +193,13 @@ export const weatherTypes = {
           if (store.resources.water < 5) {
             const damage = Math.floor(Math.random() * 5) + 3
             store.player.health = Math.max(1, store.player.health - damage)
-            store.addToEventLog(`热浪中你因缺水而脱水，损失了${damage}点健康值！`)
+            store.addToEventLog(
+              `热浪中你因缺水而脱水，损失了${damage}点健康值！`
+            )
           }
-        }
-      }
-    ]
+        },
+      },
+    ],
   },
   blizzard: {
     name: '暴风雪',
@@ -212,13 +216,13 @@ export const weatherTypes = {
       foodConsumption: 1.5,
       movementSpeed: 0.4,
       explorationEfficiency: 0.2,
-      mentalRecovery: 0.5
+      mentalRecovery: 0.5,
     },
     seasonModifiers: {
       spring: 0.1,
       summer: 0.0,
       autumn: 0.2,
-      winter: 2.0
+      winter: 2.0,
     },
     events: [
       {
@@ -230,13 +234,21 @@ export const weatherTypes = {
           if (store.resources.fuel < 3) {
             const healthDamage = Math.floor(Math.random() * 8) + 5
             const mentalDamage = Math.floor(Math.random() * 10) + 10
-            store.player.health = Math.max(1, store.player.health - healthDamage)
-            store.player.mental = Math.max(1, store.player.mental - mentalDamage)
-            store.addToEventLog(`暴风雪中你因缺乏燃料而患上低温症，损失了${healthDamage}点健康值和${mentalDamage}点精神值！`)
+            store.player.health = Math.max(
+              1,
+              store.player.health - healthDamage
+            )
+            store.player.mental = Math.max(
+              1,
+              store.player.mental - mentalDamage
+            )
+            store.addToEventLog(
+              `暴风雪中你因缺乏燃料而患上低温症，损失了${healthDamage}点健康值和${mentalDamage}点精神值！`
+            )
           }
-        }
-      }
-    ]
+        },
+      },
+    ],
   },
   sandstorm: {
     name: '沙尘暴',
@@ -253,13 +265,13 @@ export const weatherTypes = {
       foodConsumption: 1.2,
       movementSpeed: 0.5,
       explorationEfficiency: 0.3,
-      mentalRecovery: 0.6
+      mentalRecovery: 0.6,
     },
     seasonModifiers: {
       spring: 0.5,
       summer: 1.5,
       autumn: 0.5,
-      winter: 0.1
+      winter: 0.1,
     },
     events: [
       {
@@ -269,15 +281,20 @@ export const weatherTypes = {
         effect: (store) => {
           // 随机损失一些资源
           const resources = ['food', 'water', 'wood', 'herb']
-          const randomResource = resources[Math.floor(Math.random() * resources.length)]
+          const randomResource =
+            resources[Math.floor(Math.random() * resources.length)]
           const lossAmount = Math.floor(Math.random() * 5) + 3
           if (store.resources[randomResource] >= lossAmount) {
             store.resources[randomResource] -= lossAmount
-            store.addToEventLog(`沙尘暴摧毁了你的一些${store.getResourceName(randomResource)}，损失了${lossAmount}单位！`)
+            store.addToEventLog(
+              `沙尘暴摧毁了你的一些${store.getResourceName(
+                randomResource
+              )}，损失了${lossAmount}单位！`
+            )
           }
-        }
-      }
-    ]
+        },
+      },
+    ],
   },
   auroral: {
     name: '极光',
@@ -294,13 +311,13 @@ export const weatherTypes = {
       foodConsumption: 0.9,
       movementSpeed: 1.0,
       explorationEfficiency: 1.2,
-      mentalRecovery: 1.5
+      mentalRecovery: 1.5,
     },
     seasonModifiers: {
       spring: 0.2,
       summer: 0.1,
       autumn: 0.3,
-      winter: 1.8
+      winter: 1.8,
     },
     events: [
       {
@@ -312,11 +329,16 @@ export const weatherTypes = {
           const expGain = Math.floor(Math.random() * 15) + 10
           const mentalGain = Math.floor(Math.random() * 20) + 15
           store.addExperience(expGain)
-          store.player.mental = Math.min(store.player.maxMental, store.player.mental + mentalGain)
-          store.addToEventLog(`极光的美景给你带来灵感，获得了${expGain}点经验和${mentalGain}点精神恢复！`)
-        }
-      }
-    ]
+          store.player.mental = Math.min(
+            store.player.maxMental,
+            store.player.mental + mentalGain
+          )
+          store.addToEventLog(
+            `极光的美景给你带来灵感，获得了${expGain}点经验和${mentalGain}点精神恢复！`
+          )
+        },
+      },
+    ],
   },
   rainbow: {
     name: '彩虹',
@@ -333,13 +355,13 @@ export const weatherTypes = {
       foodConsumption: 0.9,
       movementSpeed: 1.1,
       explorationEfficiency: 1.3,
-      mentalRecovery: 1.4
+      mentalRecovery: 1.4,
     },
     seasonModifiers: {
       spring: 1.5,
       summer: 1.0,
       autumn: 1.0,
-      winter: 0.2
+      winter: 0.2,
     },
     events: [
       {
@@ -349,14 +371,19 @@ export const weatherTypes = {
         effect: (store) => {
           // 随机获得一些资源
           const resources = ['food', 'water', 'wood', 'stone', 'herb', 'metal']
-          const randomResource = resources[Math.floor(Math.random() * resources.length)]
+          const randomResource =
+            resources[Math.floor(Math.random() * resources.length)]
           const gainAmount = Math.floor(Math.random() * 8) + 5
           store.addResource(randomResource, gainAmount)
-          store.addToEventLog(`彩虹的祝福让你幸运地发现了${gainAmount}单位${store.getResourceName(randomResource)}！`)
-        }
-      }
-    ]
-  }
+          store.addToEventLog(
+            `彩虹的祝福让你幸运地发现了${gainAmount}单位${store.getResourceName(
+              randomResource
+            )}！`
+          )
+        },
+      },
+    ],
+  },
 }
 
 // 根据季节获取天气概率分布
@@ -364,11 +391,16 @@ export const getWeatherProbabilities = (season) => {
   const probabilities = {}
   for (const [weatherType, data] of Object.entries(weatherTypes)) {
     // 基础概率 * 季节修正
-    const seasonModifier = data.seasonModifiers ? data.seasonModifiers[season] || 1.0 : 1.0
+    const seasonModifier = data.seasonModifiers
+      ? data.seasonModifiers[season] || 1.0
+      : 1.0
     probabilities[weatherType] = data.probability * seasonModifier
   }
   // 归一化概率总和为1
-  const totalProbability = Object.values(probabilities).reduce((sum, p) => sum + p, 0)
+  const totalProbability = Object.values(probabilities).reduce(
+    (sum, p) => sum + p,
+    0
+  )
   for (const weatherType in probabilities) {
     probabilities[weatherType] /= totalProbability
   }
@@ -382,7 +414,10 @@ export const selectRandomWeather = (season, currentWeather = null) => {
   if (currentWeather && probabilities[currentWeather]) {
     probabilities[currentWeather] *= 0.5
     // 重新归一化
-    const totalProbability = Object.values(probabilities).reduce((sum, p) => sum + p, 0)
+    const totalProbability = Object.values(probabilities).reduce(
+      (sum, p) => sum + p,
+      0
+    )
     for (const weatherType in probabilities) {
       probabilities[weatherType] /= totalProbability
     }

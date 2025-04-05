@@ -339,38 +339,6 @@ onMounted(() => {
   })
 })
 
-// 获取当前季节的图标
-const getSeasonIcon = () => {
-  const season = currentSeasonKey.value
-  switch (season) {
-    case 'spring': return '🌱'
-    case 'summer': return '☀️'
-    case 'autumn': return '🍂'
-    case 'winter': return '❄️'
-    default: return '🌱'
-  }
-}
-
-// 获取当前季节的中文名称
-const getSeasonName = () => {
-  const season = currentSeasonKey.value
-  switch (season) {
-    case 'spring': return '春季'
-    case 'summer': return '夏季'
-    case 'autumn': return '秋季'
-    case 'winter': return '冬季'
-    default: return '春季'
-  }
-}
-
-// 获取效果样式类名
-const getEffectClass = (value, isConsumption = false) => {
-  // 对于消耗类效果，大于1是负面的（红色），小于1是正面的（绿色）
-  // 对于其他效果，大于1是正面的（绿色），小于1是负面的（红色）
-  if (isConsumption) return value > 1 ? 'negative-effect' : value < 1 ? 'positive-effect' : ''
-  else return value > 1 ? 'positive-effect' : value < 1 ? 'negative-effect' : ''
-}
-
 // 初始化天气
 generateWeather()
 updateNextWeatherChangeTime()

@@ -10,6 +10,7 @@ export default defineConfig({
   define: {
     __APP_NAME__: JSON.stringify(pkg.name),
     __APP_TITLE__: JSON.stringify(pkg.title),
+    __APP_VERSION__: JSON.stringify(pkg.version),
   },
   base: './',
   build: {

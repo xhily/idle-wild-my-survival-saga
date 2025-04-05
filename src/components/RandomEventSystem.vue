@@ -416,6 +416,10 @@ const selectOption = async (option) => {
   }
   // 执行选项效果
   const result = option.effect(gameStore)
+  // 确保玩家属性不会低于0
+  gameStore.player.health = Math.max(0, gameStore.player.health)
+  gameStore.player.energy = Math.max(0, gameStore.player.energy)
+  gameStore.player.mental = Math.max(0, gameStore.player.mental)
   // 关闭事件面板
   showEventPanel.value = false
   // 显示结果
@@ -432,7 +436,6 @@ watch(() => gameStore.gameTime.day, (newDay, oldDay) => {
   if (newDay > oldDay) triggerRandomEvent()
 })
 
-// 扩展gameStore的triggerRandomEvent方法
 onMounted(() => {
   // 保存原始方法
   const originalTriggerRandomEvent = gameStore.triggerRandomEvent

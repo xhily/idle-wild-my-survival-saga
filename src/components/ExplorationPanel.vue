@@ -88,6 +88,20 @@ const availableRegions = computed(() => {
   })
 })
 
+// 获取探索技能效果文本
+const getExplorationSkillEffects = () => {
+  const effects = []
+  // 采集效率加成（影响探索资源获取）
+  if (gameStore.skillTreeEffects.gatheringEfficiency > 0) effects.push(`资源获取效率 +${Math.round(gameStore.skillTreeEffects.gatheringEfficiency * 100)}%`)
+  // 稀有资源几率
+  if (gameStore.skillTreeEffects.rareResourceChance > 0) effects.push(`稀有资源发现几率 +${Math.round(gameStore.skillTreeEffects.rareResourceChance * 100)}%`)
+  // 能量消耗减少
+  if (gameStore.skillTreeEffects.energyConsumption < 0) effects.push(`能量消耗 ${Math.round(gameStore.skillTreeEffects.energyConsumption * 100)}%`)
+  // 天气抵抗（如果有）
+  if (gameStore.skillTreeEffects.weatherResistance > 0) effects.push(`天气影响减少 +${Math.round(gameStore.skillTreeEffects.weatherResistance * 100)}%`)
+  return effects.length > 0 ? effects.join('，') : '无加成效果'
+}
+
 // 检查是否有足够的资源进行探索
 const canExplore = computed(() => {
   if (!selectedRegion.value) return false
@@ -404,6 +418,11 @@ onUnmounted(() => {
 
 <template>
   <el-scrollbar class="exploration-panel">
+    <div v-if="getExplorationSkillEffects() !== '无加成效果'" class="exploration-skill-effects">
+      <el-alert title="当前探索技能效果" type="success" :closable="false" show-icon>
+        <div>{{ getExplorationSkillEffects() }}</div>
+      </el-alert>
+    </div>
     <div class="current-explorations" v-if="gameStore.currentActivities.some(a => a.recipeId.startsWith('explore_'))">
       <h4>进行中的探索</h4>
       <div class="exploration-list">

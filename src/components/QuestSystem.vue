@@ -246,47 +246,6 @@ const completedQuests = computed(() => {
   return gameStore.completedQuests || []
 })
 
-// 获取资源名称
-const getResourceName = (resource) => {
-  const resourceNames = {
-    food: '食物',
-    water: '水',
-    wood: '木材',
-    stone: '石头',
-    metal: '金属',
-    herb: '草药',
-    rare_herb: '稀有草药',
-    medicine: '药品',
-    tools: '工具',
-    rope: '绳索',
-    parts: '零件',
-    advanced_parts: '高级零件',
-    electronic_components: '电子元件',
-    crystal: '水晶',
-    techFragment: '科技碎片',
-    ancientRelic: '古代遗物',
-    explorationCompleted: '探索完成次数',
-    days: '生存天数',
-    completedQuests: '完成任务数'
-  }
-  return resourceNames[resource] || resource
-}
-
-// 获取奖励名称
-const getRewardName = (reward) => {
-  const rewardNames = {
-    exp: '经验',
-    maxHealth: '最大健康值',
-    maxEnergy: '最大体力值',
-    maxMental: '最大精神值',
-    medicine: '药品',
-    weather_station: '气象站',
-    communication_device: '通讯装置',
-    unlockTech: '解锁科技'
-  }
-  return rewardNames[reward] || reward
-}
-
 // 获取难度文本
 const getDifficultyText = (difficulty) => {
   const difficultyTexts = {
@@ -436,7 +395,7 @@ const abandonQuest = (quest) => {
                   <div class="objectives-title">目标:</div>
                   <ul class="objectives-list">
                     <li v-for="(amount, resource) in quest.objectives" :key="resource">
-                      {{ getResourceName(resource) }}: {{ amount }}
+                      {{ gameStore.getResourceName(resource) }}: {{ amount }}
                     </li>
                   </ul>
                 </div>
@@ -444,7 +403,7 @@ const abandonQuest = (quest) => {
                   <div class="rewards-title">奖励:</div>
                   <ul class="rewards-list">
                     <li v-for="(amount, reward) in quest.rewards" :key="reward">
-                      {{ getRewardName(reward) }}: {{ amount }}
+                      {{ gameStore.getResourceName(reward) }}: {{ amount }}
                     </li>
                   </ul>
                 </div>
@@ -475,7 +434,7 @@ const abandonQuest = (quest) => {
                   <div class="progress-title">进度:</div>
                   <ul class="progress-list">
                     <li v-for="(amount, resource) in quest.objectives" :key="resource">
-                      {{ getResourceName(resource) }}:
+                      {{ gameStore.getResourceName(resource) }}:
                       <span class="progress-value">
                         {{ getProgressValue(quest, resource) }}/{{ amount }}
                       </span>
@@ -488,7 +447,7 @@ const abandonQuest = (quest) => {
                   <div class="rewards-title">奖励:</div>
                   <ul class="rewards-list">
                     <li v-for="(amount, reward) in quest.rewards" :key="reward">
-                      {{ getRewardName(reward) }}: {{ amount }}
+                      {{ gameStore.getResourceName(reward) }}: {{ amount }}
                     </li>
                   </ul>
                 </div>
@@ -526,7 +485,7 @@ const abandonQuest = (quest) => {
                   <div class="rewards-title">获得奖励:</div>
                   <ul class="rewards-list">
                     <li v-for="(amount, reward) in quest.rewards" :key="reward">
-                      {{ getRewardName(reward) }}: {{ amount }}
+                      {{ gameStore.getResourceName(reward) }}: {{ amount }}
                     </li>
                   </ul>
                 </div>

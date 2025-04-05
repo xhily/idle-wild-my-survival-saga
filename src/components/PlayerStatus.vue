@@ -73,8 +73,7 @@ const getSkillName = (key) => {
 					<span>健康</span>
 					<span class="stat-value">{{ gameStore.player.health }}/{{ gameStore.player.maxHealth }}</span>
 				</div>
-				<el-progress :percentage="healthPercentage" :color="healthStatus.color" :stroke-width="15"
-					:show-text="false" />
+				<el-progress :percentage="healthPercentage" :color="healthStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: healthStatus.color }">
 					{{ healthStatus.text }}
 				</div>
@@ -85,8 +84,7 @@ const getSkillName = (key) => {
 					<span>体力</span>
 					<span class="stat-value">{{ gameStore.player.energy }}/{{ gameStore.player.maxEnergy }}</span>
 				</div>
-				<el-progress :percentage="energyPercentage" :color="energyStatus.color" :stroke-width="15"
-					:show-text="false" />
+				<el-progress :percentage="energyPercentage" :color="energyStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: energyStatus.color }">
 					{{ energyStatus.text }}
 				</div>
@@ -97,8 +95,7 @@ const getSkillName = (key) => {
 					<span>精神</span>
 					<span class="stat-value">{{ gameStore.player.mental }}/{{ gameStore.player.maxMental }}</span>
 				</div>
-				<el-progress :percentage="mentalPercentage" :color="mentalStatus.color" :stroke-width="15"
-					:show-text="false" />
+				<el-progress :percentage="mentalPercentage" :color="mentalStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: mentalStatus.color }">
 					{{ mentalStatus.text }}
 				</div>

@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useGameStore } from '../stores/gameStore'
-import { ElMessage } from 'element-plus'
 import { availableBuildings } from '../plugins/recipes'
 
 const gameStore = useGameStore()
@@ -68,9 +67,7 @@ const getNextLevelCostText = (building) => {
   const currentLevel = getBuildingLevel(building.id)
   if (currentLevel >= building.levels.length) return '已达到最高等级'
   const nextLevel = building.levels[currentLevel]
-  return Object.entries(nextLevel.cost)
-    .map(([resource, amount]) => `${gameStore.getResourceName(resource)}: ${amount}`)
-    .join(', ')
+  return Object.entries(nextLevel.cost).map(([resource, amount]) => `${gameStore.getResourceName(resource)}: ${amount}`).join(', ')
 }
 
 // 获取建筑效果文本
@@ -79,15 +76,11 @@ const getBuildingEffectsText = (building) => {
   if (currentLevel === 0) {
     // 显示第一级效果
     const firstLevel = building.levels[0]
-    return Object.entries(firstLevel.effects)
-      .map(([effect, value]) => formatEffectText(effect, value))
-      .join(', ')
+    return Object.entries(firstLevel.effects).map(([effect, value]) => formatEffectText(effect, value)).join(', ')
   }
   // 显示当前等级效果
   const existingBuilding = gameStore.buildings.find(b => b.id === building.id)
-  return Object.entries(existingBuilding.effects)
-    .map(([effect, value]) => formatEffectText(effect, value))
-    .join(', ')
+  return Object.entries(existingBuilding.effects).map(([effect, value]) => formatEffectText(effect, value)).join(', ')
 }
 
 // 格式化效果文本
@@ -139,12 +132,12 @@ const formatEffectText = (effect, value) => {
                 <el-descriptions-item label="技能要求">
                   {{Object.entries(building.levels[getBuildingLevel(building.id)].requirements)
                     .map(([skill, level]) => `${gameStore.getResourceName(skill)} Lv.${level}`)
-                    .join(', ') }}
+                    .join(', ')}}
                 </el-descriptions-item>
               </template>
             </el-descriptions>
-            <el-button type="primary" style="width: 100%;" :disabled="!canBuildOrUpgrade(building)" @click="buildOrUpgrade(building)"
-              class="build-button">
+            <el-button type="primary" style="width: 100%;" :disabled="!canBuildOrUpgrade(building)"
+              @click="buildOrUpgrade(building)" class="build-button">
               {{ getBuildingLevel(building.id) === 0 ? '建造' : '升级' }}
             </el-button>
           </div>

@@ -14,7 +14,8 @@ import AchievementSystem from './AchievementSystem.vue'
 import RandomEventSystem from './RandomEventSystem.vue'
 import TradingSystem from './TradingSystem.vue'
 import QuestSystem from './QuestSystem.vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import SkillTreeSystem from './SkillTreeSystem.vue'
+import { ElMessage } from 'element-plus'
 import { saveAs } from 'file-saver'
 
 const gameStore = useGameStore()
@@ -210,6 +211,9 @@ onUnmounted(() => {
 					</el-tab-pane>
 					<el-tab-pane label="任务" name="quests">
 						<QuestSystem />
+					</el-tab-pane>
+					<el-tab-pane label="技能树" name="skilltree">
+						<SkillTreeSystem />
 					</el-tab-pane>
 					<el-tab-pane label="成就" name="achievements">
 						<AchievementSystem />
