@@ -27,7 +27,19 @@ export default defineConfig({
         assetFileNames: () => {
           return 'assets/[ext]/[name]-[hash].[ext]'
         }
-      }
+      },
+      plugins: [
+        {
+          name: 'exclude-file-from-minification',
+          renderChunk(code, chunk) {
+            // 根据文件名排除特定文件
+            if (chunk.fileName.includes('crypto.js')) {
+              return { code, map: null }
+            }
+            return null
+          }
+        }
+      ]
     },
     terserOptions: {
       compress: {
