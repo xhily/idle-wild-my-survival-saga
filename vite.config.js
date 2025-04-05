@@ -12,7 +12,7 @@ export default defineConfig({
     __APP_TITLE__: JSON.stringify(pkg.title),
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
-  base: process.env.NODE_ENV === 'production' ? '/idle-wild-my-survival-saga/' : './',
+  base: './',
   build: {
     outDir: 'docs',
     minify: 'terser',
@@ -28,18 +28,6 @@ export default defineConfig({
           return 'assets/[ext]/[name]-[hash].[ext]'
         }
       },
-      plugins: [
-        {
-          name: 'exclude-file-from-minification',
-          renderChunk(code, chunk) {
-            // 根据文件名排除特定文件
-            if (chunk.fileName.includes('crypto.js')) {
-              return { code, map: null }
-            }
-            return null
-          }
-        }
-      ]
     },
     terserOptions: {
       compress: {
