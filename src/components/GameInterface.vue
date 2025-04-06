@@ -15,7 +15,7 @@ import RandomEventSystem from './RandomEventSystem.vue'
 import TradingSystem from './TradingSystem.vue'
 import QuestSystem from './QuestSystem.vue'
 import SkillTreeSystem from './SkillTreeSystem.vue'
-import { ElMessage, ElDialog } from 'element-plus'
+import {ElMessage, ElDialog, ElMessageBox} from 'element-plus'
 import { saveAs } from 'file-saver'
 
 const gameStore = useGameStore()
@@ -72,14 +72,29 @@ const loadSave = async (saveId) => {
 }
 
 const deleteSave = async (saveId) => {
-  if (await gameStore.deleteSave(saveId)) {
-    ElMessage.success(`存档 ${saveId} 已删除`)
-    if (currentSaveId.value === saveId) currentSaveId.value = ''
-    await refreshSaveList()
-    // 如果删除了所有存档，自动创建新存档
-    if (saveList.value.length === 0) {
-      await createNewSave()
+  try {
+    await ElMessageBox.confirm(
+        `确定要删除存档 ${saveId} 吗？此操作不可撤销！`,
+        '删除确认',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+    )
+    // 如果用户点击了确定，才执行删除操作
+    if (await gameStore.deleteSave(saveId)) {
+      ElMessage.success(`存档 ${saveId} 已删除`)
+      if (currentSaveId.value === saveId) currentSaveId.value = ''
+      await refreshSaveList()
+      // 如果删除了所有存档，自动创建新存档
+      if (saveList.value.length === 0) {
+        await createNewSave()
+      }
     }
+  } catch (error) {
+    // 用户点击取消或关闭对话框时不会执行删除
+    ElMessage.info('已取消删除操作')
   }
 }
 
@@ -223,7 +238,11 @@ onUnmounted(() => {
           <template #default="{ row }">
             <el-button size="small" @click="loadSave(row.id)">载入</el-button>
             <el-button size="small" @click="exportSave(row.id)">导出</el-button>
-            <el-button size="small" type="danger" @click="deleteSave(row.id)">删除</el-button>
+            <el-button
+                size="small"
+                type="danger"
+                @click="deleteSave(row.id)"
+            >删除</el-button>
           </template>
         </el-table-column>
       </el-table>
