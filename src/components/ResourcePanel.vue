@@ -53,7 +53,7 @@ const getResourcePercentage = (key) => {
 
 // 同步资源上限数据
 const refreshResourceData = () => {
-  ElMessageBox.confirm('是否需要同步资源上限的数据?', '提示', {
+  ElMessageBox.confirm('是否需要同步资源的数据?', '提示', {
     confirmButtonText: '确定',
     showCancelButton: true,
     cancelButtonText: '取消',

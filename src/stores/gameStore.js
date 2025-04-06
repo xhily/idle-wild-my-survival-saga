@@ -226,7 +226,7 @@ export const useGameStore = defineStore('game', {
     },
     // 保存游戏
     saveGame() {
-      const filteredState = omit(this.$state, ['eventLog', 'currentActivities'])
+      const filteredState = omit(this.$state, ['eventLog', 'currentActivities', 'pendingActivities'])
       const encryptedData = encryptData(filteredState)
       if (encryptedData) {
         try {
@@ -595,9 +595,20 @@ export const useGameStore = defineStore('game', {
       // 应用技能效果到输出资源
       let modifiedOutputs = {}
       // 添加输出资源
-      for (const [resource, range] of Object.entries(recipe.outputs)) {
-        const [min, max] = range
-        let amount = Math.floor(Math.random() * (max - min + 1)) + min
+      for (const [resource, output] of Object.entries(recipe.outputs)) {
+        let amount
+        // 处理不同类型的输出格式
+        if (Array.isArray(output)) {
+          // 如果是[min, max]范围
+          const [min, max] = output
+          amount = Math.floor(Math.random() * (max - min + 1)) + min
+        } else if (typeof output === 'number') {
+          // 如果是固定数量
+          amount = output
+        } else {
+          // 其他格式跳过
+          continue
+        }
         // 应用技能效果
         if (recipe.category === 'gathering') amount = this.applyGatheringSkillEffects(amount, resource) // 应用采集技能效果
         else if (recipe.category === 'crafting') modifiedOutputs[resource] = amount // 对于制作活动，先收集所有输出，稍后应用技能效果
@@ -1432,7 +1443,32 @@ export const useGameStore = defineStore('game', {
         ancientRelic: 5,
         techFragment: 5,
       }
+      const resources = {
+        food: 10,
+        water: 10,
+        wood: 0,
+        stone: 0,
+        metal: 0,
+        herb: 0,
+        rare_herb: 0,
+        // 高级资源
+        medicine: 0,
+        tools: 0,
+        parts: 0,
+        advanced_parts: 0,
+        electronic_components: 0,
+        fuel: 0,
+        crystal: 0,
+        // 特殊资源
+        ancientRelic: 0,
+        techFragment: 0,
+      }
       for (const resource in resourceLimits) {
+        // 资源
+        if (typeof this.resources[resource] !== 'number') {
+          this.resources[resource] = resources[resource]
+        }
+        // 资源上限
         if (typeof this.resourceLimits[resource] !== 'number') {
           this.resourceLimits[resource] = resourceLimits[resource]
         } else if (this.resourceLimits[resource] >= 200) {

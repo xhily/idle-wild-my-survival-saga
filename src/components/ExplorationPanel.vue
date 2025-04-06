@@ -156,7 +156,7 @@ const startExploration = () => {
     activityDuration = region.explorationTime * gameStore.skillTreeEffects.gatheringEfficiency
   }
   activityDuration = Math.max(1, activityDuration)
-  // 创建探索活动
+  // 创建探索活动 
   const explorationActivity = {
     id: `explore_${region.id}_${Date.now()}`,
     recipeId: `explore_${region.id}`,
@@ -183,7 +183,7 @@ const startExploration = () => {
     gameStore.addToEventLog(`开始探索${region.name}`)
     ElMessage.success(`开始探索${region.name}`)
     // 设置定时器完成探索
-    setTimeout(() => completeExploration(explorationActivity.id, region), region.explorationTime * 1000)
+    setTimeout(() => completeExploration(explorationActivity.id, region), activityDuration * 1000)
   } else {
     // 否则加入等待队列
     gameStore.pendingActivities.push(explorationActivity)
