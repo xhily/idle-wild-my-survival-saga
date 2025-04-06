@@ -60,7 +60,6 @@ const refreshResourceData = () => {
     lockScroll: false
   }).then(() => {
     gameStore.resetResourceLimits()
-    gameStore.saveGame()
     ElMessage.success('资源上限数据已同步')
   }).catch(() => { })
 }

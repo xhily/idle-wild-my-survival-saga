@@ -1358,6 +1358,7 @@ export const useGameStore = defineStore('game', {
         // 应用存储上限效果
         if (building.effects.storageMultiplier) {
           for (const resource in this.resourceLimits) {
+            if (this.resourceLimits[resource] >= 200) continue
             this.resourceLimits[resource] *= building.effects.storageMultiplier
           }
         }
@@ -1389,9 +1390,11 @@ export const useGameStore = defineStore('game', {
         ancientRelic: 5,
         techFragment: 5,
       }
-      for (const resource in this.resourceLimits) {
-        if (this.resourceLimits[resource] === 'number' && resourceLimits[resource] > this.resourceLimits[resource]) {
+      for (const resource in resourceLimits) {
+        if (typeof this.resourceLimits[resource] !== 'number') {
           this.resourceLimits[resource] = resourceLimits[resource]
+        } else if (this.resourceLimits[resource] >= 200) {
+          this.resourceLimits[resource] = 200
         }
       }
     },
