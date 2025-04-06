@@ -213,7 +213,7 @@ const pendingActivities = computed(() => gameStore.pendingActivities)
             </el-button>
           </div>
         </div>
-        
+
         <!-- 等待中的活动 -->
         <div v-for="activity in pendingActivities" :key="activity.id" class="activity-card pending">
           <div class="activity-header">
@@ -300,6 +300,7 @@ const pendingActivities = computed(() => gameStore.pendingActivities)
   border-left: 4px solid #E6A23C;
   opacity: 0.8;
 }
+
 .activity-panel {
   background-color: var(--el-bg-color-overlay);
   border-radius: 4px;

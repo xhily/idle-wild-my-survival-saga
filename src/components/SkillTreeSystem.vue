@@ -114,7 +114,7 @@ const showActiveEffects = () => {
   effectsContent += '<h3 style="margin-top: 0;">当前激活的技能效果</h3>'
   // 按类别分组显示效果
   const effectCategories = {
-    '采集效果': ['gatheringEfficiency', 'rareResourceChance', 'gatheringEnergyCost', 'rareHerbChance', 'gatheringYield'],
+    '采集效果': ['gatheringEfficiency', 'gatheringEnergyCost', 'rareHerbChance', 'gatheringYield'],
     '制作效果': ['craftingSpeed', 'resourceSaving', 'extraCraftingOutput', 'toolDurability', 'craftingQuality', 'unlockAdvancedRecipes'],
     '生存效果': ['foodConsumption', 'waterConsumption', 'weatherResistance', 'energyConsumption', 'healthRecovery', 'mentalRecovery', 'allSurvivalStats'],
     '研究效果': ['researchSpeed', 'techFragmentYield', 'researchResourceSaving', 'unlockAdvancedTech', 'allResearchBonus', 'breakthroughChance'],
@@ -162,7 +162,6 @@ const formatEffectName = (effect) => {
   const effectNames = {
     // 采集效果
     gatheringEfficiency: '采集效率',
-    rareResourceChance: '稀有资源几率',
     gatheringEnergyCost: '采集体力消耗',
     rareHerbChance: '稀有草药几率',
     gatheringYield: '采集产出',

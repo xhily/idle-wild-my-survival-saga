@@ -27,7 +27,6 @@ export const useGameStore = defineStore('game', {
     skillTreeEffects: {
       // 采集效果
       gatheringEfficiency: 0,
-      rareResourceChance: 0,
       gatheringEnergyCost: 0,
       rareHerbChance: 0,
       gatheringYield: 0,

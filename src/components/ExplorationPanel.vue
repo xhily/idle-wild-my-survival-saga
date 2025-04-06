@@ -93,8 +93,6 @@ const getExplorationSkillEffects = () => {
   const effects = []
   // 采集效率加成（影响探索资源获取）
   if (gameStore.skillTreeEffects.gatheringEfficiency > 0) effects.push(`资源获取效率 +${Math.round(gameStore.skillTreeEffects.gatheringEfficiency * 100)}%`)
-  // 稀有资源几率
-  if (gameStore.skillTreeEffects.rareResourceChance > 0) effects.push(`稀有资源发现几率 +${Math.round(gameStore.skillTreeEffects.rareResourceChance * 100)}%`)
   // 体力消耗减少
   if (gameStore.skillTreeEffects.energyConsumption < 0) effects.push(`体力消耗 ${Math.round(gameStore.skillTreeEffects.energyConsumption * 100)}%`)
   // 天气抵抗（如果有）
@@ -108,7 +106,12 @@ const canExplore = computed(() => {
   const region = explorationRegions.value.find(r => r.id === selectedRegion.value)
   if (!region) return false
   // 检查体力
-  if (gameStore.player.energy < region.energyCost) return false
+  if (gameStore.skillTreeEffects.energyConsumption < 0) {
+    const energyCost = Math.round(region.energyCost * (1 + gameStore.skillTreeEffects.energyConsumption))
+    if (gameStore.player.energy < energyCost) return false
+  } else {
+    if (gameStore.player.energy < region.energyCost) return false
+  }
   // 检查资源
   for (const [resource, amount] of Object.entries(region.resourceCost)) {
     if (gameStore.resources[resource] < amount) return false
@@ -147,22 +150,31 @@ const getDangersText = (region) => {
 const startExploration = () => {
   if (!selectedRegion.value || !canExplore.value) return
   const region = explorationRegions.value.find(r => r.id === selectedRegion.value)
-
+  // 计算活动持续时间
+  let activityDuration = region.explorationTime
+  if (gameStore.skillTreeEffects.gatheringEfficiency > 0) {
+    activityDuration = region.explorationTime * gameStore.skillTreeEffects.gatheringEfficiency
+  }
+  activityDuration = Math.max(1, activityDuration)
   // 创建探索活动
   const explorationActivity = {
     id: `explore_${region.id}_${Date.now()}`,
     recipeId: `explore_${region.id}`,
     name: `探索${region.name}`,
-    duration: region.explorationTime * 1000, // 转换为毫秒
+    duration: activityDuration * 1000, // 转换为毫秒
     completed: false,
     region: region.id
   }
-
   // 如果没有正在进行的探索活动，立即开始
   const hasActiveExploration = gameStore.currentActivities.some(a => a.recipeId.startsWith('explore_'))
   if (!hasActiveExploration) {
     // 消耗资源
-    gameStore.player.energy -= region.energyCost
+    if (gameStore.skillTreeEffects.energyConsumption < 0) {
+      const energyCost = Math.round(region.energyCost * (1 + gameStore.skillTreeEffects.energyConsumption))
+      gameStore.player.energy -= energyCost
+    } else {
+      gameStore.player.energy -= region.energyCost
+    }
     for (const [resource, amount] of Object.entries(region.resourceCost)) {
       gameStore.consumeResource(resource, amount)
     }
@@ -190,11 +202,13 @@ const cancelExploration = (activityId) => {
     const activity = gameStore.currentActivities[currentIndex]
     const region = explorationRegions.value.find(r => r.id === activity.region)
     if (region) {
-      // 返还体力
-      gameStore.player.energy = Math.min(
-        gameStore.player.maxEnergy,
-        gameStore.player.energy + region.energyCost
-      )
+      // 消耗资源
+      if (gameStore.skillTreeEffects.energyConsumption < 0) {
+        const energyCost = Math.round(region.energyCost * (1 + gameStore.skillTreeEffects.energyConsumption))
+        gameStore.player.energy = Math.min(gameStore.player.maxEnergy, gameStore.player.energy + energyCost)
+      } else {
+        gameStore.player.energy = Math.min(gameStore.player.maxEnergy, gameStore.player.energy + region.energyCost)
+      }
       // 返还其他资源
       for (const [resource, amount] of Object.entries(region.resourceCost)) {
         gameStore.addResource(resource, amount)

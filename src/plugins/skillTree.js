@@ -16,16 +16,6 @@ export const skillTree = {
         requires: null
       },
       {
-        id: 'resource_detection',
-        name: '资源探测',
-        description: '增加10%发现稀有资源的几率',
-        level: 0,
-        maxLevel: 3,
-        effects: { rareResourceChance: 0.1 },
-        cost: { exp: 30 },
-        requires: { gathering: 2 }
-      },
-      {
         id: 'conservation',
         name: '资源保存',
         description: '采集活动消耗的体力减少10%',
