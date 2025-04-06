@@ -43,6 +43,20 @@ const totalSkillLevel = computed(() => {
 	return Object.values(gameStore.skills).reduce((sum, level) => sum + level, 0)
 })
 
+const plusPlayerHealth = () => {
+	if (!gameStore.resources.medicine) {
+		ElMessage.error('药品不足')
+		return
+	}
+	if (gameStore.player.health === gameStore.player.maxHealth) {
+		ElMessage.error('暂时不需要药品恢复健康')
+		return
+	}
+	gameStore.player.health += 10
+	gameStore.resources.medicine -= 1
+	gameStore.addToEventLog('你使用了药品，恢复了10点健康')
+}
+
 // 获取技能名称
 const getSkillName = (key) => {
 	const skillNames = {
@@ -71,7 +85,12 @@ const getSkillName = (key) => {
 				<div class="stat-label">
 					<span class="stat-icon">❤️</span>
 					<span>健康</span>
-					<span class="stat-value">{{ gameStore.player.health }}/{{ gameStore.player.maxHealth }}</span>
+					<span class="stat-icon-plus" @click="plusPlayerHealth" v-if="gameStore.player.health !== gameStore.player.maxHealth">
+						<el-icon>
+							<Plus />
+						</el-icon>
+					</span>
+					<span class="stat-value">{{ Math.ceil(gameStore.player.health) }}/{{ Math.ceil(gameStore.player.maxHealth) }}</span>
 				</div>
 				<el-progress :percentage="healthPercentage" :color="healthStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: healthStatus.color }">
@@ -82,7 +101,7 @@ const getSkillName = (key) => {
 				<div class="stat-label">
 					<span class="stat-icon">⚡</span>
 					<span>体力</span>
-					<span class="stat-value">{{ gameStore.player.energy }}/{{ gameStore.player.maxEnergy }}</span>
+					<span class="stat-value">{{ Math.ceil(gameStore.player.energy) }}/{{ Math.ceil(gameStore.player.maxEnergy) }}</span>
 				</div>
 				<el-progress :percentage="energyPercentage" :color="energyStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: energyStatus.color }">
@@ -93,7 +112,7 @@ const getSkillName = (key) => {
 				<div class="stat-label">
 					<span class="stat-icon">🧠</span>
 					<span>精神</span>
-					<span class="stat-value">{{ gameStore.player.mental }}/{{ gameStore.player.maxMental }}</span>
+					<span class="stat-value">{{ Math.ceil(gameStore.player.mental) }}/{{ Math.ceil(gameStore.player.maxMental) }}</span>
 				</div>
 				<el-progress :percentage="mentalPercentage" :color="mentalStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: mentalStatus.color }">
@@ -115,9 +134,9 @@ const getSkillName = (key) => {
 				<span class="survival-icon">📅</span>
 				<span>生存天数: {{ gameStore.player.days }}</span>
 			</div>
-			<div class="survival-item" v-if="gameStore.player.cycles > 0">
+			<div class="survival-item">
 				<span class="survival-icon">🔄</span>
-				<span>轮回次数: {{ gameStore.player.cycles }}</span>
+				<span>轮回次数: {{ Math.floor(gameStore.player.days / 120) }}</span>
 			</div>
 		</div>
 	</div>
@@ -180,6 +199,12 @@ const getSkillName = (key) => {
 	text-align: right;
 	margin-top: 2px;
 	font-weight: bold;
+}
+
+.stat-icon-plus {
+	display: flex;
+	align-items: center;
+	margin-left: 10px;
 }
 
 .player-skills h4 {

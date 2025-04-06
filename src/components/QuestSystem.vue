@@ -34,8 +34,7 @@ const questList = [
     difficulty: 2,
     objectives: {
       wood: 30,
-      stone: 20,
-      rope: 5
+      stone: 20
     },
     rewards: {
       exp: 50,
@@ -75,8 +74,7 @@ const questList = [
     description: '制作基本工具，提高资源收集效率。',
     difficulty: 2,
     objectives: {
-      tools: 2,
-      rope: 3
+      tools: 2
     },
     rewards: {
       exp: 45

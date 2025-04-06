@@ -95,8 +95,8 @@ const getExplorationSkillEffects = () => {
   if (gameStore.skillTreeEffects.gatheringEfficiency > 0) effects.push(`资源获取效率 +${Math.round(gameStore.skillTreeEffects.gatheringEfficiency * 100)}%`)
   // 稀有资源几率
   if (gameStore.skillTreeEffects.rareResourceChance > 0) effects.push(`稀有资源发现几率 +${Math.round(gameStore.skillTreeEffects.rareResourceChance * 100)}%`)
-  // 能量消耗减少
-  if (gameStore.skillTreeEffects.energyConsumption < 0) effects.push(`能量消耗 ${Math.round(gameStore.skillTreeEffects.energyConsumption * 100)}%`)
+  // 体力消耗减少
+  if (gameStore.skillTreeEffects.energyConsumption < 0) effects.push(`体力消耗 ${Math.round(gameStore.skillTreeEffects.energyConsumption * 100)}%`)
   // 天气抵抗（如果有）
   if (gameStore.skillTreeEffects.weatherResistance > 0) effects.push(`天气影响减少 +${Math.round(gameStore.skillTreeEffects.weatherResistance * 100)}%`)
   return effects.length > 0 ? effects.join('，') : '无加成效果'
@@ -184,6 +184,8 @@ const completeExploration = (activityId, region) => {
   generateExplorationResults(region)
   // 增加相关技能经验
   gameStore.addSkillExp('survival', 2)
+  // 增加探索次数
+  gameStore.player.explorationCount += 1
   if (region.difficulty >= 3) gameStore.addSkillExp('combat', 1)
 }
 

@@ -13,7 +13,7 @@ const selectedTech = ref(null)
 if (!gameStore.researched) {
   gameStore.researched = []
   // 初始化已研究的科技
-  const initialTechs = technologies().filter(tech => tech.researched)
+  const initialTechs = technologies.filter(tech => tech.researched)
   for (const tech of initialTechs) {
     gameStore.researched.push(tech.id)
   }
@@ -21,7 +21,7 @@ if (!gameStore.researched) {
 
 // 可研究的科技
 const availableTechnologies = computed(() => {
-  return technologies().filter(tech => {
+  return technologies.filter(tech => {
     // 过滤未研究且满足前置条件的科技
     if (gameStore.researched.includes(tech.id)) return false
     // 检查前置科技要求
@@ -36,13 +36,13 @@ const availableTechnologies = computed(() => {
 
 // 已研究的科技
 const researchedTechnologies = computed(() => {
-  return technologies().filter(tech => gameStore.researched.includes(tech.id))
+  return technologies.filter(tech => gameStore.researched.includes(tech.id))
 })
 
 // 检查是否有足够的资源研究科技
 const canResearch = computed(() => {
   if (!selectedTech.value) return false
-  const tech = technologies().find(t => t.id === selectedTech.value)
+  const tech = technologies.find(t => t.id === selectedTech.value)
   if (!tech || gameStore.researched.includes(tech.id)) return false
   // 检查资源
   for (const [resource, amount] of Object.entries(tech.cost)) {
@@ -62,7 +62,7 @@ const getTechCost = (tech) => {
 // 研究选中的科技
 const researchTech = () => {
   if (!selectedTech.value || !canResearch.value) return
-  const tech = technologies().find(t => t.id === selectedTech.value)
+  const tech = technologies.find(t => t.id === selectedTech.value)
   // 消耗资源（应用研究资源节约效果）
   for (const [resource, amount] of Object.entries(tech.cost)) {
     // 计算实际消耗量，应用研究资源节约效果
@@ -110,7 +110,7 @@ const getTechUnlocks = (tech) => {
   const unlockTexts = []
   for (const unlockId of tech.unlocks) {
     // 检查是否解锁了新科技
-    const unlockedTech = technologies().find(t => t.id === unlockId)
+    const unlockedTech = technologies.find(t => t.id === unlockId)
     if (unlockedTech) {
       unlockTexts.push(`科技: ${unlockedTech.name}`)
       continue
@@ -163,17 +163,17 @@ const getTechUnlocks = (tech) => {
       <h4>科技详情</h4>
       <div class="selected-tech">
         <div class="tech-name">
-          {{technologies().find(t => t.id === selectedTech).name}}
+          {{technologies.find(t => t.id === selectedTech).name}}
         </div>
         <div class="tech-description">
-          {{technologies().find(t => t.id === selectedTech).description}}
+          {{technologies.find(t => t.id === selectedTech).description}}
         </div>
         <div class="tech-requirements">
           <div class="tech-cost">
-            需要资源: {{getTechCost(technologies().find(t => t.id === selectedTech))}}
+            需要资源: {{getTechCost(technologies.find(t => t.id === selectedTech))}}
           </div>
           <div class="tech-unlocks">
-            解锁: {{getTechUnlocks(technologies().find(t => t.id === selectedTech))}}
+            解锁: {{getTechUnlocks(technologies.find(t => t.id === selectedTech))}}
           </div>
         </div>
         <div class="tech-actions">

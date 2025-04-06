@@ -7,7 +7,7 @@ const gameStore = useGameStore()
 
 // 建筑列表
 const buildings = computed(() => {
-  return availableBuildings().filter(building => canSeeBuilding(building))
+  return availableBuildings.filter(building => canSeeBuilding(building))
 })
 
 // 检查是否满足建筑的技能要求
@@ -88,7 +88,7 @@ const formatEffectText = (effect, value) => {
   const effectTexts = {
     energyRecovery: `体力恢复 +${value}/小时`,
     mentalRecovery: `精神恢复 +${value}/小时`,
-    maxHealth: `健康值上限 +${value}`,
+    maxHealth: `健康上限 +${value}`,
     storageMultiplier: `存储上限 x${value}`,
     craftingEfficiency: `制作效率 x${value}`,
     foodPerDay: `食物 +${value}/天`,

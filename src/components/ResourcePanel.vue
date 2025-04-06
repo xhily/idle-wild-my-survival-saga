@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useGameStore } from '../stores/gameStore'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const gameStore = useGameStore()
 
@@ -17,7 +18,6 @@ const basicResources = computed(() => [
 
 const advancedResources = computed(() => [
   { key: 'medicine', name: '药品', icon: '💊' },
-  { key: 'rope', name: '绳索', icon: '🧶' },
   { key: 'tools', name: '工具', icon: '🔨' },
   { key: 'parts', name: '零件', icon: '⚙️' },
   { key: 'advanced_parts', name: '高级零件', icon: '🔧' },
@@ -33,12 +33,12 @@ const specialResources = computed(() => [
 
 // 获取资源数量
 const getResourceAmount = (key) => {
-  return gameStore.resources[key] || 0
+  return Math.ceil(gameStore.resources[key] || 0)
 }
 
 // 获取资源上限
 const getResourceLimit = (key) => {
-  return gameStore.resourceLimits[key] || 0
+  return Math.ceil(gameStore.resourceLimits[key] || 0)
 }
 
 // 计算资源百分比
@@ -48,13 +48,34 @@ const getResourcePercentage = (key) => {
   // 防止除以零或未定义值导致NaN
   if (!limit || limit <= 0) return 0
   // 确保百分比不超过100
-  return Math.min((amount / limit) * 100, 100)
+  return Math.ceil(Math.min((amount / limit) * 100, 100))
+}
+
+// 同步资源上限数据
+const refreshResourceData = () => {
+  ElMessageBox.confirm('是否需要同步资源上限的数据?', '提示', {
+    confirmButtonText: '确定',
+    showCancelButton: true,
+    cancelButtonText: '取消',
+    lockScroll: false
+  }).then(() => {
+    gameStore.resetResourceLimits()
+    gameStore.saveGame()
+    ElMessage.success('资源上限数据已同步')
+  }).catch(() => { })
 }
 </script>
 
 <template>
   <div class="resource-panel">
-    <h3>资源</h3>
+    <h3>
+      <span>资源</span>
+      <span class="resource-panel-name" @click="refreshResourceData">
+        <el-icon>
+          <Refresh />
+        </el-icon>
+      </span>
+    </h3>
     <div class="resource-section">
       <h4>基础资源</h4>
       <div class="resource-grid">
@@ -105,6 +126,10 @@ const getResourcePercentage = (key) => {
   background-color: var(--el-bg-color-overlay);
   border-radius: 4px;
   padding: 10px;
+}
+
+.resource-panel-name {
+  margin-left: 10px;
 }
 
 .resource-section {

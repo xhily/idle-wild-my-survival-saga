@@ -212,7 +212,7 @@ onUnmounted(() => {
 					<el-tab-pane label="任务" name="quests">
 						<QuestSystem />
 					</el-tab-pane>
-					<el-tab-pane label="技能树" name="skilltree">
+					<el-tab-pane label="技能" name="skilltree">
 						<SkillTreeSystem />
 					</el-tab-pane>
 					<el-tab-pane label="成就" name="achievements">

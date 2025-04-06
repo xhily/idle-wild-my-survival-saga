@@ -6,7 +6,6 @@ const gameStore = useGameStore()
 
 // 时间流逝速度选项
 const timeScaleOptions = [
-  { label: '慢速 (0.5x)', value: 0.5 },
   { label: '正常 (1x)', value: 1 },
   { label: '快速 (2x)', value: 2 },
   { label: '极速 (5x)', value: 5 }
@@ -98,7 +97,6 @@ const currentSeason = computed(() => {
         <div class="season-info">
           <div class="season-header">
             <span class="season-indicator">{{ currentSeason.icon }} {{ currentSeason.name }}</span>
-            <span class="season-progress">{{ currentSeason.progress }}%</span>
           </div>
           <div class="season-progress-bar">
             <div class="progress-fill" :style="{ width: currentSeason.progress + '%' }"></div>
@@ -152,6 +150,7 @@ const currentSeason = computed(() => {
 .time {
   font-weight: bold;
   font-size: 1.1em;
+  text-align: center;
 }
 
 .season-indicator,
@@ -164,17 +163,13 @@ const currentSeason = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  width: 200px;
 }
 
 .season-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.season-progress {
-  font-size: 0.8em;
-  color: var(--el-text-color-secondary);
 }
 
 .season-progress-bar {
@@ -202,5 +197,6 @@ const currentSeason = computed(() => {
 .time-scale-label {
   font-size: 0.9em;
   color: var(--el-text-color-secondary);
+  width: 90px;
 }
 </style>

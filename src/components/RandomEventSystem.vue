@@ -424,6 +424,7 @@ const selectOption = async (option) => {
   showEventPanel.value = false
   // 显示结果
   await ElMessageBox.alert(result, '事件结果', {
+    lockScroll: false,
     confirmButtonText: '确定',
     type: 'info'
   })
@@ -457,7 +458,7 @@ onMounted(() => {
     </div>
     <el-dialog v-model="showEventPanel"
       :title="activeEvent ? `${eventTypes[activeEvent.type].icon} ${activeEvent.title}` : '事件'" width="412px"
-      :close-on-click-modal="false" :show-close="true" custom-class="event-dialog">
+      :close-on-click-modal="false" :show-close="false" custom-class="event-dialog">
       <div v-if="activeEvent" class="event-panel" :class="`event-type-${activeEvent.type}`">
         <div class="event-header">
           <span class="event-type-label">{{ eventTypes[activeEvent.type].title }}</span>

@@ -13,7 +13,6 @@ export const weatherTypes = {
       energyConsumption: 1.0,
       waterConsumption: 1.1,
       foodConsumption: 1.0,
-      movementSpeed: 1.1,
       explorationEfficiency: 1.1,
       mentalRecovery: 1.1,
     },
@@ -37,7 +36,6 @@ export const weatherTypes = {
       energyConsumption: 1.0,
       waterConsumption: 0.9,
       foodConsumption: 1.0,
-      movementSpeed: 1.0,
       explorationEfficiency: 1.0,
       mentalRecovery: 0.9,
     },
@@ -61,7 +59,6 @@ export const weatherTypes = {
       energyConsumption: 1.2,
       waterConsumption: 0.7,
       foodConsumption: 1.1,
-      movementSpeed: 0.8,
       explorationEfficiency: 0.7,
       mentalRecovery: 0.8,
     },
@@ -86,7 +83,6 @@ export const weatherTypes = {
       energyConsumption: 1.1,
       waterConsumption: 1.0,
       foodConsumption: 1.0,
-      movementSpeed: 0.6,
       explorationEfficiency: 0.5,
       mentalRecovery: 0.7,
     },
@@ -110,7 +106,6 @@ export const weatherTypes = {
       energyConsumption: 1.3,
       waterConsumption: 1.2,
       foodConsumption: 1.1,
-      movementSpeed: 0.7,
       explorationEfficiency: 0.7,
       mentalRecovery: 0.8,
     },
@@ -134,7 +129,6 @@ export const weatherTypes = {
       energyConsumption: 1.5,
       waterConsumption: 0.5,
       foodConsumption: 1.2,
-      movementSpeed: 0.5,
       explorationEfficiency: 0.3,
       mentalRecovery: 0.6,
     },
@@ -150,11 +144,11 @@ export const weatherTypes = {
         name: '雷击',
         probability: 0.05,
         effect: (store) => {
-          // 随机损失一些健康值
+          // 随机损失一些健康
           const damage = Math.floor(Math.random() * 10) + 5
           store.player.health = Math.max(1, store.player.health - damage)
           store.addToEventLog(
-            `暴风雨中你被雷电击中，损失了${damage}点健康值！`
+            `暴风雨中你被雷电击中，损失了${damage}点健康！`
           )
         },
       },
@@ -173,7 +167,6 @@ export const weatherTypes = {
       energyConsumption: 1.4,
       waterConsumption: 1.8,
       foodConsumption: 1.1,
-      movementSpeed: 0.8,
       explorationEfficiency: 0.6,
       mentalRecovery: 0.7,
     },
@@ -189,12 +182,12 @@ export const weatherTypes = {
         name: '脱水',
         probability: 0.1,
         effect: (store) => {
-          // 如果水资源不足，会损失健康值
+          // 如果水资源不足，会损失健康
           if (store.resources.water < 5) {
             const damage = Math.floor(Math.random() * 5) + 3
             store.player.health = Math.max(1, store.player.health - damage)
             store.addToEventLog(
-              `热浪中你因缺水而脱水，损失了${damage}点健康值！`
+              `热浪中你因缺水而脱水，损失了${damage}点健康！`
             )
           }
         },
@@ -214,7 +207,6 @@ export const weatherTypes = {
       energyConsumption: 1.7,
       waterConsumption: 0.8,
       foodConsumption: 1.5,
-      movementSpeed: 0.4,
       explorationEfficiency: 0.2,
       mentalRecovery: 0.5,
     },
@@ -230,7 +222,7 @@ export const weatherTypes = {
         name: '低温症',
         probability: 0.15,
         effect: (store) => {
-          // 如果没有足够的燃料，会损失健康值和精神值
+          // 如果没有足够的燃料，会损失健康和精神
           if (store.resources.fuel < 3) {
             const healthDamage = Math.floor(Math.random() * 8) + 5
             const mentalDamage = Math.floor(Math.random() * 10) + 10
@@ -243,7 +235,7 @@ export const weatherTypes = {
               store.player.mental - mentalDamage
             )
             store.addToEventLog(
-              `暴风雪中你因缺乏燃料而患上低温症，损失了${healthDamage}点健康值和${mentalDamage}点精神值！`
+              `暴风雪中你因缺乏燃料而患上低温症，损失了${healthDamage}点健康和${mentalDamage}点精神！`
             )
           }
         },
@@ -263,7 +255,6 @@ export const weatherTypes = {
       energyConsumption: 1.6,
       waterConsumption: 1.5,
       foodConsumption: 1.2,
-      movementSpeed: 0.5,
       explorationEfficiency: 0.3,
       mentalRecovery: 0.6,
     },
@@ -309,7 +300,6 @@ export const weatherTypes = {
       energyConsumption: 0.9,
       waterConsumption: 1.0,
       foodConsumption: 0.9,
-      movementSpeed: 1.0,
       explorationEfficiency: 1.2,
       mentalRecovery: 1.5,
     },
@@ -353,7 +343,6 @@ export const weatherTypes = {
       energyConsumption: 0.8,
       waterConsumption: 0.9,
       foodConsumption: 0.9,
-      movementSpeed: 1.1,
       explorationEfficiency: 1.3,
       mentalRecovery: 1.4,
     },

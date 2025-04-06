@@ -83,7 +83,6 @@ const updateWeatherEffects = () => {
     energyConsumption: effects.energyConsumption || 1.0,
     waterConsumption: effects.waterConsumption || 1.0,
     foodConsumption: effects.foodConsumption || 1.0,
-    movementSpeed: effects.movementSpeed || 1.0,
     explorationEfficiency: effects.explorationEfficiency || 1.0,
     mentalRecovery: effects.mentalRecovery || 1.0
   }
@@ -127,10 +126,8 @@ const applyWeatherEffects = () => {
     energyConsumption: 1.0,
     waterConsumption: 1.0,
     foodConsumption: 1.0,
-    movementSpeed: 1.0,
     explorationEfficiency: 1.0,
-    mentalRecovery: 1.0,
-    researchEfficiency: 1.0
+    mentalRecovery: 1.0
   }
   // 根据天气类型应用基础效果
   switch (currentWeather.value.name) {
@@ -146,7 +143,6 @@ const applyWeatherEffects = () => {
       // 增加水资源
       const waterBonus = 2
       gameStore.addResource('water', waterBonus)
-      weatherEffects.movementSpeed = 0.9 // 移动速度-10%
       // 春季雨天对植物生长有额外好处
       if (season === 'spring') {
         if (Math.random() < 0.3) {
@@ -161,7 +157,6 @@ const applyWeatherEffects = () => {
       const heavyWaterBonus = 5
       gameStore.addResource('water', heavyWaterBonus)
       weatherEffects.gatheringEfficiency = 0.7 // 采集效率-30%
-      weatherEffects.movementSpeed = 0.7 // 移动速度-30%
       // 夏季暴雨可能导致洪水风险
       if (season === 'summer' && Math.random() < 0.2) {
         gameStore.addToEventLog('暴雨引发了小规模洪水，部分资源被冲走了')
@@ -207,7 +202,6 @@ const applyWeatherEffects = () => {
       }
       break
     case '降雪':
-      weatherEffects.movementSpeed = 0.7 // 移动速度-30%
       weatherEffects.gatheringEfficiency = 0.8 // 采集效率-20%
       weatherEffects.foodConsumption = 1.2 // 食物消耗+20%
       // 冬季降雪可能带来特殊事件
@@ -226,7 +220,6 @@ const applyWeatherEffects = () => {
       }
       break
     case '风暴':
-      weatherEffects.movementSpeed = 0.5 // 移动速度-50%
       weatherEffects.explorationEfficiency = 0.5 // 探索效率-50%
       weatherEffects.energyConsumption = 1.3 // 体力消耗+30%
       // 风暴有触发灾害的风险
@@ -264,7 +257,6 @@ const applyWeatherEffects = () => {
       }
       break
     case '冰雹':
-      weatherEffects.movementSpeed = 0.6 // 移动速度-40%
       weatherEffects.gatheringEfficiency = 0.7 // 采集效率-30%
       // 冰雹可能造成资源损失
       if (Math.random() < 0.3) {
@@ -299,7 +291,6 @@ const applyWeatherEffects = () => {
       break
     case '极光':
       weatherEffects.mentalRecovery = 1.3 // 精神恢复+30%
-      weatherEffects.researchEfficiency = 1.15 // 研究效率+15%
       gameStore.player.mental = Math.min(gameStore.player.mental + 10, gameStore.player.maxMental)
       // 极光可能带来灵感
       if (Math.random() < 0.3) {
@@ -374,9 +365,6 @@ updateNextWeatherChangeTime()
           </span>
           <span v-if="currentWeather.effects && currentWeather.effects.foodConsumption !== 1.0">
             食物消耗: x{{ currentWeather.effects.foodConsumption.toFixed(1) }}
-          </span>
-          <span v-if="currentWeather.effects && currentWeather.effects.movementSpeed !== 1.0">
-            移动速度: x{{ currentWeather.effects.movementSpeed.toFixed(1) }}
           </span>
           <span v-if="currentWeather.effects && currentWeather.effects.explorationEfficiency !== 1.0">
             探索效率: x{{ currentWeather.effects.explorationEfficiency.toFixed(1) }}

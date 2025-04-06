@@ -14,21 +14,21 @@ const activityTabs = ref('gathering')
 
 // 按类型分组的活动
 const gatheringActivities = computed(() => {
-  return recipes().filter(recipe =>
+  return recipes.filter(recipe =>
     recipe.id.startsWith('gather_') &&
     meetsSkillRequirements(recipe)
   )
 })
 
 const craftingActivities = computed(() => {
-  return recipes().filter(recipe =>
+  return recipes.filter(recipe =>
     recipe.id.startsWith('craft_') &&
     meetsSkillRequirements(recipe)
   )
 })
 
 const explorationActivities = computed(() => {
-  return recipes().filter(recipe =>
+  return recipes.filter(recipe =>
     recipe.id.startsWith('explore_') &&
     meetsSkillRequirements(recipe)
   )
@@ -107,8 +107,8 @@ const getSkillEffectText = (recipe) => {
     if (gameStore.skillTreeEffects.gatheringEfficiency > 0) effects.push(`采集效率 +${Math.round(gameStore.skillTreeEffects.gatheringEfficiency * 100)}%`)
     // 采集产出加成
     if (gameStore.skillTreeEffects.gatheringYield > 0) effects.push(`产出增加 +${Math.round(gameStore.skillTreeEffects.gatheringYield * 100)}%`)
-    // 能量消耗减少
-    if (gameStore.skillTreeEffects.gatheringEnergyCost < 0) effects.push(`能量消耗 ${Math.round(gameStore.skillTreeEffects.gatheringEnergyCost * 100)}%`)
+    // 体力消耗减少
+    if (gameStore.skillTreeEffects.gatheringEnergyCost < 0) effects.push(`体力消耗 ${Math.round(gameStore.skillTreeEffects.gatheringEnergyCost * 100)}%`)
     // 稀有资源几率
     if (recipe.id.includes('herb') && gameStore.skillTreeEffects.rareHerbChance > 0) effects.push(`稀有草药几率 +${Math.round(gameStore.skillTreeEffects.rareHerbChance * 100)}%`)
   } else if (category === 'crafting') {
@@ -128,8 +128,8 @@ const getSkillEffectText = (recipe) => {
     // 突破性发现几率
     if (gameStore.skillTreeEffects.breakthroughChance > 0) effects.push(`突破性发现几率 +${Math.round(gameStore.skillTreeEffects.breakthroughChance * 100)}%`)
   }
-  // 通用能量消耗减少
-  if (gameStore.skillTreeEffects.energyConsumption < 0 && !effects.some(e => e.includes('能量消耗'))) effects.push(`能量消耗 ${Math.round(gameStore.skillTreeEffects.energyConsumption * 100)}%`)
+  // 通用体力消耗减少
+  if (gameStore.skillTreeEffects.energyConsumption < 0 && !effects.some(e => e.includes('体力消耗'))) effects.push(`体力消耗 ${Math.round(gameStore.skillTreeEffects.energyConsumption * 100)}%`)
   return effects.length > 0 ? effects.join('，') : '无加成效果'
 }
 
@@ -259,8 +259,8 @@ onUnmounted(() => {
                 <div class="activity-requirements">
                   需求: {{ getSkillRequirementText(recipe.skillRequired) }}
                 </div>
-                <div class="activity-skill-effects" v-if="getSkillEffectText(recipe) !== '无加成效果'">
-                  <el-tag size="small" type="success">技能加成: {{ getSkillEffectText(recipe) }}</el-tag>
+                <div class="activity-requirements" v-if="getSkillEffectText(recipe) !== '无加成效果'">
+                  加成: {{ getSkillEffectText(recipe) }}
                 </div>
               </div>
               <div class="activity-actions">
