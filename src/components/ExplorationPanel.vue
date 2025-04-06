@@ -147,31 +147,74 @@ const getDangersText = (region) => {
 const startExploration = () => {
   if (!selectedRegion.value || !canExplore.value) return
   const region = explorationRegions.value.find(r => r.id === selectedRegion.value)
-  // 消耗体力
-  gameStore.player.energy -= region.energyCost
-  // 消耗资源
-  for (const [resource, amount] of Object.entries(region.resourceCost)) {
-    gameStore.consumeResource(resource, amount)
-  }
+
   // 创建探索活动
   const explorationActivity = {
     id: `explore_${region.id}_${Date.now()}`,
     recipeId: `explore_${region.id}`,
     name: `探索${region.name}`,
-    startTime: Date.now(),
     duration: region.explorationTime * 1000, // 转换为毫秒
     completed: false,
     region: region.id
   }
-  // 添加到当前活动
-  gameStore.currentActivities.push(explorationActivity)
-  // 添加事件日志
-  gameStore.addToEventLog(`开始探索${region.name}`)
-  ElMessage.success(`开始探索${region.name}`)
-  // 设置定时器完成探索
-  setTimeout(() => completeExploration(explorationActivity.id, region), region.explorationTime * 1000)
+
+  // 如果没有正在进行的探索活动，立即开始
+  const hasActiveExploration = gameStore.currentActivities.some(a => a.recipeId.startsWith('explore_'))
+  if (!hasActiveExploration) {
+    // 消耗资源
+    gameStore.player.energy -= region.energyCost
+    for (const [resource, amount] of Object.entries(region.resourceCost)) {
+      gameStore.consumeResource(resource, amount)
+    }
+    explorationActivity.startTime = Date.now()
+    gameStore.currentActivities.push(explorationActivity)
+    gameStore.addToEventLog(`开始探索${region.name}`)
+    ElMessage.success(`开始探索${region.name}`)
+    // 设置定时器完成探索
+    setTimeout(() => completeExploration(explorationActivity.id, region), region.explorationTime * 1000)
+  } else {
+    // 否则加入等待队列
+    gameStore.pendingActivities.push(explorationActivity)
+    gameStore.addToEventLog(`已将探索${region.name}加入等待队列`)
+    ElMessage.info(`探索${region.name}已加入等待队列`)
+  }
   // 重置选中
   selectedRegion.value = null
+}
+
+// 取消探索活动
+const cancelExploration = (activityId) => {
+  // 先检查当前活动
+  const currentIndex = gameStore.currentActivities.findIndex(a => a.id === activityId)
+  if (currentIndex !== -1) {
+    const activity = gameStore.currentActivities[currentIndex]
+    const region = explorationRegions.value.find(r => r.id === activity.region)
+    if (region) {
+      // 返还体力
+      gameStore.player.energy = Math.min(
+        gameStore.player.maxEnergy,
+        gameStore.player.energy + region.energyCost
+      )
+      // 返还其他资源
+      for (const [resource, amount] of Object.entries(region.resourceCost)) {
+        gameStore.addResource(resource, amount)
+      }
+    }
+    gameStore.currentActivities.splice(currentIndex, 1)
+    gameStore.addToEventLog(`取消了探索${activity.name}并返还了资源`)
+    ElMessage.success(`已取消探索${activity.name}并返还了资源`)
+    return true
+  }
+  // 检查等待队列
+  const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === activityId)
+  if (pendingIndex !== -1) {
+    const activity = gameStore.pendingActivities[pendingIndex]
+    gameStore.pendingActivities.splice(pendingIndex, 1)
+    gameStore.addToEventLog(`取消了等待中的探索${activity.name}`)
+    ElMessage.warning(`已取消等待中的探索${activity.name}`)
+    return true
+  }
+  return false
 }
 
 // 完成探索
@@ -184,9 +227,29 @@ const completeExploration = (activityId, region) => {
   generateExplorationResults(region)
   // 增加相关技能经验
   gameStore.addSkillExp('survival', 2)
-  // 增加探索次数
   gameStore.player.explorationCount += 1
   if (region.difficulty >= 3) gameStore.addSkillExp('combat', 1)
+  // 检查是否有等待中的探索活动
+  const nextExploration = gameStore.pendingActivities.find(a => a.recipeId.startsWith('explore_'))
+  if (nextExploration) {
+    const nextRegion = explorationRegions.value.find(r => r.id === nextExploration.region)
+    if (nextRegion) {
+      // 消耗资源
+      gameStore.player.energy -= nextRegion.energyCost
+      for (const [resource, amount] of Object.entries(nextRegion.resourceCost)) {
+        gameStore.consumeResource(resource, amount)
+      }
+      // 从等待队列移除并添加到当前活动
+      const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextExploration.id)
+      if (pendingIndex !== -1) gameStore.pendingActivities.splice(pendingIndex, 1)
+      nextExploration.startTime = Date.now()
+      gameStore.currentActivities.push(nextExploration)
+      gameStore.addToEventLog(`开始探索${nextRegion.name}`)
+      ElMessage.success(`开始探索${nextRegion.name}`)
+      // 设置定时器
+      setTimeout(() => completeExploration(nextExploration.id, nextRegion), nextExploration.duration)
+    }
+  }
 }
 
 // 生成探索结果
@@ -237,7 +300,7 @@ const handleDangerEvent = (danger, region) => {
         gameStore.addSkillExp('combat', 2)
       } else {
         gameStore.player.health -= 10 * (region.difficulty - gameStore.skills.combat)
-        gameStore.addToEventLog(`你在${region.name}遭遇野兽袭击，受了伤`)
+        gameStore.addToEventLog(`你在${region.name}遭遇野兽袭击，受到了伤`)
       }
       break
     case 'storm':
@@ -248,7 +311,7 @@ const handleDangerEvent = (danger, region) => {
     case 'rockslide':
       if (Math.random() < 0.5) {
         gameStore.player.health -= 15
-        gameStore.addToEventLog(`你在${region.name}遭遇了坍塌，受了伤`)
+        gameStore.addToEventLog(`你在${region.name}遭遇了坍塌，受到了伤`)
       } else {
         gameStore.addToEventLog(`你在${region.name}险些遭遇坍塌，幸好及时躲避`)
       }
@@ -273,7 +336,7 @@ const handleDangerEvent = (danger, region) => {
         const lostResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)]
         const lostAmount = Math.min(gameStore.resources[lostResource], Math.floor(Math.random() * 5) + 1)
         gameStore.consumeResource(lostResource, lostAmount)
-        gameStore.addToEventLog(`你在${region.name}遭遇敌对人员，受了伤并失去了一些${lostResource}`)
+        gameStore.addToEventLog(`你在${region.name}遭遇敌对人员，受到了伤并失去了一些${lostResource}`)
       }
       break
     case 'thirst':
@@ -425,8 +488,9 @@ onUnmounted(() => {
         <div>{{ getExplorationSkillEffects() }}</div>
       </el-alert>
     </div>
-    <div class="current-explorations" v-if="gameStore.currentActivities.some(a => a.recipeId.startsWith('explore_'))">
-      <h4>进行中的探索</h4>
+    <div class="current-explorations"
+      v-if="gameStore.currentActivities.some(a => a.recipeId.startsWith('explore_')) || gameStore.pendingActivities.some(a => a.recipeId.startsWith('explore_'))">
+      <h4>探索队列</h4>
       <div class="exploration-list">
         <div v-for="activity in gameStore.currentActivities.filter(a => a.recipeId.startsWith('explore_'))"
           :key="activity.id" class="exploration-card in-progress">
@@ -437,6 +501,22 @@ onUnmounted(() => {
             </div>
           </div>
           <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
+          <el-button type="danger" size="small" @click="cancelExploration(activity.id)"
+            style="width: 100%; margin-top: 10px;">
+            取消探索
+          </el-button>
+        </div>
+        <div v-for="activity in gameStore.pendingActivities.filter(a => a.recipeId.startsWith('explore_'))"
+          :key="activity.id" class="exploration-card pending">
+          <div class="exploration-header">
+            <div class="exploration-name">{{ activity.name }}</div>
+            <div class="exploration-time">等待中</div>
+          </div>
+          <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
+          <el-button type="danger" size="small" @click="cancelExploration(activity.id)"
+            style="width: 100%; margin-top: 10px;">
+            取消队列
+          </el-button>
         </div>
       </div>
     </div>

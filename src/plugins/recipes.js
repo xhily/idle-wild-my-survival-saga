@@ -133,6 +133,7 @@ export const technologies = [
 		description: '掌握基本的生存技能',
 		researched: true, // 默认已解锁
 		cost: {},
+		researchTime: 60,
 		unlocks: ['basic_crafting', 'water_collection']
 	},
 	{
@@ -142,6 +143,7 @@ export const technologies = [
 		researched: false,
 		cost: { techFragment: 1 },
 		unlocks: ['advanced_crafting', 'tool_making'],
+		researchTime: 60,
 		requirements: ['basic_survival']
 	},
 	{
@@ -151,6 +153,7 @@ export const technologies = [
 		researched: false,
 		cost: { techFragment: 1 },
 		unlocks: ['water_purification'],
+		researchTime: 60,
 		requirements: ['basic_survival']
 	},
 	// 进阶科技
@@ -161,6 +164,7 @@ export const technologies = [
 		researched: false,
 		cost: { techFragment: 2 },
 		unlocks: ['metallurgy'],
+		researchTime: 600,
 		requirements: ['basic_crafting']
 	},
 	{
@@ -170,6 +174,7 @@ export const technologies = [
 		researched: false,
 		cost: { techFragment: 2, wood: 15, stone: 10 },
 		unlocks: ['advanced_tools'],
+		researchTime: 600,
 		requirements: ['basic_crafting']
 	},
 	{
@@ -179,6 +184,7 @@ export const technologies = [
 		researched: false,
 		cost: { techFragment: 2, herb: 5 },
 		unlocks: ['medicine_brewing'],
+		researchTime: 600,
 		requirements: ['water_collection']
 	},
 	// 高级科技
@@ -189,6 +195,7 @@ export const technologies = [
 		researched: false,
 		cost: { techFragment: 3, metal: 10, fuel: 5 },
 		unlocks: ['advanced_construction'],
+		researchTime: 3000,
 		requirements: ['advanced_crafting']
 	},
 	{
@@ -198,6 +205,7 @@ export const technologies = [
 		researched: false,
 		cost: { techFragment: 3, metal: 15, tools: 2 },
 		unlocks: ['mechanical_devices'],
+		researchTime: 3000,
 		requirements: ['tool_making']
 	},
 	{
@@ -207,6 +215,7 @@ export const technologies = [
 		researched: false,
 		cost: { techFragment: 3, herb: 15, water: 10 },
 		unlocks: ['advanced_medicine'],
+		researchTime: 3000,
 		requirements: ['water_purification']
 	},
 ]

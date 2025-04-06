@@ -190,16 +190,6 @@ export const skillTree = {
         requires: null
       },
       {
-        id: 'efficient_analysis',
-        name: '高效分析',
-        description: '分析遗物时获得的科技碎片增加20%',
-        level: 0,
-        maxLevel: 2,
-        effects: { techFragmentYield: 0.2 },
-        cost: { exp: 35 },
-        requires: { research: 2 }
-      },
-      {
         id: 'resource_recycling',
         name: '资源回收',
         description: '研究科技时有15%几率不消耗部分材料',

@@ -191,19 +191,36 @@ onUnmounted(() => {
     activityTimerId.value = null
   }
 })
-</script>
 
+const pendingActivities = computed(() => gameStore.pendingActivities)
+</script>
 <template>
   <el-scrollbar class="activity-panel">
-    <div class="current-activities" v-if="gameStore.currentActivities.length > 0">
-      <h4>进行中的活动</h4>
+    <div class="current-activities" v-if="gameStore.currentActivities.length > 0 || pendingActivities.length > 0">
+      <h4>活动队列</h4>
       <div class="activity-list">
+        <!-- 当前活动 -->
         <div v-for="activity in gameStore.currentActivities" :key="activity.id" class="activity-card in-progress">
           <div class="activity-header">
             <div class="activity-name">{{ activity.name }}</div>
             <div class="activity-time">剩余: {{ getActivityRemainingTime(activity) }}</div>
           </div>
           <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
+          <div class="activity-actions">
+            <el-button style="width: 100%;margin-top: 5px;" type="danger" size="small"
+              @click="gameStore.cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
+              取消
+            </el-button>
+          </div>
+        </div>
+        
+        <!-- 等待中的活动 -->
+        <div v-for="activity in pendingActivities" :key="activity.id" class="activity-card pending">
+          <div class="activity-header">
+            <div class="activity-name">{{ activity.name }}</div>
+            <div class="activity-time">等待中</div>
+          </div>
+          <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
           <div class="activity-actions">
             <el-button style="width: 100%;margin-top: 5px;" type="danger" size="small"
               @click="gameStore.cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
@@ -278,6 +295,11 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* 添加等待中活动的样式 */
+.activity-card.pending {
+  border-left: 4px solid #E6A23C;
+  opacity: 0.8;
+}
 .activity-panel {
   background-color: var(--el-bg-color-overlay);
   border-radius: 4px;

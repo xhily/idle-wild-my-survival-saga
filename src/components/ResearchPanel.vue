@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted, onMounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { ElMessage } from 'element-plus'
 import { technologies } from '../plugins/recipes'
@@ -8,6 +8,13 @@ const gameStore = useGameStore()
 
 // 当前选中的科技
 const selectedTech = ref(null)
+// 研究计时器
+const researchTimer = ref(null)
+// 活动状态响应式数据
+const researchProgress = ref({})
+const researchRemainingTime = ref({})
+// 正在研究的科技ID
+const researchingTech = ref([])
 
 // 确保gameStore中有researched数组
 if (!gameStore.researched) {
@@ -63,31 +70,141 @@ const getTechCost = (tech) => {
 const researchTech = () => {
   if (!selectedTech.value || !canResearch.value) return
   const tech = technologies.find(t => t.id === selectedTech.value)
-  // 消耗资源（应用研究资源节约效果）
-  for (const [resource, amount] of Object.entries(tech.cost)) {
-    // 计算实际消耗量，应用研究资源节约效果
-    let actualAmount = amount
-    if (gameStore.skillTreeEffects.researchResourceSaving > 0) {
-      // 计算节约的资源量
-      const savedAmount = Math.floor(amount * gameStore.skillTreeEffects.researchResourceSaving)
-      actualAmount = Math.max(1, amount - savedAmount) // 确保至少消耗1个资源
-      if (savedAmount > 0) gameStore.addToEventLog(`研究技能帮你节约了 ${savedAmount} 个 ${gameStore.getResourceName(resource)}`)
-    }
-    gameStore.consumeResource(resource, actualAmount)
+  let activityDuration = tech.researchTime
+  if (gameStore.skillTreeEffects.researchSpeed > 0) {
+    activityDuration = Math.floor(activityDuration / (1 + gameStore.skillTreeEffects.researchSpeed))
   }
-  // 确保gameStore中有researched数组
+  activityDuration = Math.max(1, activityDuration)
+  // 创建研究活动
+  const researchActivity = {
+    id: `research_${tech.id}_${Date.now()}`,
+    recipeId: `research_${tech.id}`,
+    name: `${tech.name}`,
+    duration: activityDuration * 1000, // 转换为毫秒
+    completed: false,
+    tech: tech.id
+  }
+  // 加入研究的科技ID
+  researchingTech.value.push(tech.id)
+  // 检查是否有正在进行的研究活动
+  const hasActiveResearch = gameStore.currentActivities.some(a => a.recipeId.startsWith('research_'))
+  if (!hasActiveResearch) {
+    // 消耗资源
+    for (const [resource, amount] of Object.entries(tech.cost)) {
+      let actualAmount = amount
+      if (gameStore.skillTreeEffects.researchResourceSaving > 0) {
+        const savedAmount = Math.floor(amount * gameStore.skillTreeEffects.researchResourceSaving)
+        actualAmount = Math.max(1, amount - savedAmount)
+        if (savedAmount > 0) gameStore.addToEventLog(`研究技能帮你节约了 ${savedAmount} 个 ${gameStore.getResourceName(resource)}`)
+      }
+      gameStore.consumeResource(resource, actualAmount)
+    }
+    researchActivity.startTime = Date.now()
+    gameStore.currentActivities.push(researchActivity)
+    // 立即更新状态
+    updateResearchStatus()
+    startResearchTimer()
+    gameStore.addToEventLog(`开始研究${tech.name}`)
+    ElMessage.success(`开始研究${tech.name}`)
+    // 设置定时器完成研究
+    researchTimer.value = setTimeout(() => completeResearch(researchActivity.id, tech), researchActivity.duration)
+  } else {
+    // 加入等待队列
+    gameStore.pendingActivities.push(researchActivity)
+    gameStore.addToEventLog(`已将研究${tech.name}加入等待队列`)
+    ElMessage.info(`研究${tech.name}已加入等待队列`)
+  }
+  selectedTech.value = null
+}
+
+// 完成研究
+const completeResearch = (activityId, tech) => {
+  // 从当前活动中移除
+  const activityIndex = gameStore.currentActivities.findIndex(a => a.id === activityId)
+  if (activityIndex === -1) return false
+  const activity = gameStore.currentActivities[activityIndex]
+  // 清除定时器
+  if (activity.timer) clearTimeout(activity.timer)
+  // 移除研究
+  gameStore.currentActivities.splice(activityIndex, 1)
+  // 移除研究的科技ID
+  researchingTech.value.splice(researchingTech.value.indexOf(tech.id), 1)
+  // 完成研究
   if (!gameStore.researched) gameStore.researched = []
-  // 将研究ID添加到gameStore的已研究列表中
   if (!gameStore.researched.includes(tech.id)) gameStore.researched.push(tech.id)
-  // 标记为已研究（同时更新本地状态）
   tech.researched = true
   // 增加研究技能经验
   gameStore.addSkillExp('research', 2)
-  // 添加事件日志
   gameStore.addToEventLog(`你成功研究了${tech.name}！`)
   ElMessage.success(`研究成功：${tech.name}`)
-  // 重置选中
-  selectedTech.value = null
+  // 检查是否有等待中的研究活动
+  const nextResearch = gameStore.pendingActivities.find(a => a.recipeId.startsWith('research_'))
+  if (nextResearch) {
+    const nextTech = technologies.find(t => t.id === nextResearch.tech)
+    if (nextTech) {
+      // 消耗资源
+      for (const [resource, amount] of Object.entries(nextTech.cost)) {
+        let actualAmount = amount
+        if (gameStore.skillTreeEffects.researchResourceSaving > 0) {
+          const savedAmount = Math.floor(amount * gameStore.skillTreeEffects.researchResourceSaving)
+          actualAmount = Math.max(1, amount - savedAmount)
+          if (savedAmount > 0) gameStore.addToEventLog(`研究技能帮你节约了 ${savedAmount} 个 ${gameStore.getResourceName(resource)}`)
+        }
+        gameStore.consumeResource(resource, actualAmount)
+      }
+      // 从等待队列移除并添加到当前活动
+      const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextResearch.id)
+      if (pendingIndex !== -1) gameStore.pendingActivities.splice(pendingIndex, 1)
+      nextResearch.startTime = Date.now()
+      gameStore.currentActivities.push(nextResearch)
+      gameStore.addToEventLog(`开始研究${nextTech.name}`)
+      ElMessage.success(`开始研究${nextTech.name}`)
+      // 设置定时器
+      researchTimer.value = setTimeout(() => completeResearch(nextResearch.id, nextTech), nextResearch.duration)
+    }
+  }
+}
+
+// 取消研究活动
+const cancelResearch = (activityId) => {
+  // 先检查当前活动
+  const currentIndex = gameStore.currentActivities.findIndex(a => a.id === activityId)
+  if (currentIndex !== -1) {
+    const activity = gameStore.currentActivities[currentIndex]
+    const tech = technologies.find(t => t.id === activity.tech)
+    if (tech) {
+      // 返还资源
+      for (const [resource, amount] of Object.entries(tech.cost)) {
+        let actualAmount = amount
+        if (gameStore.skillTreeEffects.researchResourceSaving > 0) {
+          const savedAmount = Math.floor(amount * gameStore.skillTreeEffects.researchResourceSaving)
+          actualAmount = Math.max(1, amount - savedAmount)
+        }
+        gameStore.addResource(resource, actualAmount)
+      }
+      // 清除定时器
+      if (researchTimer.value) {
+        clearTimeout(researchTimer.value)
+        researchTimer.value = null
+      }
+      gameStore.currentActivities.splice(currentIndex, 1)
+      gameStore.addToEventLog(`取消了研究${tech.name}并返还了资源`)
+      ElMessage.success(`已取消研究${tech.name}并返还了资源`)
+      // 移除研究的科技ID
+      researchingTech.value.splice(researchingTech.value.indexOf(tech.id), 1)
+      return true
+    }
+  }
+  // 检查等待队列
+  const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === activityId)
+  if (pendingIndex !== -1) {
+    const activity = gameStore.pendingActivities[pendingIndex]
+    gameStore.pendingActivities.splice(pendingIndex, 1)
+    gameStore.addToEventLog(`取消了等待中的研究${activity.name}`)
+    ElMessage.warning(`已取消等待中的研究${activity.name}`)
+    return true
+  }
+  return false
 }
 
 // 获取研究技能效果文本
@@ -112,7 +229,7 @@ const getTechUnlocks = (tech) => {
     // 检查是否解锁了新科技
     const unlockedTech = technologies.find(t => t.id === unlockId)
     if (unlockedTech) {
-      unlockTexts.push(`科技: ${unlockedTech.name}`)
+      unlockTexts.push(`${unlockedTech.name}`)
       continue
     }
     // 检查是否解锁了新配方
@@ -123,6 +240,68 @@ const getTechUnlocks = (tech) => {
   }
   return unlockTexts.length > 0 ? unlockTexts.join(', ') : '无特殊解锁'
 }
+
+// 获取活动剩余时间（格式化为分钟:秒）
+const getActivityRemainingTime = (activity) => {
+  if (researchRemainingTime.value[activity.id] !== undefined) return researchRemainingTime.value[activity.id]
+  const now = Date.now()
+  const elapsed = now - activity.startTime
+  const remaining = Math.max(0, activity.duration - elapsed)
+  const seconds = Math.ceil(remaining / 1000)
+  return seconds < 60 ? `${seconds}秒` : `${Math.floor(seconds / 60)}分${seconds % 60}秒`
+}
+
+// 获取活动进度百分比（0-100）
+const getActivityProgress = (activity) => {
+  if (researchProgress.value[activity.id] !== undefined) return researchProgress.value[activity.id]
+  const now = Date.now()
+  const elapsed = now - activity.startTime
+  return Math.min(100, (elapsed / activity.duration) * 100)
+}
+
+// 更新所有研究活动的状态
+const updateResearchStatus = () => {
+  gameStore.currentActivities.forEach(activity => {
+    if (!activity.recipeId.startsWith('research_')) return
+    const now = Date.now()
+    const elapsed = now - activity.startTime
+    const progress = Math.min(100, (elapsed / activity.duration) * 100)
+    researchProgress.value[activity.id] = progress
+    const remaining = Math.max(0, activity.duration - elapsed)
+    const seconds = Math.ceil(remaining / 1000)
+    researchRemainingTime.value[activity.id] = seconds < 60 ?
+      `${seconds}秒` : `${Math.floor(seconds / 60)}分${seconds % 60}秒`
+  })
+}
+
+// 研究更新定时器
+const researchUpdateTimer = ref(null)
+
+// 启动研究状态更新定时器
+const startResearchTimer = () => {
+  if (researchUpdateTimer.value) return
+  researchUpdateTimer.value = setInterval(() => {
+    if (gameStore.currentActivities.some(a => a.recipeId.startsWith('research_'))) {
+      updateResearchStatus()
+    }
+  }, 1000)
+}
+
+// 组件挂载时启动定时器
+onMounted(() => {
+  startResearchTimer()
+})
+
+// 组件卸载时清除所有定时器
+onUnmounted(() => {
+  if (researchUpdateTimer.value) {
+    clearInterval(researchUpdateTimer.value)
+    researchUpdateTimer.value = null
+  }
+  if (researchTimer.value) {
+    clearTimeout(researchTimer.value)
+  }
+})
 </script>
 
 <template>
@@ -132,6 +311,38 @@ const getTechUnlocks = (tech) => {
         <el-alert title="当前研究技能效果" type="success" :closable="false" show-icon>
           <div>{{ getResearchSkillEffects() }}</div>
         </el-alert>
+      </div>
+      <div class="research-queue"
+        v-if="gameStore.currentActivities.some(a => a.recipeId.startsWith('research_')) || gameStore.pendingActivities.some(a => a.recipeId.startsWith('research_'))">
+        <h4>研究队列</h4>
+        <div class="research-list">
+          <div v-for="activity in gameStore.currentActivities.filter(a => a.recipeId.startsWith('research_'))"
+            :key="activity.id" class="research-card in-progress">
+            <div class="research-header">
+              <div class="research-name">{{ activity.name }}</div>
+              <div class="research-time">
+                剩余: {{ getActivityRemainingTime(activity) }}
+              </div>
+            </div>
+            <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
+            <el-button type="danger" size="small" @click="cancelResearch(activity.id)"
+              style="width: 100%; margin-top: 10px;">
+              取消研究
+            </el-button>
+          </div>
+          <div v-for="activity in gameStore.pendingActivities.filter(a => a.recipeId.startsWith('research_'))"
+            :key="activity.id" class="research-card pending">
+            <div class="research-header">
+              <div class="research-name">{{ activity.name }}</div>
+              <div class="research-time">等待中</div>
+            </div>
+            <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
+            <el-button type="danger" size="small" @click="cancelResearch(activity.id)"
+              style="width: 100%; margin-top: 10px;">
+              取消队列
+            </el-button>
+          </div>
+        </div>
       </div>
       <div class="tech-categories">
         <h4>可研究科技</h4>
@@ -177,7 +388,8 @@ const getTechUnlocks = (tech) => {
           </div>
         </div>
         <div class="tech-actions">
-          <el-button type="primary" @click="researchTech" :disabled="!canResearch">
+          <el-button type="primary" :loading="researchingTech.includes(selectedTech)" @click="researchTech"
+            :disabled="!canResearch">
             {{ canResearch ? '研究' : '资源不足' }}
           </el-button>
         </div>
@@ -204,6 +416,44 @@ const getTechUnlocks = (tech) => {
 .tech-tree {
   flex: 1;
   overflow-y: auto;
+}
+
+.research-queue {
+  margin-top: 20px;
+}
+
+.research-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  margin: 10px;
+}
+
+.research-card {
+  background-color: var(--el-bg-color);
+  border-radius: 4px;
+  padding: 12px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.research-card.pending {
+  border-left: 4px solid #E6A23C;
+  opacity: 0.8;
+}
+
+.research-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.research-name {
+  font-weight: bold;
+}
+
+.research-time {
+  color: var(--el-text-color-secondary);
+  font-size: 0.9em;
 }
 
 .tech-list {

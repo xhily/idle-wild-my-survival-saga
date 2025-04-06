@@ -142,6 +142,8 @@ export const useGameStore = defineStore('game', {
     buildings: [],
     // 当前进行中的活动
     currentActivities: [],
+    // 等待中的活动队列
+    pendingActivities: [],
     // 游戏时间
     gameTime: {
       day: 1,
@@ -467,10 +469,6 @@ export const useGameStore = defineStore('game', {
     startActivity(recipeId) {
       const recipe = recipes.find(r => r.id === recipeId)
       if (!recipe) return false
-      if (this.currentActivities.length >= 4) {
-        this.addToEventLog('活动队列已满，无法开始新的活动')
-        return false
-      }
       // 检查技能要求
       for (const [skill, level] of Object.entries(recipe.skillRequired)) {
         if (this.skills[skill] < level) {
@@ -481,13 +479,9 @@ export const useGameStore = defineStore('game', {
       // 检查并消耗输入资源
       for (const [resource, amount] of Object.entries(recipe.inputs)) {
         if (resource === 'energy') {
-          // 计算体力消耗，应用技能效果
           let energyAmount = amount
-          // 应用采集活动的体力消耗减少效果
           if (recipe.category === 'gathering' && this.skillTreeEffects.gatheringEnergyCost < 0) energyAmount = Math.floor(energyAmount * (1 + this.skillTreeEffects.gatheringEnergyCost))
-          // 应用通用体力消耗减少效果
           if (this.skillTreeEffects.energyConsumption < 0) energyAmount = Math.floor(energyAmount * (1 + this.skillTreeEffects.energyConsumption))
-          // 确保至少消耗1点体力
           energyAmount = Math.max(1, energyAmount)
           if (this.player.energy < energyAmount) {
             this.addToEventLog('你的体力不足')
@@ -501,46 +495,93 @@ export const useGameStore = defineStore('game', {
           }
         }
       }
-      // 创建活动
-      // 计算活动持续时间，应用技能效果
+      // 计算活动持续时间
       let activityDuration = recipe.duration
-      // 应用采集效率加成
       if (recipe.category === 'gathering' && this.skillTreeEffects.gatheringEfficiency > 0) {
         activityDuration = Math.floor(activityDuration / (1 + this.skillTreeEffects.gatheringEfficiency))
       }
-      // 应用制作速度加成
       if (recipe.category === 'crafting' && this.skillTreeEffects.craftingSpeed > 0) {
         activityDuration = Math.floor(activityDuration / (1 + this.skillTreeEffects.craftingSpeed))
       }
-      // 应用研究速度加成
       if (recipe.category === 'research' && this.skillTreeEffects.researchSpeed > 0) {
         activityDuration = Math.floor(activityDuration / (1 + this.skillTreeEffects.researchSpeed))
       }
-      // 确保活动至少持续1秒
       activityDuration = Math.max(1, activityDuration)
       const activity = {
         id: Date.now(),
         recipeId,
         name: recipe.name,
-        startTime: Date.now(),
-        duration: activityDuration * 1000, // 转换为毫秒
+        duration: activityDuration * 1000,
         completed: false
       }
-      this.currentActivities.push(activity)
-      this.addToEventLog(`开始${recipe.name}`)
-      // 设置定时器完成活动，使用修改后的持续时间
-      setTimeout(() => this.completeActivity(activity.id), activityDuration * 1000)
+      // 如果没有正在进行的活动，立即开始
+      if (this.currentActivities.length === 0) {
+        activity.startTime = Date.now()
+        this.currentActivities.push(activity)
+        this.startActivityTimer(activity)
+        this.addToEventLog(`开始${recipe.name}`)
+      } else {
+        // 否则加入等待队列
+        this.pendingActivities.push(activity)
+        this.addToEventLog(`已将${recipe.name}加入等待队列`)
+      }
       return true
+    },
+    // 启动活动计时器
+    startActivityTimer(activity) {
+      activity.timer = setTimeout(() => {
+        this.completeActivity(activity.id)
+        // 检查是否有等待中的活动
+        if (this.pendingActivities.length > 0) {
+          const nextActivity = this.pendingActivities.shift()
+          nextActivity.startTime = Date.now()
+          this.currentActivities.push(nextActivity)
+          this.startActivityTimer(nextActivity)
+          this.addToEventLog(`开始${nextActivity.name}`)
+        }
+      }, activity.duration)
     },
     // 取消活动
     cancelActivity(activityId) {
-      const activityIndex = this.currentActivities.findIndex(a => a.id === activityId)
-      if (activityIndex === -1) return false
-      const activity = this.currentActivities[activityIndex]
-      // 移除活动
-      this.currentActivities.splice(activityIndex, 1)
-      this.addToEventLog(`取消了${activity.name}活动`)
-      return true
+      // 先检查当前活动
+      const currentIndex = this.currentActivities.findIndex(a => a.id === activityId)
+      if (currentIndex !== -1) {
+        const activity = this.currentActivities[currentIndex]
+        const recipe = recipes.find(r => r.id === activity.recipeId)
+        // 返还资源
+        if (recipe) {
+          // 返还体力
+          if (recipe.inputs.energy) {
+            let energyAmount = recipe.inputs.energy
+            if (recipe.category === 'gathering' && this.skillTreeEffects.gatheringEnergyCost < 0)
+              energyAmount = Math.floor(energyAmount * (1 + this.skillTreeEffects.gatheringEnergyCost))
+            if (this.skillTreeEffects.energyConsumption < 0)
+              energyAmount = Math.floor(energyAmount * (1 + this.skillTreeEffects.energyConsumption))
+            energyAmount = Math.max(1, energyAmount)
+            this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + energyAmount)
+          }
+          // 返还其他资源
+          for (const [resource, amount] of Object.entries(recipe.inputs)) {
+            if (resource !== 'energy') {
+              this.addResource(resource, amount)
+            }
+          }
+        }
+        // 移除活动
+        if (activity.timer) clearTimeout(activity.timer)
+        this.currentActivities.splice(currentIndex, 1)
+        this.addToEventLog(`取消了${activity.name}活动并返还了资源`)
+        return true
+      }
+      // 检查等待队列
+      const pendingIndex = this.pendingActivities.findIndex(a => a.id === activityId)
+      if (pendingIndex !== -1) {
+        const activity = this.pendingActivities[pendingIndex]
+        this.pendingActivities.splice(pendingIndex, 1)
+        this.addToEventLog(`取消了等待中的${activity.name}活动`)
+        return true
+      }
+      return false
     },
     // 完成活动
     completeActivity(activityId) {
@@ -548,6 +589,8 @@ export const useGameStore = defineStore('game', {
       if (activityIndex === -1) return false
       const activity = this.currentActivities[activityIndex]
       const recipe = recipes.find(r => r.id === activity.recipeId)
+      // 清除定时器
+      if (activity.timer) clearTimeout(activity.timer)
       // 移除活动
       this.currentActivities.splice(activityIndex, 1)
       // 应用技能效果到输出资源
