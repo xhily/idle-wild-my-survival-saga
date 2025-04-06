@@ -571,6 +571,14 @@ export const useGameStore = defineStore('game', {
         if (activity.timer) clearTimeout(activity.timer)
         this.currentActivities.splice(currentIndex, 1)
         this.addToEventLog(`取消了${activity.name}活动并返还了资源`)
+        // 检查并启动等待队列中的下一个活动
+        if (this.pendingActivities.length > 0) {
+          const nextActivity = this.pendingActivities.shift()
+          nextActivity.startTime = Date.now()
+          this.currentActivities.push(nextActivity)
+          this.startActivityTimer(nextActivity)
+          this.addToEventLog(`开始${nextActivity.name}`)
+        }
         return true
       }
       // 检查等待队列

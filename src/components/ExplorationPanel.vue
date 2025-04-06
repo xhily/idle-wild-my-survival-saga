@@ -156,7 +156,7 @@ const startExploration = () => {
     activityDuration = region.explorationTime * gameStore.skillTreeEffects.gatheringEfficiency
   }
   activityDuration = Math.max(1, activityDuration)
-  // 创建探索活动 
+  // 创建探索活动
   const explorationActivity = {
     id: `explore_${region.id}_${Date.now()}`,
     recipeId: `explore_${region.id}`,
@@ -183,7 +183,7 @@ const startExploration = () => {
     gameStore.addToEventLog(`开始探索${region.name}`)
     ElMessage.success(`开始探索${region.name}`)
     // 设置定时器完成探索
-    setTimeout(() => completeExploration(explorationActivity.id, region), activityDuration * 1000)
+    setTimeout(() => completeExploration(explorationActivity.id, region), region.explorationTime * 1000)
   } else {
     // 否则加入等待队列
     gameStore.pendingActivities.push(explorationActivity)
@@ -202,30 +202,43 @@ const cancelExploration = (activityId) => {
     const activity = gameStore.currentActivities[currentIndex]
     const region = explorationRegions.value.find(r => r.id === activity.region)
     if (region) {
-      // 消耗资源
-      if (gameStore.skillTreeEffects.energyConsumption < 0) {
-        const energyCost = Math.round(region.energyCost * (1 + gameStore.skillTreeEffects.energyConsumption))
-        gameStore.player.energy = Math.min(gameStore.player.maxEnergy, gameStore.player.energy + energyCost)
-      } else {
-        gameStore.player.energy = Math.min(gameStore.player.maxEnergy, gameStore.player.energy + region.energyCost)
-      }
-      // 返还其他资源
+      // 返还资源
       for (const [resource, amount] of Object.entries(region.resourceCost)) {
         gameStore.addResource(resource, amount)
       }
+      // 返还体力
+      gameStore.player.energy = Math.min(
+        gameStore.player.maxEnergy,
+        gameStore.player.energy + region.energyCost
+      )
+      // 移除活动
+      gameStore.currentActivities.splice(currentIndex, 1)
+      gameStore.addToEventLog(`取消了${region.name}探索并返还了资源`)
+      ElMessage.success(`已取消${region.name}探索并返还了资源`)
+      // 检查并启动等待队列中的下一个探索活动
+      const nextExploration = gameStore.pendingActivities.find(a => a.recipeId.startsWith('explore_'))
+      if (nextExploration) {
+        const nextRegion = explorationRegions.value.find(r => r.id === nextExploration.region)
+        if (nextRegion) {
+          // 从等待队列移除并添加到当前活动
+          const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextExploration.id)
+          if (pendingIndex !== -1) gameStore.pendingActivities.splice(pendingIndex, 1)
+          nextExploration.startTime = Date.now()
+          gameStore.currentActivities.push(nextExploration)
+          gameStore.addToEventLog(`开始探索${nextRegion.name}`)
+          ElMessage.success(`开始探索${nextRegion.name}`)
+        }
+      }
+      return true
     }
-    gameStore.currentActivities.splice(currentIndex, 1)
-    gameStore.addToEventLog(`取消了探索${activity.name}并返还了资源`)
-    ElMessage.success(`已取消探索${activity.name}并返还了资源`)
-    return true
   }
   // 检查等待队列
   const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === activityId)
   if (pendingIndex !== -1) {
     const activity = gameStore.pendingActivities[pendingIndex]
     gameStore.pendingActivities.splice(pendingIndex, 1)
-    gameStore.addToEventLog(`取消了等待中的探索${activity.name}`)
-    ElMessage.warning(`已取消等待中的探索${activity.name}`)
+    gameStore.addToEventLog(`取消了等待中的${activity.name}探索`)
+    ElMessage.warning(`已取消等待中的${activity.name}探索`)
     return true
   }
   return false

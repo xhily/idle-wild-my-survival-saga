@@ -192,6 +192,32 @@ const cancelResearch = (activityId) => {
       ElMessage.success(`已取消研究${tech.name}并返还了资源`)
       // 移除研究的科技ID
       researchingTech.value.splice(researchingTech.value.indexOf(tech.id), 1)
+      // 检查并启动等待队列中的下一个研究活动
+      const nextResearch = gameStore.pendingActivities.find(a => a.recipeId.startsWith('research_'))
+      if (nextResearch) {
+        const nextTech = technologies.find(t => t.id === nextResearch.tech)
+        if (nextTech) {
+          // 消耗资源
+          for (const [resource, amount] of Object.entries(nextTech.cost)) {
+            let actualAmount = amount
+            if (gameStore.skillTreeEffects.researchResourceSaving > 0) {
+              const savedAmount = Math.floor(amount * gameStore.skillTreeEffects.researchResourceSaving)
+              actualAmount = Math.max(1, amount - savedAmount)
+              if (savedAmount > 0) gameStore.addToEventLog(`研究技能帮你节约了 ${savedAmount} 个 ${gameStore.getResourceName(resource)}`)
+            }
+            gameStore.consumeResource(resource, actualAmount)
+          }
+          // 从等待队列移除并添加到当前活动
+          const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextResearch.id)
+          if (pendingIndex !== -1) gameStore.pendingActivities.splice(pendingIndex, 1)
+          nextResearch.startTime = Date.now()
+          gameStore.currentActivities.push(nextResearch)
+          gameStore.addToEventLog(`开始研究${nextTech.name}`)
+          ElMessage.success(`开始研究${nextTech.name}`)
+          // 设置定时器
+          researchTimer.value = setTimeout(() => completeResearch(nextResearch.id, nextTech), nextResearch.duration)
+        }
+      }
       return true
     }
   }
