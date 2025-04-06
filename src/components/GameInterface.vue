@@ -83,6 +83,7 @@ const download = () => {
 		ElMessage.success('存档已导出')
 	} catch (error) {
 		ElMessage.error('存档导出失败：' + error.message)
+		gameStore.addToEventLog('存档导出失败：' + error.message)
 	}
 }
 
