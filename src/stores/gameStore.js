@@ -194,9 +194,13 @@ export const useGameStore = defineStore(__APP_NAME__, {
       minute: 0,
       timeScale: 1,
       startTime: Date.now(),
+      _timestamp: Date.now(),
       get timestamp() {
-        return Date.now()
-      }
+        return this._timestamp;
+      },
+      set timestamp(value) {
+        this._timestamp = value; // 允许外部设置
+      },
     },
     settings: {
       autoSave: true,
@@ -274,6 +278,7 @@ export const useGameStore = defineStore(__APP_NAME__, {
           return false
         }
       } catch (error) {
+        console.error('加载存档时出错:', error);
         this.addToEventLog('存档加载失败: ' + error.message)
         return false
       }
