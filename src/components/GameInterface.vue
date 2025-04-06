@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useGameStore } from '../stores/gameStore'
+import {computed, onMounted, onUnmounted, ref} from 'vue'
+import {useGameStore} from '../stores/gameStore'
 import ResourcePanel from './ResourcePanel.vue'
 import BuildingPanel from './BuildingPanel.vue'
 import EventLog from './EventLog.vue'
@@ -15,8 +15,8 @@ import RandomEventSystem from './RandomEventSystem.vue'
 import TradingSystem from './TradingSystem.vue'
 import QuestSystem from './QuestSystem.vue'
 import SkillTreeSystem from './SkillTreeSystem.vue'
-import {ElMessage, ElDialog, ElMessageBox} from 'element-plus'
-import { saveAs } from 'file-saver'
+import {ElDialog, ElMessage, ElMessageBox} from 'element-plus'
+import {saveAs} from 'file-saver'
 
 const gameStore = useGameStore()
 const gameTimerId = ref(null)
@@ -36,20 +36,28 @@ const startGameTimer = () => {
 }
 
 const initGame = async () => {
-  const saves = await gameStore.getSaveList()
-  if (saves.length === 0) {
-    // 如果没有存档，创建新存档并更新列表
-    gameStore.initGame()
-    const newSaveId = await gameStore.saveGame()
-    currentSaveId.value = newSaveId
-    ElMessage.success(`新游戏已开始并保存为 ${newSaveId}`)
-    await refreshSaveList() // 确保存档列表刷新
-    startGameTimer()
+  const savedState = localStorage.getItem(__APP_NAME__)
+
+  if (savedState) {
+    try {
+      const now = Date.now()
+      const elapsedRealTime = now - gameStore.gameTime.startTime
+      const elapsedGameMinutes = Math.floor(elapsedRealTime / (1000 * 60 / gameStore.gameTime.timeScale))
+      gameStore.advanceTime(elapsedGameMinutes)
+      gameStore.gameTime.startTime = now
+      gameStore.gameTime._timestamp = now
+      ElMessage.success('已加载即时存档')
+    } catch (error) {
+      console.error('加载即时存档失败:', error)
+      gameStore.initGame()
+      ElMessage.warning('即时存档加载失败，已开始新游戏')
+    }
   } else {
-    // 如果有存档，显示存档管理对话框
-    await refreshSaveList() // 刷新存档列表
-    showSaveDialog.value = true
+    gameStore.initGame()
+    ElMessage.success('已开始新游戏')
   }
+
+  startGameTimer()
 }
 
 const createNewSave = async () => {
@@ -165,12 +173,17 @@ const toggleDarkMode = () => {
 }
 
 onMounted(async () => {
-  await initGame() // 在挂载时直接调用 initGame，包含刷新逻辑
+  console.log('组件挂载，初始化游戏')
+  await initGame()
   toggleDarkMode()
 })
 
 onUnmounted(() => {
-  if (gameTimerId.value) clearInterval(gameTimerId.value)
+  if (gameTimerId.value) {
+    console.log('组件卸载，清除定时器，ID:', gameTimerId.value)
+    clearInterval(gameTimerId.value)
+    gameTimerId.value = null
+  }
 })
 </script>
 

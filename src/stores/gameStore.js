@@ -266,21 +266,28 @@ export const useGameStore = defineStore(__APP_NAME__, {
 
     async loadGame(saveId) {
       try {
-        const rawData = await loadFromIndexedDB(saveId)
+        const rawData = await loadFromIndexedDB(saveId);
         if (rawData) {
-          const decryptedData = decryptData ? decryptData(rawData) : JSON.parse(rawData)
-          this.$patch(decryptedData)
-          this.initBuildingEffects()
-          this.addToEventLog(`存档 ${saveId} 已加载`)
-          return true
+          const decryptedData = decryptData ? decryptData(rawData) : JSON.parse(rawData);
+          this.$patch(decryptedData);
+          // 校准时间：计算加载时的时间偏移
+          const now = Date.now();
+          const elapsedRealTime = now - this.gameTime.startTime; // 从保存到现在的真实时间差
+          const elapsedGameMinutes = Math.floor(elapsedRealTime / (1000 * 60 / this.gameTime.timeScale)); // 转换为游戏分钟
+          this.advanceTime(elapsedGameMinutes); // 推进游戏时间
+          this.gameTime.startTime = now; // 重置 startTime 为当前时刻
+          this.gameTime._timestamp = now; // 同步 _timestamp
+          this.initBuildingEffects();
+          this.addToEventLog(`存档 ${saveId} 已加载`);
+          return true;
         } else {
-          this.addToEventLog(`未找到存档 ${saveId}`)
-          return false
+          this.addToEventLog(`未找到存档 ${saveId}`);
+          return false;
         }
       } catch (error) {
         console.error('加载存档时出错:', error);
-        this.addToEventLog('存档加载失败: ' + error.message)
-        return false
+        this.addToEventLog('存档加载失败: ' + error.message);
+        return false;
       }
     },
 
