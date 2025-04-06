@@ -159,6 +159,7 @@ export const useGameStore = defineStore('game', {
     },
     // 已研究
     researched: [],
+    recipes: [],
     // 游戏设置
     settings: {
       autoSave: true,
