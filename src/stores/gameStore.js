@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { omit } from 'lodash-es'
 import { recipes, availableBuildings } from '../plugins/recipes'
+import { encryptData, decryptData } from '../plugins/crypto.js';
 
 const openDB = () => {
   return new Promise((resolve, reject) => {
