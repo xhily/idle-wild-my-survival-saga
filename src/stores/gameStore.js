@@ -1,3 +1,4 @@
+import { computed } from 'vue'
 import { defineStore } from 'pinia'
 import { omit } from 'lodash-es'
 import { encryptData, decryptData } from '../plugins/crypto'
@@ -503,9 +504,6 @@ export const useGameStore = defineStore('game', {
       if (recipe.category === 'crafting' && this.skillTreeEffects.craftingSpeed > 0) {
         activityDuration = Math.floor(activityDuration / (1 + this.skillTreeEffects.craftingSpeed))
       }
-      if (recipe.category === 'research' && this.skillTreeEffects.researchSpeed > 0) {
-        activityDuration = Math.floor(activityDuration / (1 + this.skillTreeEffects.researchSpeed))
-      }
       activityDuration = Math.max(1, activityDuration)
       const activity = {
         id: Date.now(),
@@ -514,8 +512,12 @@ export const useGameStore = defineStore('game', {
         duration: activityDuration * 1000,
         completed: false
       }
+      const research = this.currentActivities.some(a => a.recipeId.startsWith('research_'))
+      const explore = this.currentActivities.some(a => a.recipeId.startsWith('explore_'))
+      const gathering = this.currentActivities.some(a => a.recipeId.startsWith('gather_'))
+      const crafting = this.currentActivities.some(a => a.recipeId.startsWith('craft_'))
       // 如果没有正在进行的活动，立即开始
-      if (this.currentActivities.length === 0) {
+      if ((!research || !explore) && !gathering && !crafting) {
         activity.startTime = Date.now()
         this.currentActivities.push(activity)
         this.startActivityTimer(activity)
@@ -585,8 +587,28 @@ export const useGameStore = defineStore('game', {
       const pendingIndex = this.pendingActivities.findIndex(a => a.id === activityId)
       if (pendingIndex !== -1) {
         const activity = this.pendingActivities[pendingIndex]
+        const recipe = recipes.find(r => r.id === activity.recipeId)
+        // 返还资源
+        if (recipe) {
+          // 返还体力
+          if (recipe.inputs.energy) {
+            let energyAmount = recipe.inputs.energy
+            if (recipe.category === 'gathering' && this.skillTreeEffects.gatheringEnergyCost < 0)
+              energyAmount = Math.floor(energyAmount * (1 + this.skillTreeEffects.gatheringEnergyCost))
+            if (this.skillTreeEffects.energyConsumption < 0)
+              energyAmount = Math.floor(energyAmount * (1 + this.skillTreeEffects.energyConsumption))
+            energyAmount = Math.max(1, energyAmount)
+            this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + energyAmount)
+          }
+          // 返还其他资源
+          for (const [resource, amount] of Object.entries(recipe.inputs)) {
+            if (resource !== 'energy') {
+              this.addResource(resource, amount)
+            }
+          }
+        }
         this.pendingActivities.splice(pendingIndex, 1)
-        this.addToEventLog(`取消了等待中的${activity.name}活动`)
+        this.addToEventLog(`取消了等待中的${activity.name}活动并返还了资源`)
         return true
       }
       return false

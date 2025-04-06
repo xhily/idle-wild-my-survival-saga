@@ -192,15 +192,26 @@ onUnmounted(() => {
   }
 })
 
-const pendingActivities = computed(() => gameStore.pendingActivities)
+const currentActivities = computed(() =>
+  gameStore.currentActivities.filter(a => {
+    const recipe = recipes.find(r => r.id === a.recipeId)
+    return recipe && ['gathering', 'crafting'].includes(recipe.category)
+  })
+)
+
+const pendingActivities = computed(() =>
+  gameStore.pendingActivities.filter(a => {
+    const recipe = recipes.find(r => r.id === a.recipeId)
+    return recipe && ['gathering', 'crafting'].includes(recipe.category)
+  })
+)
 </script>
 <template>
   <el-scrollbar class="activity-panel">
-    <div class="current-activities" v-if="gameStore.currentActivities.length > 0 || pendingActivities.length > 0">
+    <div class="current-activities" v-if="currentActivities.length > 0 || pendingActivities.length > 0">
       <h4>活动队列</h4>
       <div class="activity-list">
-        <!-- 当前活动 -->
-        <div v-for="activity in gameStore.currentActivities" :key="activity.id" class="activity-card in-progress">
+        <div v-for="activity in currentActivities" :key="activity.id" class="activity-card in-progress">
           <div class="activity-header">
             <div class="activity-name">{{ activity.name }}</div>
             <div class="activity-time">剩余: {{ getActivityRemainingTime(activity) }}</div>
@@ -213,8 +224,6 @@ const pendingActivities = computed(() => gameStore.pendingActivities)
             </el-button>
           </div>
         </div>
-
-        <!-- 等待中的活动 -->
         <div v-for="activity in pendingActivities" :key="activity.id" class="activity-card pending">
           <div class="activity-header">
             <div class="activity-name">{{ activity.name }}</div>

@@ -313,6 +313,14 @@ const startResearchTimer = () => {
   }, 1000)
 }
 
+const clickSelectedTech = (id) => {
+  if (selectedTech.value === id) {
+    selectedTech.value = null
+  } else {
+    selectedTech.value = id
+  }
+}
+
 // 组件挂载时启动定时器
 onMounted(() => {
   startResearchTimer()
@@ -370,32 +378,6 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-      <div class="tech-categories">
-        <h4>可研究科技</h4>
-        <div class="tech-list">
-          <div v-for="tech in availableTechnologies" :key="tech.id" class="tech-card"
-            :class="{ 'selected': selectedTech === tech.id }" @click="selectedTech = tech.id">
-            <div class="tech-name">{{ tech.name }}</div>
-            <div class="tech-description">{{ tech.description }}</div>
-            <div class="tech-cost">需要: {{ getTechCost(tech) }}</div>
-          </div>
-          <div v-if="availableTechnologies.length === 0" class="no-tech-message">
-            当前没有可研究的科技
-          </div>
-        </div>
-        <h4>已研究科技</h4>
-        <div class="tech-list researched">
-          <div v-for="tech in researchedTechnologies" :key="tech.id" class="tech-card researched">
-            <div class="tech-name">{{ tech.name }}</div>
-            <div class="tech-description">{{ tech.description }}</div>
-            <div class="tech-unlocks">解锁: {{ getTechUnlocks(tech) }}</div>
-          </div>
-          <div v-if="researchedTechnologies.length === 0" class="no-tech-message">
-            尚未研究任何科技
-          </div>
-        </div>
-      </div>
-    </div>
     <div v-if="selectedTech" class="tech-details">
       <h4>科技详情</h4>
       <div class="selected-tech">
@@ -418,6 +400,33 @@ onUnmounted(() => {
             :disabled="!canResearch">
             {{ canResearch ? '研究' : '资源不足' }}
           </el-button>
+        </div>
+      </div>
+    </div>
+      <div class="tech-categories">
+        <h4>可研究科技</h4>
+        <div class="tech-list">
+          <div v-for="tech in availableTechnologies" :key="tech.id" class="tech-card"
+            :class="{ 'selected': selectedTech === tech.id }" @click="clickSelectedTech(tech.id)">
+            <div class="tech-name">{{ tech.name }}</div>
+            <div class="tech-description">{{ tech.description }}</div>
+            <div class="tech-cost">需要: {{ getTechCost(tech) }}</div>
+          </div>
+          <div v-if="availableTechnologies.length === 0" class="no-tech-message">
+            当前没有可研究的科技
+          </div>
+        </div>
+        <h4>已研究科技</h4>
+        <div class="tech-list researched">
+          <div v-for="tech in researchedTechnologies" :key="tech.id" class="tech-card researched"
+          :class="{ 'selected': selectedTech === tech.id }" @click="clickSelectedTech(tech.id)">
+            <div class="tech-name">{{ tech.name }}</div>
+            <div class="tech-description">{{ tech.description }}</div>
+            <div class="tech-unlocks">解锁: {{ getTechUnlocks(tech) }}</div>
+          </div>
+          <div v-if="researchedTechnologies.length === 0" class="no-tech-message">
+            尚未研究任何科技
+          </div>
         </div>
       </div>
     </div>
