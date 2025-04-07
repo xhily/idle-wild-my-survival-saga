@@ -407,6 +407,33 @@ const cancelActivity = (activityId) => {
       gameStore.addToEventLog(`开始${nextActivity.name}`)
     }
   }
+  // 检查等待队列
+  const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === activityId)
+  if (pendingIndex !== -1) {
+    const activity = gameStore.pendingActivities[pendingIndex]
+    const recipe = recipes.find(r => r.id === activity.recipeId)
+    // 返还资源
+    if (recipe) {
+      // 返还体力
+      if (recipe.inputs.energy) {
+        let energyAmount = recipe.inputs.energy
+        if (recipe.category === 'gathering' && gameStore.skillTreeEffects.gatheringEnergyCost < 0)
+          energyAmount = Math.floor(energyAmount * (1 + gameStore.skillTreeEffects.gatheringEnergyCost))
+        if (gameStore.skillTreeEffects.energyConsumption < 0)
+          energyAmount = Math.floor(energyAmount * (1 + gameStore.skillTreeEffects.energyConsumption))
+        energyAmount = Math.max(1, energyAmount)
+        gameStore.player.energy = Math.min(gameStore.player.maxEnergy, gameStore.player.energy + energyAmount)
+      }
+      // 返还其他资源
+      for (const [resource, amount] of Object.entries(recipe.inputs)) {
+        if (resource !== 'energy') {
+          gameStore.addResource(resource, amount)
+        }
+      }
+    }
+    gameStore.pendingActivities.splice(pendingIndex, 1)
+    gameStore.addToEventLog(`取消了等待中的${activity.name}活动并返还了资源`)
+  }
 }
 
 // 组件挂载时启动定时器

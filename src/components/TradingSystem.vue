@@ -107,7 +107,6 @@ const sellItem = (item) => {
 // 检查是否可以执行特殊交易
 const canExecuteSpecialTrade = (trade) => {
 	for (const [resource, amount] of Object.entries(trade.inputs)) {
-		console.log(gameStore.resources[resource], amount)
 		if (resource === 'health') {
 			if (gameStore.player.health < amount) return false
 		} else if (resource === 'energy') {

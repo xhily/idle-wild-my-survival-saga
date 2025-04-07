@@ -51,7 +51,7 @@ const buildOrUpgrade = (building) => {
   const currentLevel = getBuildingLevel(building.id)
   const level = currentLevel ? currentLevel + 1 : 1
   // 应用建筑效果
-  gameStore.buildNewBuilding(building.id, level)
+  buildNewBuilding(building.id, level)
 }
 
 // 建造新建筑
