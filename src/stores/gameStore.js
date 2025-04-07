@@ -227,7 +227,7 @@ export const useGameStore = defineStore('game', {
     },
     // 保存游戏
     saveGame() {
-      const filteredState = omit(this.$state, ['eventLog', 'currentActivities', 'pendingActivities'])
+      const filteredState = omit(this.$state, ['eventLog', 'currentActivities', 'researchActivities', 'explorationActivities', 'pendingActivities'])
       const encryptedData = encryptData(filteredState)
       if (encryptedData) {
         try {
