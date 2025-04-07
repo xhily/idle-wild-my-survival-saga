@@ -495,7 +495,10 @@ const startActivityTimer = () => {
 }
 
 const clickSelectedRegion = (id) => {
-  if (selectedRegion.value == id) return
+  if (selectedRegion.value == id) {
+    selectedRegion.value = null
+    return
+  }
   selectedRegion.value = id
 }
 

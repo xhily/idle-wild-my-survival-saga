@@ -843,7 +843,7 @@ export const useGameStore = defineStore('game', {
       } else {
         this.achievements.healthyDays = 0 // 重置连续健康天数
       }
-      if (availableMerchants().length > 0) {
+      if (this.availableMerchants().length > 0) {
         this.addToEventLog(`今天有商人出现`)
       }
       this.addToEventLog(`第${this.gameTime.day}天开始了`)

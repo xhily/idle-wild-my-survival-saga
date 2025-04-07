@@ -366,7 +366,7 @@ initAchievements()
       <el-progress :percentage="achievementProgress"
         :format="() => `${unlockedAchievements.length}/${localAchievements.length}`" :stroke-width="10" />
     </div>
-    <el-tabs type="border-card" class="achievement-tabs">
+    <el-tabs type="border-card">
       <el-tab-pane label="已解锁">
         <div class="achievement-list" v-if="unlockedAchievements.length > 0">
           <div v-for="achievement in unlockedAchievements" :key="achievement.id" class="achievement-item unlocked">
@@ -417,11 +417,6 @@ initAchievements()
 .achievement-header h3 {
   margin-top: 0;
   margin-bottom: 10px;
-}
-
-.achievement-tabs {
-  height: 300px;
-  overflow-y: auto;
 }
 
 .achievement-list {
