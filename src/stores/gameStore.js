@@ -251,6 +251,7 @@ export const useGameStore = defineStore('game', {
             this.$state = decryptData(saveData)
             // 重新初始化建筑效果
             this.initBuildingEffects()
+            this.resetSkillEffects()
             this.addToEventLog('游戏已加载')
             return true
           } catch (error) {
@@ -259,6 +260,32 @@ export const useGameStore = defineStore('game', {
         }
       }
       return false
+    },
+    // 重置错误的技能效果
+    resetSkillEffects() {
+      for (const skillId in this.skillTreeEffects) {
+        if (typeof this.skillTreeEffects[skillId] === 'number') {
+          const skillData = this.findSkillEffectById(skillId)
+          if (skillData) {
+            const { effects, maxLevel } = skillData
+            for (const [effect, value] of Object.entries(effects)) {
+              if (this.skillTreeEffects[value[0]] !== undefined) {
+                if (typeof value[1] === 'number') {
+                  const targetValue = value[1] * maxLevel
+                  // 处理正效果（上限）
+                  if (value[1] > 0 && this.skillTreeEffects[value[0]] > targetValue) {
+                    this.skillTreeEffects[value[0]] = parseFloat(targetValue.toFixed(2))
+                  }
+                  // 处理负效果（下限）
+                  else if (value[1] < 0 && this.skillTreeEffects[value[0]] < targetValue) {
+                    this.skillTreeEffects[value[0]] = parseFloat(targetValue.toFixed(2))
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     // 获取技能名称
     getSkillName(skillId) {
@@ -529,13 +556,31 @@ export const useGameStore = defineStore('game', {
     },
     // 初始化建筑效果（在建造或加载游戏时调用）
     initBuildingEffects() {
+      // 重置资源上限到基础值
+      this.resourceLimits = {
+        food: 50,
+        water: 50,
+        wood: 50,
+        stone: 50,
+        metal: 50,
+        herb: 30,
+        rare_herb: 30,
+        medicine: 20,
+        tools: 10,
+        parts: 10,
+        advanced_parts: 10,
+        electronic_components: 10,
+        crystal: 10,
+        fuel: 20,
+        ancientRelic: 5,
+        techFragment: 5,
+      }
       // 遍历所有建筑应用永久效果
       for (const building of this.buildings) {
         if (!building.effects) continue
         // 应用存储上限效果
         if (building.effects.storageMultiplier) {
           for (const resource in this.resourceLimits) {
-            if (this.resourceLimits[resource] >= 200) continue
             this.resourceLimits[resource] *= building.effects.storageMultiplier
           }
         }
