@@ -91,7 +91,7 @@ const questList = [
     description: '探索周围的区域，寻找有用的资源和信息。',
     difficulty: 3,
     objectives: {
-      explorationCompleted: 3 // 完成3次探索
+      explorationCount: 20 // 完成10次探索
     },
     rewards: {
       exp: 60,
@@ -136,8 +136,7 @@ const questList = [
       advanced_parts: 2
     },
     rewards: {
-      exp: 120,
-      weather_station: 1
+      exp: 120
     },
     timeLimit: 168, // 168小时内完成
     unlockRequirements: {
@@ -179,7 +178,7 @@ const questList = [
     },
     rewards: {
       exp: 150,
-      communication_device: 1
+      techFragment: 1
     },
     timeLimit: 336, // 336小时内完成
     unlockRequirements: {

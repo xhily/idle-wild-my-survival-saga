@@ -1,15 +1,14 @@
-import { computed } from 'vue'
 import { defineStore } from 'pinia'
 import { omit } from 'lodash-es'
 import { encryptData, decryptData } from '../plugins/crypto'
 import { recipes, availableBuildings } from '../plugins/recipes'
 import { skillTree } from '../plugins/skillTree'
+import { merchants } from '../plugins/merchants'
 
 export const useGameStore = defineStore('game', {
   state: () => ({
     // 玩家基本信息
     player: {
-      name: '幸存者',
       level: 1,
       exp: 0,
       expToNextLevel: 100,
@@ -138,6 +137,10 @@ export const useGameStore = defineStore('game', {
     buildings: [],
     // 当前进行中的活动
     currentActivities: [],
+    // 当前进行中的研究
+    researchActivities: [],
+    // 当前进行中的探索
+    explorationActivities: [],
     // 等待中的活动队列
     pendingActivities: [],
     // 游戏时间
@@ -448,7 +451,7 @@ export const useGameStore = defineStore('game', {
         this.player.health = this.player.maxHealth
         this.player.maxEnergy += 5
         this.player.energy = this.player.maxEnergy
-        this.addToEventLog(`升级了！当前等级: ${this.player.level}`)
+        this.addToEventLog(`幸存者增加了！当前幸存者: ${this.player.level}人`)
       }
     },
     // 消耗资源
@@ -504,12 +507,10 @@ export const useGameStore = defineStore('game', {
         duration: activityDuration * 1000,
         completed: false
       }
-      const research = this.currentActivities.some(a => a.recipeId.startsWith('research_'))
-      const explore = this.currentActivities.some(a => a.recipeId.startsWith('explore_'))
       const gathering = this.currentActivities.filter(a => a.recipeId.startsWith('gather_')).length
       const crafting = this.currentActivities.filter(a => a.recipeId.startsWith('craft_')).length
       // 如果没有正在进行的活动，立即开始
-      if ((!research || !explore) && gathering < this.player.level && crafting < this.player.level) {
+      if ((gathering + crafting) < this.player.level) {
         activity.startTime = Date.now()
         this.currentActivities.push(activity)
         this.startActivityTimer(activity)
@@ -814,6 +815,18 @@ export const useGameStore = defineStore('game', {
       // 检查游戏结束条件
       if (this.player.health <= 0) this.gameOver()
     },
+    // 计算当前可用的商人
+    availableMerchants() {
+      const currentDay = this.gameTime.day
+      return merchants.filter(merchant => {
+        // 检查是否达到最小天数要求
+        if (currentDay < merchant.availability.minDay) return false
+        // 计算商人是否在当前日期出现
+        const daysSinceMinDay = currentDay - merchant.availability.minDay
+        const cyclePosition = daysSinceMinDay % merchant.availability.frequency
+        return cyclePosition < merchant.availability.duration
+      })
+    },
     // 每日更新
     dailyUpdate() {
       // 随机事件
@@ -829,6 +842,9 @@ export const useGameStore = defineStore('game', {
         this.achievements.healthyDays += 1
       } else {
         this.achievements.healthyDays = 0 // 重置连续健康天数
+      }
+      if (availableMerchants().length > 0) {
+        this.addToEventLog(`今天有商人出现`)
       }
       this.addToEventLog(`第${this.gameTime.day}天开始了`)
       // 自动保存
@@ -1075,6 +1091,7 @@ export const useGameStore = defineStore('game', {
         electronic_components: '电子元件',
         rare_herb: '稀有草药',
         crystal: '水晶',
+        explorationCount: '探索次数',
       }
       return resourceNames[resourceKey] || resourceKey
     },

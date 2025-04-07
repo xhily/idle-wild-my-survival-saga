@@ -61,25 +61,28 @@ const getSkillName = (key) => {
 
 <template>
 	<div class="player-status">
-		<div class="player-header">
-			<h3>{{ gameStore.player.name }} <span class="player-level">Lv.{{ gameStore.player.level }}</span></h3>
-			<div class="player-exp">
-				<el-progress :percentage="(gameStore.player.exp / gameStore.player.expToNextLevel) * 100"
-					:format="() => `${gameStore.player.exp}/${gameStore.player.expToNextLevel}`" :stroke-width="10"
-					color="#8e44ad" />
+		<div class="stat-item">
+			<div class="stat-label">
+				<span class="stat-icon">👨‍🔧</span>
+				<span>幸存者</span>
+				<span class="stat-value">{{ gameStore.player.level }}人</span>
 			</div>
+			<el-progress :percentage="(gameStore.player.exp / gameStore.player.expToNextLevel) * 100" :show-text="false"
+				:stroke-width="10" color="#8e44ad" />
 		</div>
 		<div class="player-stats">
 			<div class="stat-item">
 				<div class="stat-label">
 					<span class="stat-icon">❤️</span>
 					<span>健康</span>
-					<span class="stat-icon-plus" @click="plusPlayerHealth" v-if="gameStore.player.health !== gameStore.player.maxHealth">
+					<span class="stat-icon-plus" @click="plusPlayerHealth"
+						v-if="gameStore.player.health !== gameStore.player.maxHealth">
 						<el-icon>
 							<Plus />
 						</el-icon>
 					</span>
-					<span class="stat-value">{{ Math.floor(gameStore.player.health) }}/{{ Math.floor(gameStore.player.maxHealth) }}</span>
+					<span class="stat-value">{{ Math.floor(gameStore.player.health) }}/{{ Math.floor(gameStore.player.maxHealth)
+					}}</span>
 				</div>
 				<el-progress :percentage="healthPercentage" :color="healthStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: healthStatus.color }">
@@ -90,7 +93,8 @@ const getSkillName = (key) => {
 				<div class="stat-label">
 					<span class="stat-icon">⚡</span>
 					<span>体力</span>
-					<span class="stat-value">{{ Math.floor(gameStore.player.energy) }}/{{ Math.floor(gameStore.player.maxEnergy) }}</span>
+					<span class="stat-value">{{ Math.floor(gameStore.player.energy) }}/{{ Math.floor(gameStore.player.maxEnergy)
+					}}</span>
 				</div>
 				<el-progress :percentage="energyPercentage" :color="energyStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: energyStatus.color }">
@@ -125,26 +129,6 @@ const getSkillName = (key) => {
 	background-color: var(--el-bg-color-overlay);
 	border-radius: 4px;
 	padding: 15px;
-}
-
-.player-header {
-	margin-bottom: 15px;
-}
-
-.player-header h3 {
-	margin-top: 0;
-	margin-bottom: 10px;
-	display: flex;
-	align-items: center;
-}
-
-.player-level {
-	font-size: 0.8em;
-	background-color: #8e44ad;
-	color: white;
-	padding: 2px 6px;
-	border-radius: 10px;
-	margin-left: 10px;
 }
 
 .player-stats {

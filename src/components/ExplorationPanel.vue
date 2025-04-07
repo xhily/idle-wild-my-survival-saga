@@ -68,7 +68,7 @@ const explorationRegions = computed(() => [
     description: '危险的辐射区域，但可能有高级科技残骸',
     difficulty: 5,
     unlockRequirements: { survival: 5, combat: 4 },
-    resources: ['metal', 'parts', 'techFragment', 'ancientRelic', 'rareElement'],
+    resources: ['metal', 'parts', 'techFragment', 'ancientRelic'],
     dangers: ['radiation', 'storm', 'hostiles', 'thirst'],
     image: '🏜️',
     explorationTime: 480,
@@ -166,8 +166,7 @@ const startExploration = () => {
     region: region.id
   }
   // 如果没有正在进行的探索活动，立即开始
-  const hasActiveExploration = gameStore.currentActivities.some(a => a.recipeId.startsWith('explore_'))
-  if (!hasActiveExploration) {
+  if (gameStore.explorationActivities.length < gameStore.player.level) {
     // 消耗资源
     if (gameStore.skillTreeEffects.energyConsumption < 0) {
       const energyCost = Math.round(region.energyCost * (1 + gameStore.skillTreeEffects.energyConsumption))
@@ -179,7 +178,7 @@ const startExploration = () => {
       gameStore.consumeResource(resource, amount)
     }
     explorationActivity.startTime = Date.now()
-    gameStore.currentActivities.push(explorationActivity)
+    gameStore.explorationActivities.push(explorationActivity)
     gameStore.addToEventLog(`开始探索${region.name}`)
     ElMessage.success(`开始探索${region.name}`)
     // 设置定时器完成探索
@@ -197,9 +196,9 @@ const startExploration = () => {
 // 取消探索活动
 const cancelExploration = (activityId) => {
   // 先检查当前活动
-  const currentIndex = gameStore.currentActivities.findIndex(a => a.id === activityId)
+  const currentIndex = gameStore.explorationActivities.findIndex(a => a.id === activityId)
   if (currentIndex !== -1) {
-    const activity = gameStore.currentActivities[currentIndex]
+    const activity = gameStore.explorationActivities[currentIndex]
     const region = explorationRegions.value.find(r => r.id === activity.region)
     if (region) {
       // 返还资源
@@ -212,7 +211,7 @@ const cancelExploration = (activityId) => {
         gameStore.player.energy + region.energyCost
       )
       // 移除活动
-      gameStore.currentActivities.splice(currentIndex, 1)
+      gameStore.explorationActivities.splice(currentIndex, 1)
       gameStore.addToEventLog(`取消了${region.name}探索并返还了资源`)
       ElMessage.success(`已取消${region.name}探索并返还了资源`)
       // 检查并启动等待队列中的下一个探索活动
@@ -224,7 +223,7 @@ const cancelExploration = (activityId) => {
           const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextExploration.id)
           if (pendingIndex !== -1) gameStore.pendingActivities.splice(pendingIndex, 1)
           nextExploration.startTime = Date.now()
-          gameStore.currentActivities.push(nextExploration)
+          gameStore.explorationActivities.push(nextExploration)
           gameStore.addToEventLog(`开始探索${nextRegion.name}`)
           ElMessage.success(`开始探索${nextRegion.name}`)
         }
@@ -247,9 +246,9 @@ const cancelExploration = (activityId) => {
 // 完成探索
 const completeExploration = (activityId, region) => {
   // 从当前活动中移除
-  const activityIndex = gameStore.currentActivities.findIndex(a => a.id === activityId)
+  const activityIndex = gameStore.explorationActivities.findIndex(a => a.id === activityId)
   if (activityIndex === -1) return
-  gameStore.currentActivities.splice(activityIndex, 1)
+  gameStore.explorationActivities.splice(activityIndex, 1)
   // 生成探索结果
   generateExplorationResults(region)
   // 增加相关技能经验
@@ -270,7 +269,7 @@ const completeExploration = (activityId, region) => {
       const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextExploration.id)
       if (pendingIndex !== -1) gameStore.pendingActivities.splice(pendingIndex, 1)
       nextExploration.startTime = Date.now()
-      gameStore.currentActivities.push(nextExploration)
+      gameStore.explorationActivities.push(nextExploration)
       gameStore.addToEventLog(`开始探索${nextRegion.name}`)
       ElMessage.success(`开始探索${nextRegion.name}`)
       // 设置定时器
@@ -292,7 +291,7 @@ const generateExplorationResults = (region) => {
     // 根据资源稀有度调整发现概率
     let resourceChance = discoveryChance
     // 稀有资源发现率降低
-    if (['techFragment', 'ancientRelic', 'rareElement'].includes(resource)) resourceChance *= 0.3
+    if (['techFragment', 'ancientRelic'].includes(resource)) resourceChance *= 0.3
     if (Math.random() < resourceChance) {
       // 确定资源数量，基于难度和随机因素
       const baseAmount = region.difficulty * 2
@@ -453,7 +452,7 @@ const activityTimerId = ref(null)
 
 // 更新所有进行中活动的进度和时间
 const updateActivitiesStatus = () => {
-  gameStore.currentActivities.forEach(activity => {
+  gameStore.explorationActivities.forEach(activity => {
     const now = Date.now()
     const elapsed = now - activity.startTime
     const progress = Math.min(100, (elapsed / activity.duration) * 100)
@@ -491,8 +490,13 @@ const startActivityTimer = () => {
   if (activityTimerId.value) return
   // 每秒更新一次活动状态
   activityTimerId.value = setInterval(() => {
-    if (gameStore.gameState === 'playing' && gameStore.currentActivities.length > 0) updateActivitiesStatus()
+    if (gameStore.gameState === 'playing' && gameStore.explorationActivities.length > 0) updateActivitiesStatus()
   }, 1000)
+}
+
+const clickSelectedRegion = (id) => {
+  if (selectedRegion.value == id) return
+  selectedRegion.value = id
 }
 
 // 组件挂载时启动定时器
@@ -515,10 +519,10 @@ onUnmounted(() => {
       </el-alert>
     </div>
     <div class="current-explorations"
-      v-if="gameStore.currentActivities.some(a => a.recipeId.startsWith('explore_')) || gameStore.pendingActivities.some(a => a.recipeId.startsWith('explore_'))">
+      v-if="gameStore.explorationActivities.some(a => a.recipeId.startsWith('explore_')) || gameStore.pendingActivities.some(a => a.recipeId.startsWith('explore_'))">
       <h4>探索队列</h4>
       <div class="exploration-list">
-        <div v-for="activity in gameStore.currentActivities.filter(a => a.recipeId.startsWith('explore_'))"
+        <div v-for="activity in gameStore.explorationActivities.filter(a => a.recipeId.startsWith('explore_'))"
           :key="activity.id" class="exploration-card in-progress">
           <div class="exploration-header">
             <div class="exploration-name">{{ activity.name }}</div>
@@ -550,7 +554,7 @@ onUnmounted(() => {
       <h4>可探索区域</h4>
       <div class="region-list">
         <div v-for="region in availableRegions" :key="region.id" class="region-card"
-          :class="{ 'selected': selectedRegion === region.id }" @click="selectedRegion = region.id">
+          :class="{ 'selected': selectedRegion === region.id }" @click="clickSelectedRegion(region.id)">
           <div class="region-header">
             <div class="region-icon">{{ region.image }}</div>
             <div class="region-name">{{ region.name }}</div>
@@ -568,16 +572,16 @@ onUnmounted(() => {
               需要: {{ getResourceCostText(region) }}
             </div>
           </div>
+          <div v-if="selectedRegion === region.id" class="exploration-actions">
+            <el-button type="primary" @click="startExploration" :disabled="!canExplore">
+              {{ canExplore ? '开始探索' : '资源不足' }}
+            </el-button>
+          </div>
         </div>
         <div v-if="availableRegions.length === 0" class="no-regions-message">
           当前没有可探索的区域，提升你的生存和战斗技能以解锁更多区域
         </div>
       </div>
-    </div>
-    <div v-if="selectedRegion" class="exploration-actions">
-      <el-button type="primary" @click="startExploration" :disabled="!canExplore">
-        {{ canExplore ? '开始探索' : '资源不足' }}
-      </el-button>
     </div>
   </el-scrollbar>
 </template>

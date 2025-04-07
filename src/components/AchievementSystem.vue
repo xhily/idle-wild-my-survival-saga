@@ -322,7 +322,7 @@ const unlockAchievement = (achievement) => {
     gameStore.player.exp -= gameStore.player.expToNextLevel
     gameStore.player.level += 1
     gameStore.player.expToNextLevel = Math.floor(gameStore.player.expToNextLevel * 1.5)
-    gameStore.addToEventLog(`你升级了！当前等级: ${gameStore.player.level}`)
+    gameStore.addToEventLog(`幸存者增加了！当前幸存者: ${gameStore.player.level}人`)
   }
   // 可以添加其他类型的奖励
 
