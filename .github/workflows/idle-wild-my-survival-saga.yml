@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write  # 必须添加这个权限
+      packages: write
 
     steps:
       - name: 检查代码
