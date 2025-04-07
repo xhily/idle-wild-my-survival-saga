@@ -26,11 +26,23 @@
 - Vite 团队提供了高效的构建工具
 - Pinia 团队提供了简洁的状态管理方案
 
-## 安装运行
+## 安装项目
 ```bash
 npm install
+```
+
+## 运行项目
+```bash
 npm run dev
 ```
+
+## 编译项目
+```bash
+npm run build
+```
+
+## Docker 部署
+Dockerfile 已提供，可用于快速构建镜像并部署。
 
 ## 版权声明
 知识共享署名-非商业性使用 4.0 国际许可协议
