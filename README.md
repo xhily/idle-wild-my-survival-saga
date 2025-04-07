@@ -54,7 +54,7 @@ docker pull ghcr.io/setube/idle-wild-my-survival-saga:latest
 ```
 ### 运行容器
 ```bash
-docker run -d -p 8080:80 --name idle-wild-my-survival-saga ghcr.io/setube/idle-wild-my-survival-saga:latest
+docker run -d -p 2543:80 --name idle-wild-my-survival-saga ghcr.io/setube/idle-wild-my-survival-saga:latest
 ```
 
 
