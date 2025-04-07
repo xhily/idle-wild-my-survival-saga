@@ -163,7 +163,6 @@ const currentSeason = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  width: 200px;
 }
 
 .season-header {

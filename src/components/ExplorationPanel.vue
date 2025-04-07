@@ -151,17 +151,17 @@ const startExploration = () => {
   if (!selectedRegion.value || !canExplore.value) return
   const region = explorationRegions.value.find(r => r.id === selectedRegion.value)
   // 计算活动持续时间
-  let activityDuration = region.explorationTime
+  let duration = region.explorationTime
   if (gameStore.skillTreeEffects.gatheringEfficiency > 0) {
-    activityDuration = region.explorationTime * gameStore.skillTreeEffects.gatheringEfficiency
+    duration = region.explorationTime * gameStore.skillTreeEffects.gatheringEfficiency
   }
-  activityDuration = Math.max(1, activityDuration)
+  duration = Math.max(1, duration) * 1000
   // 创建探索活动
   const explorationActivity = {
     id: `explore_${region.id}_${Date.now()}`,
     recipeId: `explore_${region.id}`,
     name: `探索${region.name}`,
-    duration: activityDuration * 1000, // 转换为毫秒
+    duration, // 转换为毫秒
     completed: false,
     region: region.id
   }
@@ -183,7 +183,7 @@ const startExploration = () => {
     gameStore.addToEventLog(`开始探索${region.name}`)
     ElMessage.success(`开始探索${region.name}`)
     // 设置定时器完成探索
-    setTimeout(() => completeExploration(explorationActivity.id, region), region.explorationTime * 1000)
+    setTimeout(() => completeExploration(explorationActivity.id, region), duration)
   } else {
     // 否则加入等待队列
     gameStore.pendingActivities.push(explorationActivity)
@@ -332,8 +332,7 @@ const handleDangerEvent = (danger, region) => {
       break
     case 'storm':
       gameStore.player.energy -= 10
-      gameStore.player.mental -= 5
-      gameStore.addToEventLog(`你在${region.name}遭遇了风暴，消耗了额外的体力和精神`)
+      gameStore.addToEventLog(`你在${region.name}遭遇了风暴，消耗了额外的体力`)
       break
     case 'rockslide':
       if (Math.random() < 0.5) {
@@ -372,7 +371,7 @@ const handleDangerEvent = (danger, region) => {
       break
     case 'creatures':
       if (Math.random() < 0.7) {
-        gameStore.player.mental -= 10
+        gameStore.player.health -= 10
         gameStore.addToEventLog(`你在${region.name}遇到了奇怪的生物，感到恐惧`)
       } else {
         gameStore.addToEventLog(`你在${region.name}发现了奇怪的生物，但它们似乎对你不感兴趣`)

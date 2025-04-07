@@ -116,9 +116,9 @@ const showActiveEffects = () => {
   const effectCategories = {
     '采集效果': ['gatheringEfficiency', 'gatheringEnergyCost', 'rareHerbChance', 'gatheringYield'],
     '制作效果': ['craftingSpeed', 'resourceSaving', 'extraCraftingOutput', 'toolDurability', 'craftingQuality', 'unlockAdvancedRecipes'],
-    '生存效果': ['foodConsumption', 'waterConsumption', 'weatherResistance', 'energyConsumption', 'healthRecovery', 'mentalRecovery', 'allSurvivalStats'],
+    '生存效果': ['foodConsumption', 'waterConsumption', 'weatherResistance', 'energyConsumption', 'healthRecovery', 'allSurvivalStats'],
     '研究效果': ['researchSpeed', 'techFragmentYield', 'researchResourceSaving', 'unlockAdvancedTech', 'allResearchBonus', 'breakthroughChance'],
-    '其他效果': ['maxHealth', 'maxMental', 'maxEnergy']
+    '其他效果': ['maxHealth', 'maxEnergy']
   }
   // 遍历所有效果类别
   for (const [category, effects] of Object.entries(effectCategories)) {
@@ -178,7 +178,6 @@ const formatEffectName = (effect) => {
     weatherResistance: '天气抵抗',
     energyConsumption: '体力消耗',
     healthRecovery: '健康恢复',
-    mentalRecovery: '精神恢复',
     allSurvivalStats: '所有生存属性',
     // 研究效果
     researchSpeed: '研究速度',
@@ -189,7 +188,6 @@ const formatEffectName = (effect) => {
     breakthroughChance: '突破性发现几率',
     // 其他效果
     maxHealth: '最大健康',
-    maxMental: '最大精神',
     maxEnergy: '最大体力'
   }
   return effectNames[effect] || effect

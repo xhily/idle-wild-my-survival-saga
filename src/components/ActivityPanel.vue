@@ -27,13 +27,6 @@ const craftingActivities = computed(() => {
   )
 })
 
-const explorationActivities = computed(() => {
-  return recipes.filter(recipe =>
-    recipe.id.startsWith('explore_') &&
-    meetsSkillRequirements(recipe)
-  )
-})
-
 // 检查是否满足技能要求
 const meetsSkillRequirements = (recipe) => {
   if (!recipe.skillRequired) return true

@@ -200,8 +200,7 @@ const questList = [
     rewards: {
       exp: 200,
       maxHealth: 20,
-      maxEnergy: 20,
-      maxMental: 20
+      maxEnergy: 20
     },
     timeLimit: null,
     unlockRequirements: {

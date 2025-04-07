@@ -87,7 +87,6 @@ const getBuildingEffectsText = (building) => {
 const formatEffectText = (effect, value) => {
   const effectTexts = {
     energyRecovery: `体力恢复 +${value}/小时`,
-    mentalRecovery: `精神恢复 +${value}/小时`,
     maxHealth: `健康上限 +${value}`,
     storageMultiplier: `存储上限 x${value}`,
     craftingEfficiency: `制作效率 x${value}`,

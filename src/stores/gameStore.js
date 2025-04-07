@@ -17,8 +17,6 @@ export const useGameStore = defineStore('game', {
       maxHealth: 100,
       energy: 100,
       maxEnergy: 100,
-      mental: 100,
-      maxMental: 100,
       // 生存天数
       days: 0,
       // 探索次数
@@ -44,7 +42,6 @@ export const useGameStore = defineStore('game', {
       weatherResistance: 0,
       energyConsumption: 0,
       healthRecovery: 0,
-      mentalRecovery: 0,
       allSurvivalStats: 0,
       // 研究效果
       researchSpeed: 0,
@@ -72,8 +69,7 @@ export const useGameStore = defineStore('game', {
         foodGrowthRate: 1.0,
         herbGrowthRate: 1.0,
         energyConsumption: 1.0,
-        waterConsumption: 1.0,
-        mentalRecovery: 1.0
+        waterConsumption: 1.0
       }
     },
     // 天气系统
@@ -430,11 +426,6 @@ export const useGameStore = defineStore('game', {
             this.player.maxEnergy += amount
             this.player.energy += amount
             break
-          case 'maxMental':
-            // 增加最大精神
-            this.player.maxMental += amount
-            this.player.mental += amount
-            break
           default:
             // 如果是资源类型的奖励
             if (this.resources.hasOwnProperty(rewardType)) this.addResource(rewardType, amount)
@@ -454,8 +445,6 @@ export const useGameStore = defineStore('game', {
         this.player.health = this.player.maxHealth
         this.player.maxEnergy += 5
         this.player.energy = this.player.maxEnergy
-        this.player.maxMental += 5
-        this.player.mental = this.player.maxMental
         this.addToEventLog(`升级了！当前等级: ${this.player.level}`)
       }
     },
@@ -491,7 +480,7 @@ export const useGameStore = defineStore('game', {
           this.player.energy -= energyAmount
         } else {
           if (!this.consumeResource(resource, amount)) {
-            this.addToEventLog(`资源不足: ${resource}`)
+            this.addToEventLog(`资源不足: ${this.getResourceName(resource)}`)
             return false
           }
         }
@@ -514,10 +503,10 @@ export const useGameStore = defineStore('game', {
       }
       const research = this.currentActivities.some(a => a.recipeId.startsWith('research_'))
       const explore = this.currentActivities.some(a => a.recipeId.startsWith('explore_'))
-      const gathering = this.currentActivities.some(a => a.recipeId.startsWith('gather_'))
-      const crafting = this.currentActivities.some(a => a.recipeId.startsWith('craft_'))
+      const gathering = this.currentActivities.filter(a => a.recipeId.startsWith('gather_')).length
+      const crafting = this.currentActivities.filter(a => a.recipeId.startsWith('craft_')).length
       // 如果没有正在进行的活动，立即开始
-      if ((!research || !explore) && !gathering && !crafting) {
+      if ((!research || !explore) && gathering < this.player.level && crafting < this.player.level) {
         activity.startTime = Date.now()
         this.currentActivities.push(activity)
         this.startActivityTimer(activity)
@@ -711,11 +700,6 @@ export const useGameStore = defineStore('game', {
               }
               this.addToEventLog('你的生存技能提高，可以储存更多资源了！')
               break
-            case 'research':
-              this.player.maxMental += 5
-              this.player.mental += 5
-              this.addToEventLog('你的研究技能提高，增加了最大精神！')
-              break
           }
         }
       }
@@ -759,17 +743,11 @@ export const useGameStore = defineStore('game', {
     },
     // 应用技能效果到生存属性
     applySurvivalSkillEffects() {
-      // 应用最大健康和精神加成
+      // 应用最大健康加成
       if (this.skillTreeEffects.maxHealth > 0) {
         const healthBonus = Math.floor(this.player.maxHealth * this.skillTreeEffects.maxHealth)
         this.player.maxHealth += healthBonus
       }
-      if (this.skillTreeEffects.maxMental > 0) {
-        const mentalBonus = Math.floor(this.player.maxMental * this.skillTreeEffects.maxMental)
-        this.player.maxMental += mentalBonus
-      }
-      // 应用恢复速度加成
-      // 这些效果会在游戏循环中使用
     },
     // 推进游戏时间
     advanceTime(minutes) {
@@ -813,14 +791,10 @@ export const useGameStore = defineStore('game', {
       if (this.weather.current === 'hot' || this.weather.current === 'cold') baseEnergyRecovery *= 0.8 // 极端天气减少体力恢复
       // 应用基础体力恢复
       this.player.energy = Math.min(this.player.energy + baseEnergyRecovery, this.player.maxEnergy)
-      // 应用技能中的健康和精神恢复效果
+      // 应用技能中的健康恢复效果
       if (this.skillTreeEffects.healthRecovery > 0) {
         const healthRecovery = Math.floor(this.player.maxHealth * 0.01 * this.skillTreeEffects.healthRecovery)
         this.player.health = Math.min(this.player.health + healthRecovery, this.player.maxHealth)
-      }
-      if (this.skillTreeEffects.mentalRecovery > 0) {
-        const mentalRecovery = Math.floor(this.player.maxMental * 0.01 * this.skillTreeEffects.mentalRecovery)
-        this.player.mental = Math.min(this.player.mental + mentalRecovery, this.player.maxMental)
       }
       // 检查资源状态并影响健康
       if (this.resources.food <= 0 || this.resources.water <= 0) {
@@ -881,7 +855,7 @@ export const useGameStore = defineStore('game', {
       // 检查并消耗资源
       for (const [resource, amount] of Object.entries(levelConfig.cost)) {
         if (!this.consumeResource(resource, amount)) {
-          this.addToEventLog(`资源不足: ${resource}`)
+          this.addToEventLog(`资源不足: ${this.getResourceName(resource)}`)
           return false
         }
       }
@@ -974,9 +948,9 @@ export const useGameStore = defineStore('game', {
             this.consumeResource('food', 1)
             this.addToEventLog('冬季寒冷导致额外的食物消耗')
           }
-          // 冬季精神状态可能下降
-          if (Math.random() < 0.2 && this.player.mental > 10) {
-            this.player.mental -= 2
+          // 冬季健康状态可能下降
+          if (Math.random() < 0.2 && this.player.health > 10) {
+            this.player.health -= 2
             this.addToEventLog('漫长的冬季让你感到有些压抑')
           }
           break
@@ -991,29 +965,25 @@ export const useGameStore = defineStore('game', {
           foodGrowthRate: 1.2,
           herbGrowthRate: 1.3,
           energyConsumption: 0.9,
-          waterConsumption: 1.0,
-          mentalRecovery: 1.1
+          waterConsumption: 1.0
         },
         summer: {
           foodGrowthRate: 1.0,
           herbGrowthRate: 0.8,
           energyConsumption: 1.2,
-          waterConsumption: 1.3,
-          mentalRecovery: 0.9
+          waterConsumption: 1.3
         },
         autumn: {
           foodGrowthRate: 1.4,
           herbGrowthRate: 0.7,
           energyConsumption: 1.0,
-          waterConsumption: 0.9,
-          mentalRecovery: 1.0
+          waterConsumption: 0.9
         },
         winter: {
           foodGrowthRate: 0.6,
           herbGrowthRate: 0.4,
           energyConsumption: 1.3,
-          waterConsumption: 0.8,
-          mentalRecovery: 0.8
+          waterConsumption: 0.8
         }
       }
       this.season.effects = seasonEffects[seasonKey]
@@ -1070,10 +1040,8 @@ export const useGameStore = defineStore('game', {
     getResourceName(resourceKey) {
       const resourceNames = {
         exp: '幸存者经验',
-        maxMental: '最大精神',
         maxHealth: '最大健康',
         maxEnergy: '最大体力',
-        mental: '精神',
         health: '健康',
         energy: '体力',
         food: '食物',
@@ -1355,11 +1323,10 @@ export const useGameStore = defineStore('game', {
             const hasShelter = this.buildings.some(b => b.id === 'shelter' && b.level >= 1)
             if (hasShelter) {
               this.addToEventLog('风暴肆虐，但你的庇护所提供了保护。')
-              this.player.mental -= 5 // 仍有轻微影响
+              this.player.health -= 5 // 仍有轻微影响
             } else {
-              this.addToEventLog('风暴肆虐，你的健康和精神都受到了严重影响！')
+              this.addToEventLog('风暴肆虐，你的健康都受到了严重影响！')
               this.player.health -= 10
-              this.player.mental -= 15
               // 随机损失资源
               const resources = ['food', 'water', 'wood', 'herb']
               for (let i = 0; i < 2; i++) {
@@ -1450,8 +1417,6 @@ export const useGameStore = defineStore('game', {
         if (building.effects.maxHealth) this.player.maxHealth += building.effects.maxHealth
         // 应用最大体力效果
         if (building.effects.maxEnergy) this.player.maxEnergy += building.effects.maxEnergy
-        // 应用最大精神效果
-        if (building.effects.maxMental) this.player.maxMental += building.effects.maxMental
       }
     },
     // 重置资源上限到基础值
@@ -1519,11 +1484,6 @@ export const useGameStore = defineStore('game', {
           const recovery = building.effects.energyRecovery * seasonMultiplier.energy
           this.player.energy = Math.min(this.player.energy + recovery, this.player.maxEnergy)
         }
-        // 应用精神恢复效果（考虑季节影响）
-        if (building.effects.mentalRecovery) {
-          const recovery = building.effects.mentalRecovery * seasonMultiplier.mental
-          this.player.mental = Math.min(this.player.mental + recovery, this.player.maxMental)
-        }
         // 应用健康恢复效果
         if (building.effects.healthRecovery) {
           const recovery = building.effects.healthRecovery * seasonMultiplier.health
@@ -1539,13 +1499,13 @@ export const useGameStore = defineStore('game', {
       // 季节对建筑效果的影响
       const seasonMultipliers = [
         // 春季 - 适中
-        { energy: 1.1, mental: 1.2, health: 1.1, production: 1.2 },
+        { energy: 1.1, health: 1.1, production: 1.2 },
         // 夏季 - 体力消耗高，生产高
-        { energy: 0.9, mental: 1.0, health: 1.0, production: 1.3 },
+        { energy: 0.9, health: 1.0, production: 1.3 },
         // 秋季 - 生产最高
-        { energy: 1.0, mental: 0.9, health: 1.0, production: 1.4 },
+        { energy: 1.0, health: 1.0, production: 1.4 },
         // 冬季 - 各方面都受限
-        { energy: 0.8, mental: 0.7, health: 0.9, production: 0.7 }
+        { energy: 0.8, health: 0.9, production: 0.7 }
       ]
       return seasonMultipliers[seasonIndex]
     },
@@ -1601,11 +1561,10 @@ export const useGameStore = defineStore('game', {
             const hasShelter = this.buildings.some(b => b.id === 'shelter' && b.level >= 1)
             if (hasShelter) {
               this.addToEventLog('一场暴风雨来袭，但你的庇护所提供了良好的保护')
-              this.player.mental -= 5 // 仍有轻微影响
+              this.player.health -= 5 // 仍有轻微影响
             } else {
-              this.addToEventLog('一场暴风雨来袭，你被淋得浑身湿透，精神和健康都受到了影响')
+              this.addToEventLog('一场暴风雨来袭，你被淋得浑身湿透，健康都受到了影响')
               this.player.health -= 10
-              this.player.mental -= 15
             }
           },
           weight: 5,

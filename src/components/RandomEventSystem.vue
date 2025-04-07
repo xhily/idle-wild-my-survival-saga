@@ -159,9 +159,9 @@ const eventLibrary = [
               return '旅行者感谢你的帮助，给了你1个科技碎片'
             },
             () => {
-              store.player.mental += 10
-              store.addToEventLog('旅行者感谢你的帮助，分享了一些有趣的故事，提升了你的精神状态')
-              return '旅行者感谢你的帮助，分享了一些有趣的故事，提升了你的精神状态'
+              store.player.exp += 10
+              store.addToEventLog('旅行者感谢你的帮助，分享了一些有趣的故事，你获得了许多经验')
+              return '旅行者感谢你的帮助，分享了一些有趣的故事，你获得了许多经验'
             }
           ]
           return rewards[Math.floor(Math.random() * rewards.length)]()
@@ -170,7 +170,7 @@ const eventLibrary = [
       {
         text: '无视他',
         effect: (store) => {
-          store.player.mental -= 5
+          store.player.health -= 5
           store.addToEventLog('你选择无视旅行者，这让你感到有些内疚')
           return '你选择无视旅行者，这让你感到有些内疚'
         }
@@ -268,8 +268,6 @@ const eventLibrary = [
           } else {
             const healthLoss = Math.floor(Math.random() * 10) + 10
             store.player.health -= healthLoss
-            store.player.mental -= 15
-
             // 随机损失资源
             const resources = ['food', 'water', 'wood', 'herb']
             resources.forEach(res => {
@@ -292,11 +290,8 @@ const eventLibrary = [
         effect: (store) => {
           store.consumeResource('wood', 5)
           store.consumeResource('stone', 3)
-
           const healthLoss = Math.floor(Math.random() * 5) + 5
           store.player.health -= healthLoss
-          store.player.mental -= 10
-
           // 减少资源损失
           const resources = ['food', 'water']
           resources.forEach(res => {
@@ -337,7 +332,7 @@ const eventLibrary = [
         text: '询问世界秘密',
         effect: (store) => {
           store.addResource('techFragment', 3)
-          store.player.mental += 10
+          store.player.health += 10
           store.addToEventLog('神秘来客向你透露了一些世界的秘密，并给了你一些科技碎片')
           return '神秘来客向你透露了一些世界的秘密，并给了你一些科技碎片'
         }
@@ -419,7 +414,6 @@ const selectOption = async (option) => {
   // 确保玩家属性不会低于0
   gameStore.player.health = Math.max(0, gameStore.player.health)
   gameStore.player.energy = Math.max(0, gameStore.player.energy)
-  gameStore.player.mental = Math.max(0, gameStore.player.mental)
   // 关闭事件面板
   showEventPanel.value = false
   // 显示结果

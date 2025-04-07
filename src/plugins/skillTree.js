@@ -144,20 +144,20 @@ export const skillTree = {
       {
         id: 'natural_healing',
         name: '自然恢复',
-        description: '健康和精神状态的自然恢复速度提高20%',
+        description: '健康的自然恢复速度提高20%',
         level: 0,
         maxLevel: 2,
-        effects: { healthRecovery: 0.2, mentalRecovery: 0.2 },
+        effects: { healthRecovery: 0.2 },
         cost: { exp: 50 },
         requires: { survival: 4, skills: { efficient_metabolism: 2 } }
       },
       {
         id: 'survival_expert',
         name: '生存专家',
-        description: '最大健康和精神增加15%，所有生存属性提升',
+        description: '最大健康和增加15%，所有生存属性提升',
         level: 0,
         maxLevel: 1,
-        effects: { maxHealth: 0.15, maxMental: 0.15, allSurvivalStats: 0.1 },
+        effects: { maxHealth: 0.15, allSurvivalStats: 0.1 },
         cost: { exp: 100 },
         requires: { survival: 5, skills: { weather_adaptation: 1, energy_conservation: 1 } }
       }

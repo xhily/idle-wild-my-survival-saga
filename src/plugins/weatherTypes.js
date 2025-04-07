@@ -13,8 +13,7 @@ export const weatherTypes = {
       energyConsumption: 1.0,
       waterConsumption: 1.1,
       foodConsumption: 1.0,
-      explorationEfficiency: 1.1,
-      mentalRecovery: 1.1,
+      explorationEfficiency: 1.1
     },
     seasonModifiers: {
       spring: 1.0,
@@ -36,8 +35,7 @@ export const weatherTypes = {
       energyConsumption: 1.0,
       waterConsumption: 0.9,
       foodConsumption: 1.0,
-      explorationEfficiency: 1.0,
-      mentalRecovery: 0.9,
+      explorationEfficiency: 1.0
     },
     seasonModifiers: {
       spring: 1.2,
@@ -59,8 +57,7 @@ export const weatherTypes = {
       energyConsumption: 1.2,
       waterConsumption: 0.7,
       foodConsumption: 1.1,
-      explorationEfficiency: 0.7,
-      mentalRecovery: 0.8,
+      explorationEfficiency: 0.7
     },
     seasonModifiers: {
       spring: 1.5,
@@ -83,8 +80,7 @@ export const weatherTypes = {
       energyConsumption: 1.1,
       waterConsumption: 1.0,
       foodConsumption: 1.0,
-      explorationEfficiency: 0.5,
-      mentalRecovery: 0.7,
+      explorationEfficiency: 0.5
     },
     seasonModifiers: {
       spring: 1.2,
@@ -106,8 +102,7 @@ export const weatherTypes = {
       energyConsumption: 1.3,
       waterConsumption: 1.2,
       foodConsumption: 1.1,
-      explorationEfficiency: 0.7,
-      mentalRecovery: 0.8,
+      explorationEfficiency: 0.7
     },
     seasonModifiers: {
       spring: 1.3,
@@ -129,8 +124,7 @@ export const weatherTypes = {
       energyConsumption: 1.5,
       waterConsumption: 0.5,
       foodConsumption: 1.2,
-      explorationEfficiency: 0.3,
-      mentalRecovery: 0.6,
+      explorationEfficiency: 0.3
     },
     seasonModifiers: {
       spring: 1.0,
@@ -167,8 +161,7 @@ export const weatherTypes = {
       energyConsumption: 1.4,
       waterConsumption: 1.8,
       foodConsumption: 1.1,
-      explorationEfficiency: 0.6,
-      mentalRecovery: 0.7,
+      explorationEfficiency: 0.6
     },
     seasonModifiers: {
       spring: 0.2,
@@ -207,8 +200,7 @@ export const weatherTypes = {
       energyConsumption: 1.7,
       waterConsumption: 0.8,
       foodConsumption: 1.5,
-      explorationEfficiency: 0.2,
-      mentalRecovery: 0.5,
+      explorationEfficiency: 0.2
     },
     seasonModifiers: {
       spring: 0.1,
@@ -222,21 +214,11 @@ export const weatherTypes = {
         name: '低温症',
         probability: 0.15,
         effect: (store) => {
-          // 如果没有足够的燃料，会损失健康和精神
+          // 如果没有足够的燃料，会损失健康
           if (store.resources.fuel < 3) {
             const healthDamage = Math.floor(Math.random() * 8) + 5
-            const mentalDamage = Math.floor(Math.random() * 10) + 10
-            store.player.health = Math.max(
-              1,
-              store.player.health - healthDamage
-            )
-            store.player.mental = Math.max(
-              1,
-              store.player.mental - mentalDamage
-            )
-            store.addToEventLog(
-              `暴风雪中你因缺乏燃料而患上低温症，损失了${healthDamage}点健康和${mentalDamage}点精神！`
-            )
+            store.player.health = Math.max(1, store.player.health - healthDamage)
+            store.addToEventLog(`暴风雪中你因缺乏燃料而患上低温症，损失了${healthDamage}点健康！`)
           }
         },
       },
@@ -255,8 +237,7 @@ export const weatherTypes = {
       energyConsumption: 1.6,
       waterConsumption: 1.5,
       foodConsumption: 1.2,
-      explorationEfficiency: 0.3,
-      mentalRecovery: 0.6,
+      explorationEfficiency: 0.3
     },
     seasonModifiers: {
       spring: 0.5,
@@ -290,7 +271,7 @@ export const weatherTypes = {
   auroral: {
     name: '极光',
     icon: '🌌',
-    description: '天空中出现绚丽的极光，精神焕发',
+    description: '天空中出现绚丽的极光',
     color: '#9370db',
     probability: 0.03,
     animation: 'weather-aurora',
@@ -300,8 +281,7 @@ export const weatherTypes = {
       energyConsumption: 0.9,
       waterConsumption: 1.0,
       foodConsumption: 0.9,
-      explorationEfficiency: 1.2,
-      mentalRecovery: 1.5,
+      explorationEfficiency: 1.2
     },
     seasonModifiers: {
       spring: 0.2,
@@ -315,17 +295,10 @@ export const weatherTypes = {
         name: '灵感迸发',
         probability: 0.3,
         effect: (store) => {
-          // 获得额外的经验和精神恢复
+          // 获得额外的经验
           const expGain = Math.floor(Math.random() * 15) + 10
-          const mentalGain = Math.floor(Math.random() * 20) + 15
           store.addExperience(expGain)
-          store.player.mental = Math.min(
-            store.player.maxMental,
-            store.player.mental + mentalGain
-          )
-          store.addToEventLog(
-            `极光的美景给你带来灵感，获得了${expGain}点经验和${mentalGain}点精神恢复！`
-          )
+          store.addToEventLog(`极光的美景给你带来灵感，获得了${expGain}点经验！`)
         },
       },
     ],
@@ -343,8 +316,7 @@ export const weatherTypes = {
       energyConsumption: 0.8,
       waterConsumption: 0.9,
       foodConsumption: 0.9,
-      explorationEfficiency: 1.3,
-      mentalRecovery: 1.4,
+      explorationEfficiency: 1.3
     },
     seasonModifiers: {
       spring: 1.5,

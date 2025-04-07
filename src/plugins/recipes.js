@@ -186,38 +186,7 @@ export const technologies = [
 		unlocks: ['medicine_brewing'],
 		researchTime: 600,
 		requirements: ['water_collection']
-	},
-	// 高级科技
-	{
-		id: 'metallurgy',
-		name: '冶金技术',
-		description: '学习金属冶炼和加工',
-		researched: false,
-		cost: { techFragment: 3, metal: 10, fuel: 5 },
-		unlocks: ['advanced_construction'],
-		researchTime: 3000,
-		requirements: ['advanced_crafting']
-	},
-	{
-		id: 'advanced_tools',
-		name: '高级工具',
-		description: '制作精密工具',
-		researched: false,
-		cost: { techFragment: 3, metal: 15, tools: 2 },
-		unlocks: ['mechanical_devices'],
-		researchTime: 3000,
-		requirements: ['tool_making']
-	},
-	{
-		id: 'medicine_brewing',
-		name: '药剂酿造',
-		description: '制作治疗药剂',
-		researched: false,
-		cost: { techFragment: 3, herb: 15, water: 10 },
-		unlocks: ['advanced_medicine'],
-		researchTime: 3000,
-		requirements: ['water_purification']
-	},
+	}
 ]
 
 export const availableBuildings = [
@@ -235,13 +204,13 @@ export const availableBuildings = [
 			{
 				level: 2,
 				cost: { wood: 20, stone: 15, metal: 5 },
-				effects: { energyRecovery: 2, mentalRecovery: 1 },
+				effects: { energyRecovery: 2 },
 				requirements: { survival: 2, crafting: 1 }
 			},
 			{
 				level: 3,
 				cost: { wood: 40, stone: 30, metal: 15, tools: 2 },
-				effects: { energyRecovery: 3, mentalRecovery: 2, maxHealth: 10 },
+				effects: { energyRecovery: 3, maxHealth: 10 },
 				requirements: { survival: 3, crafting: 2 }
 			}
 		]
@@ -343,31 +312,6 @@ export const availableBuildings = [
 				cost: { wood: 20, stone: 50, metal: 10, tools: 2 },
 				effects: { waterPerDay: 10 },
 				requirements: { survival: 4 }
-			}
-		]
-	},
-	{
-		id: 'laboratory',
-		name: '实验室',
-		description: '提高研究效率，解锁高级技术',
-		levels: [
-			{
-				level: 1,
-				cost: { wood: 20, stone: 15, metal: 10 },
-				effects: { mentalRecovery: 1 },
-				requirements: { research: 2 }
-			},
-			{
-				level: 2,
-				cost: { wood: 30, stone: 25, metal: 20, tools: 3 },
-				effects: { mentalRecovery: 2 },
-				requirements: { research: 3 }
-			},
-			{
-				level: 3,
-				cost: { wood: 50, stone: 40, metal: 30, tools: 5, parts: 5 },
-				effects: { mentalRecovery: 3 },
-				requirements: { research: 4 }
 			}
 		]
 	},

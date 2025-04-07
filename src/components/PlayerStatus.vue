@@ -13,10 +13,6 @@ const energyPercentage = computed(() => {
 	return (gameStore.player.energy / gameStore.player.maxEnergy) * 100
 })
 
-const mentalPercentage = computed(() => {
-	return (gameStore.player.mental / gameStore.player.maxMental) * 100
-})
-
 // 计算健康状态文本和颜色
 const healthStatus = computed(() => {
 	if (healthPercentage.value > 70) return { text: '健康', color: '#67C23A' }
@@ -29,13 +25,6 @@ const energyStatus = computed(() => {
 	if (energyPercentage.value > 70) return { text: '精力充沛', color: '#67C23A' }
 	if (energyPercentage.value > 30) return { text: '有些疲惫', color: '#E6A23C' }
 	return { text: '精疲力尽', color: '#F56C6C' }
-})
-
-// 计算精神状态文本和颜色
-const mentalStatus = computed(() => {
-	if (mentalPercentage.value > 70) return { text: '精神焕发', color: '#67C23A' }
-	if (mentalPercentage.value > 30) return { text: '情绪低落', color: '#E6A23C' }
-	return { text: '精神崩溃', color: '#F56C6C' }
 })
 
 // 计算玩家技能总和
@@ -106,17 +95,6 @@ const getSkillName = (key) => {
 				<el-progress :percentage="energyPercentage" :color="energyStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: energyStatus.color }">
 					{{ energyStatus.text }}
-				</div>
-			</div>
-			<div class="stat-item">
-				<div class="stat-label">
-					<span class="stat-icon">🧠</span>
-					<span>精神</span>
-					<span class="stat-value">{{ Math.ceil(gameStore.player.mental) }}/{{ Math.ceil(gameStore.player.maxMental) }}</span>
-				</div>
-				<el-progress :percentage="mentalPercentage" :color="mentalStatus.color" :stroke-width="15" :show-text="false" />
-				<div class="stat-status" :style="{ color: mentalStatus.color }">
-					{{ mentalStatus.text }}
 				</div>
 			</div>
 		</div>

@@ -25,21 +25,20 @@ const merchants = [
 			duration: 1,  // 持续1天
 		},
 		sellItems: [
-			{ id: 'rare_herb', name: '稀有草药', resourceId: 'herb', buyPrice: { food: 10, water: 10, herb: 10 }, stock: 5, icon: '🌿', amount: 3 },
+			{ id: 'rare_herb', name: '稀有草药', resourceId: 'rare_herb', buyPrice: { food: 10, water: 10, herb: 10 }, stock: 5, icon: '🌿', amount: 3 },
 			{ id: 'advanced_parts', name: '高级零件', resourceId: 'advanced_parts', buyPrice: { parts: 10, tools: 5, metal: 8, wood: 15 }, stock: 2, icon: '🔧', amount: 1 },
 			{ id: 'ancientRelic', name: '古代遗物', resourceId: 'ancientRelic', buyPrice: { crystal: 1 }, stock: 1, icon: '🏺', amount: 1 }
 		],
 		buyItems: [
 			{ id: 'sell_food', name: '食物', resourceId: 'food', sellPrice: { water: 1 }, icon: '🍖' },
-			{ id: 'sell_water', name: '水', resourceId: 'water', sellPrice: { food: 1 }, icon: '💧' },
-			{ id: 'sell_relic', name: '古代遗物', resourceId: 'ancientRelic', sellPrice: { crystal:1, food: 30, water: 30 }, icon: '🏺' }
+			{ id: 'sell_water', name: '水', resourceId: 'water', sellPrice: { food: 1 }, icon: '💧' }
 		],
 		specialTrades: [
 			{
 				id: 'knowledge_exchange',
 				name: '知识交换',
 				description: '用你的资源换取宝贵的研究知识',
-				inputs: { ancientRelic: 1, crystal:1, techFragment: 2 },
+				inputs: { ancientRelic: 1, crystal: 1, techFragment: 2 },
 				outputs: { exp: 50 }
 			}
 		]
@@ -87,7 +86,7 @@ const merchants = [
 			duration: 1,   // 持续1天
 		},
 		sellItems: [
-			{ id: 'advanced_tech', name: '科技碎片', resourceId: 'techFragment', buyPrice: { crystal:1, ancientRelic: 2 }, stock: 3, icon: '💾', amount: 2 },
+			{ id: 'advanced_tech', name: '科技碎片', resourceId: 'techFragment', buyPrice: { crystal: 1, ancientRelic: 2 }, stock: 3, icon: '💾', amount: 2 },
 			{ id: 'rare_material', name: '水晶', resourceId: 'crystal', buyPrice: { metal: 15, tools: 2 }, stock: 3, icon: '💎', amount: 1 }
 		],
 		buyItems: [
@@ -99,7 +98,7 @@ const merchants = [
 				id: 'risky_experiment',
 				name: '危险实验',
 				description: '参与一项危险的实验，可能获得巨大收益或损失',
-				inputs: { fuel:10, medicine: 20, ancientRelic: 10, crystal: 10 },
+				inputs: { fuel: 10, medicine: 20, ancientRelic: 10, crystal: 10 },
 				outputs: { exp: 1000 }
 			}
 		]
@@ -162,7 +161,7 @@ const playerSellableItems = computed(() => {
 const formatPrice = (priceObj) => {
 	return Object.entries(priceObj)
 		.map(([resource, amount]) => {
-			if (resource === 'health' || resource === 'energy' || resource === 'mental') return `${resource === 'health' ? '健康' : resource === 'energy' ? '体力' : '精神'} ${amount}`
+			if (resource === 'health' || resource === 'energy') return `${resource === 'health' ? '健康' : '体力'} ${amount}`
 			return `${gameStore.getResourceName(resource)} ${amount}`
 		})
 		.join(', ')
@@ -223,7 +222,6 @@ const sellItem = (item) => {
 	for (const [resource, amount] of Object.entries(item.sellPrice)) {
 		if (resource === 'health') gameStore.player.health = Math.min(gameStore.player.health + amount, gameStore.player.maxHealth)
 		else if (resource === 'energy') gameStore.player.energy = Math.min(gameStore.player.energy + amount, gameStore.player.maxEnergy)
-		else if (resource === 'mental') gameStore.player.mental = Math.min(gameStore.player.mental + amount, gameStore.player.maxMental)
 		else gameStore.addResource(resource, amount)
 	}
 	// 记录交易日志
@@ -234,12 +232,11 @@ const sellItem = (item) => {
 // 检查是否可以执行特殊交易
 const canExecuteSpecialTrade = (trade) => {
 	for (const [resource, amount] of Object.entries(trade.inputs)) {
+		console.log(gameStore.resources[resource], amount)
 		if (resource === 'health') {
 			if (gameStore.player.health < amount) return false
 		} else if (resource === 'energy') {
 			if (gameStore.player.energy < amount) return false
-		} else if (resource === 'mental') {
-			if (gameStore.player.mental < amount) return false
 		} else if (gameStore.resources[resource] < amount) {
 			return false
 		}
@@ -270,13 +267,6 @@ const executeSpecialTrade = (trade) => {
 				return
 			}
 			gameStore.player.energy -= amount
-		} else if (resource === 'mental') {
-			// 确保精神不会变为负数
-			if (gameStore.player.mental < amount) {
-				ElMessage.error('精神不足')
-				return
-			}
-			gameStore.player.mental -= amount
 		} else {
 			// 确保资源不会变为负数
 			if (gameStore.resources[resource] < amount) {
@@ -298,9 +288,6 @@ const executeSpecialTrade = (trade) => {
 		} else if (resource === 'maxEnergy') {
 			gameStore.player.maxEnergy += amount
 			gameStore.player.energy = Math.min(gameStore.player.energy + amount, gameStore.player.maxEnergy)
-		} else if (resource === 'maxMental') {
-			gameStore.player.maxMental += amount
-			gameStore.player.mental = Math.min(gameStore.player.mental + amount, gameStore.player.maxMental)
 		} else {
 			gameStore.addResource(resource, amount)
 		}

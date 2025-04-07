@@ -43,14 +43,6 @@ const generateWeather = () => {
           weatherDuration.value = getWeatherDuration('auroral')
           gameStore.addToEventLog(`冬季满月之夜，${weatherTypes.auroral.name}在天空中舞动，${weatherTypes.auroral.description}`)
           return
-        } else {
-          // 其他季节满月可能带来清澈的夜空
-          currentWeather.value = weatherTypes.clear
-          weatherDuration.value = getWeatherDuration('clear')
-          gameStore.addToEventLog(`满月之夜，天空格外${weatherTypes.clear.name}，月光照亮了四周`)
-          // 满月之夜精神恢复加成
-          gameStore.player.mental = Math.min(gameStore.player.mental + 5, gameStore.player.maxMental)
-          return
         }
       }
     }
@@ -83,8 +75,7 @@ const updateWeatherEffects = () => {
     energyConsumption: effects.energyConsumption || 1.0,
     waterConsumption: effects.waterConsumption || 1.0,
     foodConsumption: effects.foodConsumption || 1.0,
-    explorationEfficiency: effects.explorationEfficiency || 1.0,
-    mentalRecovery: effects.mentalRecovery || 1.0
+    explorationEfficiency: effects.explorationEfficiency || 1.0
   }
   // 更新游戏状态中的当前天气
   gameStore.weather.current = Object.keys(weatherTypes).find(key => weatherTypes[key] === currentWeather.value) || 'clear'
@@ -126,8 +117,7 @@ const applyWeatherEffects = () => {
     energyConsumption: 1.0,
     waterConsumption: 1.0,
     foodConsumption: 1.0,
-    explorationEfficiency: 1.0,
-    mentalRecovery: 1.0
+    explorationEfficiency: 1.0
   }
   // 根据天气类型应用基础效果
   switch (currentWeather.value.name) {
@@ -246,8 +236,6 @@ const applyWeatherEffects = () => {
       }
       break
     case '彩虹':
-      weatherEffects.mentalRecovery = 1.2 // 精神恢复+20%
-      gameStore.player.mental = Math.min(gameStore.player.mental + 5, gameStore.player.maxMental)
       // 彩虹可能带来稀有资源
       if (Math.random() < 0.25) {
         const rareResource = Math.random() < 0.7 ? 'techFragment' : 'ancientRelic'
@@ -290,8 +278,6 @@ const applyWeatherEffects = () => {
       }
       break
     case '极光':
-      weatherEffects.mentalRecovery = 1.3 // 精神恢复+30%
-      gameStore.player.mental = Math.min(gameStore.player.mental + 10, gameStore.player.maxMental)
       // 极光可能带来灵感
       if (Math.random() < 0.3) {
         const techBonus = Math.floor(Math.random() * 2) + 1
@@ -368,9 +354,6 @@ updateNextWeatherChangeTime()
           </span>
           <span v-if="currentWeather.effects && currentWeather.effects.explorationEfficiency !== 1.0">
             探索效率: x{{ currentWeather.effects.explorationEfficiency.toFixed(1) }}
-          </span>
-          <span v-if="currentWeather.effects && currentWeather.effects.mentalRecovery !== 1.0">
-            精神恢复: x{{ currentWeather.effects.mentalRecovery.toFixed(1) }}
           </span>
         </div>
       </div>
