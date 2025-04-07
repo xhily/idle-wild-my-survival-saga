@@ -240,19 +240,22 @@ export const useGameStore = defineStore('game', {
     },
     // 加载游戏
     loadGame() {
-      const encodedAppName = btoa(`+++${__APP_NAME__}`)
-      const saveData = localStorage.getItem(__APP_NAME__).replace(encodedAppName, '')
-      if (saveData) {
-        try {
-          this.$state = decryptData(saveData)
-          // 重新初始化建筑效果
-          this.initBuildingEffects()
-          // 重置错误的技能效果
-          this.resetSkillEffects()
-          this.addToEventLog('游戏已加载')
-          return true
-        } catch (error) {
-          this.addToEventLog('数据加载失败:', error)
+      const data = localStorage.getItem(__APP_NAME__)
+      if (data) {
+        const encodedAppName = btoa(`+++${__APP_NAME__}`)
+        const saveData = data.replace(encodedAppName, '')
+        if (saveData) {
+          try {
+            this.$state = decryptData(saveData)
+            // 重新初始化建筑效果
+            this.initBuildingEffects()
+            // 重置错误的技能效果
+            this.resetSkillEffects()
+            this.addToEventLog('游戏已加载')
+            return true
+          } catch (error) {
+            this.addToEventLog('数据加载失败:', error)
+          }
         }
       }
       return false
