@@ -332,9 +332,19 @@ const acceptQuest = (quest) => {
     ...quest,
     acceptedAt: gameStore.gameTime.timestamp
   }
-  // 添加到进行中的任务
-  gameStore.acceptQuest(acceptedQuest)
-  ElMessage.success(`已接受任务: ${quest.name}`)
+  // 检查任务是否已经在进行中
+  if (gameStore.activeQuests.some(q => q.id === quest.id)) {
+    gameStore.addToEventLog(`任务 ${acceptedQuest.name} 已经在进行中`)
+    return
+  }
+  // 检查任务是否已经完成
+  if (gameStore.completedQuests.some(q => q.id === quest.id)) {
+    gameStore.addToEventLog(`任务 ${acceptedQuest.name} 已经完成`)
+    return
+  }
+  // 添加任务到进行中列表
+  gameStore.activeQuests.push(acceptedQuest)
+  gameStore.addToEventLog(`接受了任务: ${acceptedQuest.name}`)
 }
 
 // 完成任务
@@ -344,28 +354,63 @@ const completeQuest = (quest) => {
     return
   }
   // 添加完成时间
-  const completedQuest = {
+  const newCompletedQuest = {
     ...quest,
     completedAt: gameStore.gameTime.timestamp
   }
-  // 完成任务并获得奖励
-  gameStore.completeQuest(completedQuest)
-  ElMessage.success(`已完成任务: ${quest.name}`)
+  // 查找任务在进行中列表的索引
+  const questIndex = gameStore.activeQuests.findIndex(q => q.id === newCompletedQuest.id)
+  if (questIndex === -1) {
+    gameStore.addToEventLog(`任务 ${newCompletedQuest.name} 不在进行中`)
+    return
+  }
+  // 从进行中列表移除任务
+  const completedQuest = gameStore.activeQuests.splice(questIndex, 1)[0]
+  // 添加到已完成列表
+  gameStore.completedQuests.push(completedQuest)
+  // 处理各种类型的奖励
+  for (const [rewardType, amount] of Object.entries(completedQuest.rewards)) {
+    switch (rewardType) {
+      case 'exp':
+        // 增加经验值
+        gameStore.player.exp += amount
+        gameStore.checkLevelUp()
+        break
+      case 'maxHealth':
+        // 增加最大健康
+        gameStore.player.maxHealth += amount
+        gameStore.player.health += amount
+        break
+      case 'maxEnergy':
+        // 增加最大体力
+        gameStore.player.maxEnergy += amount
+        gameStore.player.energy += amount
+        break
+      default:
+        // 如果是资源类型的奖励
+        if (gameStore.resources.hasOwnProperty(rewardType)) gameStore.addResource(rewardType, amount)
+        break
+    }
+  }
+  gameStore.addToEventLog(`完成了任务: ${completedQuest.name}`)
 }
 
 // 放弃任务
 const abandonQuest = (quest) => {
-  ElMessageBox.confirm(
-    '确定要放弃这个任务吗？你将失去所有进度。',
-    '放弃任务',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
+  ElMessageBox.confirm('确定要放弃这个任务吗？你将失去所有进度。', '放弃任务', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(() => {
+    // 查找任务在进行中列表的索引
+    const questIndex = gameStore.activeQuests.findIndex(q => q.id === quest.id)
+    if (questIndex === -1) {
+      gameStore.addToEventLog(`任务 ${quest.name} 不在进行中`)
+      return
     }
-  ).then(() => {
-    gameStore.abandonQuest(quest)
-    ElMessage.info(`已放弃任务: ${quest.name}`)
+    // 从进行中列表移除任务
+    gameStore.activeQuests.splice(questIndex, 1)
+    gameStore.addToEventLog(`放弃了任务: ${quest.name}`)
   }).catch(() => { })
 }
 </script>

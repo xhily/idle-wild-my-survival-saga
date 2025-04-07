@@ -72,13 +72,40 @@ const upgradeSkill = (skill) => {
 // 应用技能效果
 const applySkillEffects = (skill) => {
   // 更新游戏状态中的技能效果
-  gameStore.updateSkillEffects(skill.id, skill.effects, skill.level)
+  updateSkillEffects(skill.id, skill.effects, skill.level)
   // 更新基础技能等级
   const branchKey = activeSkillBranch.value
   if (skill.level === 1) {
     // 如果是首次解锁技能，增加对应分支的基础技能等级
     gameStore.skills[branchKey] += 1
     gameStore.addToEventLog(`你的${gameStore.getSkillName(branchKey)}技能等级提升到了 ${gameStore.skills[branchKey]}!`)
+  }
+}
+
+// 更新技能效果
+const updateSkillEffects = (skillId, effects, level) => {
+  // 记录已解锁的技能
+  if (!gameStore.unlockedSkills[skillId]) gameStore.unlockedSkills[skillId] = 0
+  gameStore.unlockedSkills[skillId] = level
+  // 应用效果到游戏状态
+  for (const [effect, value] of Object.entries(effects)) {
+    if (gameStore.skillTreeEffects[effect] !== undefined) {
+      // 对于百分比效果，根据等级累加
+      if (typeof value === 'number') gameStore.skillTreeEffects[effect] = parseFloat((gameStore.skillTreeEffects[effect] + value).toFixed(2))
+      else gameStore.skillTreeEffects[effect] = value // 对于布尔值效果，直接设置
+    }
+  }
+  // 立即应用生存技能效果
+  if (skillId.includes('efficient_metabolism') ||
+    skillId.includes('weather_adaptation') ||
+    skillId.includes('energy_conservation') ||
+    skillId.includes('natural_healing') ||
+    skillId.includes('survival_expert')) {
+    // 应用最大健康加成
+    if (gameStore.skillTreeEffects.maxHealth > 0) {
+      const healthBonus = Math.floor(gameStore.player.maxHealth * gameStore.skillTreeEffects.maxHealth)
+      gameStore.player.maxHealth += healthBonus
+    }
   }
 }
 

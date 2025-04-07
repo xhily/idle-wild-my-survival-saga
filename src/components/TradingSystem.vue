@@ -12,19 +12,6 @@ const tradeTab = ref('buy')
 // 当前选中的商人
 const activeMerchant = ref(null)
 
-// 计算当前可用的商人
-const availableMerchants = computed(() => {
-	const currentDay = gameStore.gameTime.day
-	return merchants.filter(merchant => {
-		// 检查是否达到最小天数要求
-		if (currentDay < merchant.availability.minDay) return false
-		// 计算商人是否在当前日期出现
-		const daysSinceMinDay = currentDay - merchant.availability.minDay
-		const cyclePosition = daysSinceMinDay % merchant.availability.frequency
-		return cyclePosition < merchant.availability.duration
-	})
-})
-
 // 选择商人
 const selectMerchant = (merchant) => {
 	activeMerchant.value = merchant
@@ -190,9 +177,9 @@ const executeSpecialTrade = (trade) => {
 	<div class="trading-system">
 		<div v-if="!activeMerchant" class="merchant-selection">
 			<h4>可用商人</h4>
-			<el-empty v-if="availableMerchants.length === 0" description="暂无商人可交易"></el-empty>
+			<el-empty v-if="gameStore.availableMerchants().length === 0" description="暂无商人可交易"></el-empty>
 			<div v-else class="merchant-list">
-				<div v-for="merchant in availableMerchants" :key="merchant.id" class="merchant-card"
+				<div v-for="merchant in gameStore.availableMerchants()" :key="merchant.id" class="merchant-card"
 					@click="selectMerchant(merchant)">
 					<div class="merchant-icon">{{ merchant.icon }}</div>
 					<div class="merchant-info">

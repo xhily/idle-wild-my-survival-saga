@@ -54,6 +54,65 @@ const buildOrUpgrade = (building) => {
   gameStore.buildNewBuilding(building.id, level)
 }
 
+// 建造新建筑
+const buildNewBuilding = (buildingId, level) => {
+  // 查找建筑配置
+  const buildingConfig = availableBuildings.find(b => b.id === buildingId)
+  if (!buildingConfig) {
+    gameStore.addToEventLog(`未找到建筑: ${buildingId}`)
+    return
+  }
+  // 获取指定等级的配置
+  const levelConfig = buildingConfig.levels.find(l => l.level === level)
+  if (!levelConfig) {
+    gameStore.addToEventLog(`未找到建筑等级配置: ${buildingId} 等级 ${level}`)
+    return
+  }
+  // 检查技能要求
+  for (const [skill, requiredLevel] of Object.entries(levelConfig.requirements)) {
+    if (gameStore.skills[skill] < requiredLevel) {
+      gameStore.addToEventLog(`你的${skill}技能等级不足，需要达到${requiredLevel}级`)
+      return
+    }
+  }
+  // 检查并消耗资源
+  for (const [resource, amount] of Object.entries(levelConfig.cost)) {
+    if (!gameStore.consumeResource(resource, amount)) {
+      gameStore.addToEventLog(`资源不足: ${gameStore.getResourceName(resource)}`)
+      return
+    }
+  }
+  // 检查是否已有该建筑
+  const existingBuildingIndex = gameStore.buildings.findIndex(b => b.id === buildingId)
+  if (existingBuildingIndex !== -1) {
+    // 已有建筑，检查是否可以升级
+    const existingBuilding = gameStore.buildings[existingBuildingIndex]
+    if (existingBuilding.level >= level) {
+      gameStore.addToEventLog(`${buildingConfig.name}已经是等级${existingBuilding.level}，无需重复建造`)
+      return
+    }
+    // 升级建筑
+    gameStore.buildings[existingBuildingIndex] = {
+      id: buildingId,
+      name: buildingConfig.name,
+      level: level,
+      effects: { ...levelConfig.effects }
+    }
+    gameStore.addToEventLog(`${buildingConfig.name}已升级到等级${level}`)
+  } else {
+    // 新建建筑
+    gameStore.buildings.push({
+      id: buildingId,
+      name: buildingConfig.name,
+      level: level,
+      effects: { ...levelConfig.effects }
+    })
+    gameStore.addToEventLog(`建造了${buildingConfig.name}(等级${level})`)
+  }
+  // 重新初始化建筑效果
+  gameStore.initBuildingEffects()
+}
+
 // 获取建筑状态文本
 const getBuildingStatusText = (building) => {
   const currentLevel = getBuildingLevel(building.id)

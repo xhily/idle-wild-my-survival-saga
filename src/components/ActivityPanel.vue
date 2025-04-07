@@ -48,8 +48,202 @@ const hasEnoughResources = (recipe) => {
 
 // 开始活动
 const startActivity = (recipeId) => {
-  const success = gameStore.startActivity(recipeId)
-  if (success) ElMessage.success('活动已开始')
+  const recipe = recipes.find(r => r.id === recipeId)
+  // 检查技能要求
+  for (const [skill, level] of Object.entries(recipe.skillRequired)) {
+    if (gameStore.skills[skill] < level) {
+      gameStore.addToEventLog(`你的${skill}技能等级不足，无法进行${recipe.name}`)
+      return
+    }
+  }
+  // 检查并消耗输入资源
+  for (const [resource, amount] of Object.entries(recipe.inputs)) {
+    if (resource === 'energy') {
+      let energyAmount = amount
+      if (recipe.category === 'gathering' && gameStore.skillTreeEffects.gatheringEnergyCost < 0) {
+        energyAmount = Math.floor(energyAmount * (1 + gameStore.skillTreeEffects.gatheringEnergyCost))
+      }
+      if (gameStore.skillTreeEffects.energyConsumption < 0) {
+        energyAmount = Math.floor(energyAmount * (1 + gameStore.skillTreeEffects.energyConsumption))
+      }
+      energyAmount = Math.max(1, energyAmount)
+      if (gameStore.player.energy < energyAmount) {
+        gameStore.addToEventLog('你的体力不足')
+        return false
+      }
+      gameStore.player.energy -= energyAmount
+    } else {
+      if (!gameStore.consumeResource(resource, amount)) {
+        gameStore.addToEventLog(`资源不足: ${gameStore.getResourceName(resource)}`)
+        return false
+      }
+    }
+  }
+  // 计算活动持续时间
+  let activityDuration = recipe.duration
+  if (recipe.category === 'gathering' && gameStore.skillTreeEffects.gatheringEfficiency > 0) {
+    activityDuration = Math.floor(activityDuration / (1 + gameStore.skillTreeEffects.gatheringEfficiency))
+  }
+  if (recipe.category === 'crafting' && gameStore.skillTreeEffects.craftingSpeed > 0) {
+    activityDuration = Math.floor(activityDuration / (1 + gameStore.skillTreeEffects.craftingSpeed))
+  }
+  activityDuration = Math.max(1, activityDuration)
+  const activity = {
+    id: Date.now(),
+    recipeId,
+    name: recipe.name,
+    duration: activityDuration * 1000,
+    completed: false
+  }
+  const gathering = gameStore.currentActivities.filter(a => a.recipeId.startsWith('gather_')).length
+  const crafting = gameStore.currentActivities.filter(a => a.recipeId.startsWith('craft_')).length
+  // 如果没有正在进行的活动，立即开始
+  if ((gathering + crafting) < gameStore.player.level) {
+    activity.startTime = Date.now()
+    gameStore.currentActivities.push(activity)
+    activityTimer(activity)
+    gameStore.addToEventLog(`开始${recipe.name}`)
+  } else {
+    // 否则加入等待队列
+    gameStore.pendingActivities.push(activity)
+    gameStore.addToEventLog(`已将${recipe.name}加入等待队列`)
+  }
+}
+
+const activityTimer = (activity) => {
+  activity.timer = setTimeout(() => {
+    completeActivity(activity.id)
+    // 检查是否有等待中的活动
+    if (gameStore.pendingActivities.length > 0) {
+      const nextActivity = gameStore.pendingActivities.shift()
+      nextActivity.startTime = Date.now()
+      gameStore.currentActivities.push(nextActivity)
+      activityTimer(nextActivity)
+      gameStore.addToEventLog(`开始${nextActivity.name}`)
+    }
+  }, activity.duration)
+}
+
+// 完成活动
+const completeActivity = (activityId) => {
+  const activityIndex = gameStore.currentActivities.findIndex(a => a.id === activityId)
+  if (activityIndex === -1) return false
+  const activity = gameStore.currentActivities[activityIndex]
+  const recipe = recipes.find(r => r.id === activity.recipeId)
+  // 清除定时器
+  if (activity.timer) clearTimeout(activity.timer)
+  // 移除活动
+  gameStore.currentActivities.splice(activityIndex, 1)
+  // 应用技能效果到输出资源
+  let modifiedOutputs = {}
+  // 添加输出资源
+  for (const [resource, output] of Object.entries(recipe.outputs)) {
+    let amount
+    // 处理不同类型的输出格式
+    if (Array.isArray(output)) {
+      // 如果是[min, max]范围
+      const [min, max] = output
+      amount = Math.floor(Math.random() * (max - min + 1)) + min
+    } else if (typeof output === 'number') {
+      // 如果是固定数量
+      amount = output
+    } else {
+      // 其他格式跳过
+      continue
+    }
+    // 应用技能效果
+    if (recipe.category === 'gathering') {
+      amount = applyGatheringSkillEffects(amount, resource) // 应用采集技能效果
+    } else if (recipe.category === 'crafting') {
+      modifiedOutputs[resource] = amount // 对于制作活动，先收集所有输出，稍后应用技能效果
+    } else if (recipe.category === 'research' && resource === 'techFragment') {
+      amount = applyResearchSkillEffects(amount) // 应用研究技能效果
+    }
+    // 如果不是制作活动，直接添加资源
+    if (recipe.category !== 'crafting') {
+      gameStore.addResource(resource, amount)
+      gameStore.addToEventLog(`获得 ${amount} ${gameStore.getResourceName(resource)}`)
+      // 更新成就系统的资源收集计数
+      if (gameStore.achievements.resourcesCollected.hasOwnProperty(resource)) {
+        gameStore.achievements.resourcesCollected[resource] += amount
+      }
+    }
+  }
+  // 对制作活动应用技能效果并添加资源
+  if (recipe.category === 'crafting' && Object.keys(modifiedOutputs).length > 0) {
+    // 应用制作技能效果
+    const finalOutputs = applyCraftingSkillEffects(recipe, modifiedOutputs)
+    // 添加最终资源
+    for (const [resource, amount] of Object.entries(finalOutputs)) {
+      gameStore.addResource(resource, amount)
+      gameStore.addToEventLog(`获得 ${amount} ${gameStore.getResourceName(resource)}`)
+      // 更新成就系统的资源收集计数
+      if (gameStore.achievements.resourcesCollected.hasOwnProperty(resource)) {
+        gameStore.achievements.resourcesCollected[resource] += amount
+      }
+    }
+  }
+  // 如果是探索活动，增加探索计数
+  if (recipe.category === 'exploration') gameStore.achievements.explorationCount += 1
+  // 增加相关技能经验
+  for (const skill in recipe.skillRequired) gameStore.addSkillExp(skill, 1)
+  return true
+}
+
+// 应用技能效果到资源收集
+const applyGatheringSkillEffects = (baseAmount, resourceType) => {
+  let amount = baseAmount
+  // 应用采集效率加成
+  if (gameStore.skillTreeEffects.gatheringEfficiency > 0) amount *= (1 + gameStore.skillTreeEffects.gatheringEfficiency)
+  // 应用产出加成
+  if (gameStore.skillTreeEffects.gatheringYield > 0) amount *= (1 + gameStore.skillTreeEffects.gatheringYield)
+  // 对特定资源类型应用额外效果
+  if (resourceType === 'herb' && gameStore.skillTreeEffects.rareHerbChance > 0) {
+    // 有几率获得稀有草药
+    if (Math.random() < gameStore.skillTreeEffects.rareHerbChance) {
+      gameStore.addResource('rare_herb', 1)
+      gameStore.addToEventLog('你的技能帮助你发现了一株稀有草药！')
+    }
+  }
+  return Math.floor(amount)
+}
+
+// 应用技能效果到制作活动
+const applyCraftingSkillEffects = (recipe, outputs) => {
+  let modifiedOutputs = { ...outputs }
+  // 应用制作质量加成
+  if (gameStore.skillTreeEffects.craftingQuality > 0) {
+    // 对于数值型输出，增加产量
+    for (const [resource, amount] of Object.entries(modifiedOutputs)) {
+      if (typeof amount === 'number') modifiedOutputs[resource] = Math.floor(amount * (1 + gameStore.skillTreeEffects.craftingQuality))
+    }
+  }
+  // 应用额外产出几率
+  if (gameStore.skillTreeEffects.extraCraftingOutput > 0 && Math.random() < gameStore.skillTreeEffects.extraCraftingOutput) {
+    // 随机选择一种资源增加产量
+    const resources = Object.keys(modifiedOutputs)
+    if (resources.length > 0) {
+      const resource = resources[Math.floor(Math.random() * resources.length)]
+      if (typeof modifiedOutputs[resource] === 'number') {
+        modifiedOutputs[resource] += 1
+        gameStore.addToEventLog(`你的制作技能帮助你获得了额外的 ${gameStore.getResourceName(resource)}！`)
+      }
+    }
+  }
+  return modifiedOutputs
+}
+
+// 应用技能效果到研究活动
+const applyResearchSkillEffects = (techFragment) => {
+  let amount = techFragment
+  // 应用研究加成
+  if (gameStore.skillTreeEffects.techFragmentYield > 0) amount = Math.floor(amount * (1 + gameStore.skillTreeEffects.techFragmentYield))
+  // 应用突破性发现几率
+  if (gameStore.skillTreeEffects.breakthroughChance > 0 && Math.random() < gameStore.skillTreeEffects.breakthroughChance) {
+    amount += 1
+    gameStore.addToEventLog('你取得了突破性的研究发现！')
+  }
+  return amount
 }
 
 // 计算活动时间文本
@@ -174,6 +368,47 @@ const startActivityTimer = () => {
   }, 1000)
 }
 
+// 取消活动
+const cancelActivity = (activityId) => {
+  // 先检查当前活动
+  const currentIndex = gameStore.currentActivities.findIndex(a => a.id === activityId)
+  if (currentIndex !== -1) {
+    const activity = gameStore.currentActivities[currentIndex]
+    const recipe = recipes.find(r => r.id === activity.recipeId)
+    // 返还资源
+    if (recipe) {
+      // 返还体力
+      if (recipe.inputs.energy) {
+        let energyAmount = recipe.inputs.energy
+        if (recipe.category === 'gathering' && gameStore.skillTreeEffects.gatheringEnergyCost < 0)
+          energyAmount = Math.floor(energyAmount * (1 + gameStore.skillTreeEffects.gatheringEnergyCost))
+        if (gameStore.skillTreeEffects.energyConsumption < 0)
+          energyAmount = Math.floor(energyAmount * (1 + gameStore.skillTreeEffects.energyConsumption))
+        energyAmount = Math.max(1, energyAmount)
+        gameStore.player.energy = Math.min(gameStore.player.maxEnergy, gameStore.player.energy + energyAmount)
+      }
+      // 返还其他资源
+      for (const [resource, amount] of Object.entries(recipe.inputs)) {
+        if (resource !== 'energy') {
+          gameStore.addResource(resource, amount)
+        }
+      }
+    }
+    // 移除活动
+    if (activity.timer) clearTimeout(activity.timer)
+    gameStore.currentActivities.splice(currentIndex, 1)
+    gameStore.addToEventLog(`取消了${activity.name}活动并返还了资源`)
+    // 检查并启动等待队列中的下一个活动
+    if (gameStore.pendingActivities.length > 0) {
+      const nextActivity = gameStore.pendingActivities.shift()
+      nextActivity.startTime = Date.now()
+      gameStore.currentActivities.push(nextActivity)
+      activityTimer(nextActivity)
+      gameStore.addToEventLog(`开始${nextActivity.name}`)
+    }
+  }
+}
+
 // 组件挂载时启动定时器
 onMounted(() => startActivityTimer())
 
@@ -212,7 +447,7 @@ const pendingActivities = computed(() =>
           <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
           <div class="activity-actions">
             <el-button style="width: 100%;margin-top: 5px;" type="danger" size="small"
-              @click="gameStore.cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
+              @click="cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
               取消
             </el-button>
           </div>
@@ -225,7 +460,7 @@ const pendingActivities = computed(() =>
           <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
           <div class="activity-actions">
             <el-button style="width: 100%;margin-top: 5px;" type="danger" size="small"
-              @click="gameStore.cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
+              @click="cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
               取消
             </el-button>
           </div>
