@@ -13,15 +13,15 @@ jobs:
       - name: 检查代码
         uses: actions/checkout@v2
 
-      - name: 登录 Docker Hub
+      - name: 登录 GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ secrets.GHCR_USERNAME }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 构建Docker镜像
-        run: docker build -t setube/idle-wild-my-survival-saga:latest .
+        run: docker build -t ghcr.io/${{ github.repository_owner }}/idle-wild-my-survival-saga:latest .
 
-      - name: 推送到Docker Hub
-        run: docker push setube/idle-wild-my-survival-saga:latest
+      - name: 推送到 GitHub Container Registry
+        run: docker push ghcr.io/${{ github.repository_owner }}/idle-wild-my-survival-saga:latest
