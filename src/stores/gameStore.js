@@ -251,8 +251,6 @@ export const useGameStore = defineStore('game', {
             this.$state = decryptData(saveData)
             // 重新初始化建筑效果
             this.initBuildingEffects()
-            // 重置错误的技能效果
-            this.resetSkillEffects()
             this.addToEventLog('游戏已加载')
             return true
           } catch (error) {
@@ -287,26 +285,6 @@ export const useGameStore = defineStore('game', {
         }
       }
       return null // 如果未找到，返回 null
-    },
-    // 重置错误的技能效果
-    resetSkillEffects() {
-      for (const skillId in this.skillTreeEffects) {
-        if (typeof this.skillTreeEffects[skillId] === 'number') {
-          const skillData = this.findSkillEffectById(skillId)
-          if (skillData) {
-            const { effects, maxLevel } = skillData
-            for (const [effect, value] of Object.entries(effects)) {
-              if (this.skillTreeEffects[value[0]] !== undefined) {
-                if (typeof value[1] === 'number') {
-                  if (this.skillTreeEffects[value[0]] > (value[1] * maxLevel)) {
-                    this.skillTreeEffects[value[0]] = parseFloat((value[1] * maxLevel).toFixed(2))
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     },
     // 添加资源
     addResource(resource, amount) {

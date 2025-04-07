@@ -122,7 +122,7 @@ const refreshResourceData = () => {
 
 <template>
   <div class="resource-panel">
-    <h3>
+    <h3 class="resource-panel-h3">
       <span>资源</span>
       <span class="resource-panel-name" @click="refreshResourceData">
         <el-icon>
@@ -182,8 +182,14 @@ const refreshResourceData = () => {
   padding: 10px;
 }
 
+.resource-panel-h3 {
+  display: flex;
+}
+
 .resource-panel-name {
   margin-left: 10px;
+  display: flex;
+  align-items: center;
 }
 
 .resource-section {
