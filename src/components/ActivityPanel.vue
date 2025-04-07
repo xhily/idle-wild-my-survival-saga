@@ -138,7 +138,7 @@ const updateActivitiesStatus = () => {
     const progress = Math.min(100, (elapsed / activity.duration) * 100)
     activityProgress.value[activity.id] = progress
     const remaining = Math.max(0, activity.duration - elapsed)
-    const seconds = Math.ceil(remaining / 1000)
+    const seconds = Math.floor(remaining / 1000)
     activityRemainingTime.value[activity.id] = seconds < 60 ? `${seconds}秒` : `${Math.floor(seconds / 60)}分${seconds % 60}秒`
   })
 }
@@ -160,7 +160,7 @@ const getActivityRemainingTime = (activity) => {
   const now = Date.now()
   const elapsed = now - activity.startTime
   const remaining = Math.max(0, activity.duration - elapsed)
-  const seconds = Math.ceil(remaining / 1000)
+  const seconds = Math.floor(remaining / 1000)
   if (seconds < 60) return `${seconds}秒`
   return `${Math.floor(seconds / 60)}分${seconds % 60}秒`
 }

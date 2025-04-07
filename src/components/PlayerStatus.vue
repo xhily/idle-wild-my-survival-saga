@@ -79,7 +79,7 @@ const getSkillName = (key) => {
 							<Plus />
 						</el-icon>
 					</span>
-					<span class="stat-value">{{ Math.ceil(gameStore.player.health) }}/{{ Math.ceil(gameStore.player.maxHealth) }}</span>
+					<span class="stat-value">{{ Math.floor(gameStore.player.health) }}/{{ Math.floor(gameStore.player.maxHealth) }}</span>
 				</div>
 				<el-progress :percentage="healthPercentage" :color="healthStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: healthStatus.color }">
@@ -90,7 +90,7 @@ const getSkillName = (key) => {
 				<div class="stat-label">
 					<span class="stat-icon">⚡</span>
 					<span>体力</span>
-					<span class="stat-value">{{ Math.ceil(gameStore.player.energy) }}/{{ Math.ceil(gameStore.player.maxEnergy) }}</span>
+					<span class="stat-value">{{ Math.floor(gameStore.player.energy) }}/{{ Math.floor(gameStore.player.maxEnergy) }}</span>
 				</div>
 				<el-progress :percentage="energyPercentage" :color="energyStatus.color" :stroke-width="15" :show-text="false" />
 				<div class="stat-status" :style="{ color: energyStatus.color }">
