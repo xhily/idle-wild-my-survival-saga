@@ -68,7 +68,7 @@ body {
   background-color: #0000004d;
 }
 
-@media (orientation: portrait) {
+/* @media (orientation: portrait) {
 
   html,
   body {
@@ -103,7 +103,7 @@ body {
     background: #333;
     z-index: 99999;
   }
-}
+} */
 </style>
 
 <style scoped>
