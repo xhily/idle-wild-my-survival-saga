@@ -221,7 +221,7 @@ export const availableBuildings = [
 			},
 			{
 				level: 5,
-				cost: { crystal: 10, techFragment: 10, wood: 200, stone: 200, metal: 200, tools: 100 },
+				cost: { crystal: 10, techFragment: 10, wood: 150, stone: 150, metal: 150, tools: 100 },
 				effects: { energyRecovery: 10, maxHealth: 100 },
 				requirements: { survival: 20, crafting: 20 }
 			}
@@ -258,7 +258,7 @@ export const availableBuildings = [
 			},
 			{
 				level: 5,
-				cost: { crystal: 10, techFragment: 10, wood: 100, stone: 100, metal: 100, tools: 100 },
+				cost: { crystal: 10, techFragment: 10, wood: 125, stone: 125, metal: 125, tools: 25 },
 				effects: { storageMultiplier: 3 },
 				requirements: { gathering: 20, crafting: 20 }
 			}
@@ -289,13 +289,13 @@ export const availableBuildings = [
 			},
 			{
 				level: 4,
-				cost: { crystal: 5, techFragment: 5, wood: 200, stone: 100, metal: 100, tools: 20, parts: 20 },
+				cost: { crystal: 5, techFragment: 5, wood: 150, stone: 100, metal: 100, tools: 20, parts: 20 },
 				effects: { craftingEfficiency: 2 },
 				requirements: { crafting: 10, research: 10 }
 			},
 			{
 				level: 5,
-				cost: { crystal: 10, techFragment: 10, metal: 200, tools: 50 },
+				cost: { crystal: 10, techFragment: 10, metal: 150, tools: 30 },
 				effects: { craftingEfficiency: 3 },
 				requirements: { crafting: 20, research: 20 }
 			}
@@ -326,13 +326,13 @@ export const availableBuildings = [
 			},
 			{
 				level: 4,
-				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 100, water: 100, tools: 50 },
+				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 100, water: 100, tools: 30 },
 				effects: { foodPerDay: 15 },
 				requirements: { gathering: 10 }
 			},
 			{
 				level: 5,
-				cost: { crystal: 10, techFragment: 10, wood: 200, stone: 100, water: 200, tools: 50 },
+				cost: { crystal: 10, techFragment: 10, wood: 150, stone: 100, water: 150, tools: 30 },
 				effects: { foodPerDay: 20 },
 				requirements: { gathering: 20 }
 			}
@@ -363,13 +363,13 @@ export const availableBuildings = [
 			},
 			{
 				level: 4,
-				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 100, metal: 100, tools: 50 },
+				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 100, metal: 100, tools: 30 },
 				effects: { waterPerDay: 15 },
 				requirements: { survival: 10 }
 			},
 			{
 				level: 5,
-				cost: { crystal: 10, techFragment: 10, wood: 200, stone: 200, metal: 100, tools: 50 },
+				cost: { crystal: 10, techFragment: 10, wood: 150, stone: 150, metal: 100, tools: 30 },
 				effects: { waterPerDay: 20 },
 				requirements: { survival: 20 }
 			}
@@ -400,13 +400,13 @@ export const availableBuildings = [
 			},
 			{
 				level: 4,
-				cost: { crystal: 5, techFragment: 5, wood: 100, water: 100, herb: 100, tools: 50 },
+				cost: { crystal: 5, techFragment: 5, wood: 100, water: 100, herb: 90, tools: 30 },
 				effects: { herbPerDay: 10, medicinePerDay: 3 },
 				requirements: { gathering: 10, research: 10 }
 			},
 			{
 				level: 5,
-				cost: { crystal: 10, techFragment: 10, wood: 200, water: 200, herb: 200, tools: 50 },
+				cost: { crystal: 10, techFragment: 10, wood: 150, water: 150, herb: 90, tools: 30 },
 				effects: { herbPerDay: 13, medicinePerDay: 4 },
 				requirements: { gathering: 20, research: 20 }
 			}
@@ -437,13 +437,13 @@ export const availableBuildings = [
 			},
 			{
 				level: 4,
-				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 200, metal: 100, tools: 50, fuel: 100 },
+				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 150, metal: 100, tools: 30, fuel: 60 },
 				effects: { toolsPerDay: 4, partsPerDay: 3 },
 				requirements: { crafting: 10, research: 10 }
 			},
 			{
 				level: 5,
-				cost: { crystal: 10, techFragment: 10, wood: 100, stone: 200, metal: 100, tools: 50, fuel: 100 },
+				cost: { crystal: 10, techFragment: 10, wood: 100, stone: 150, metal: 100, tools: 30, electronic_components: 30, fuel: 60 },
 				effects: { toolsPerDay: 5, partsPerDay: 4 },
 				requirements: { crafting: 20, research: 20 }
 			}
