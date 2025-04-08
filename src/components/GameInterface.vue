@@ -428,7 +428,7 @@ const applyWeatherEffects = () => {
 				const specialResources = ['metal', 'parts', 'techFragment']
 				const randomResource = specialResources[Math.floor(Math.random() * specialResources.length)]
 				gameStore.addResource(randomResource, 1)
-				gameStore.addToEventLog(`大风带来了一些特殊资源，你获得了1单位${randomResource}！`)
+				gameStore.addToEventLog(`大风带来了一些特殊资源，你获得了1单位${gameStore.getResourceName(randomResource)}！`)
 			}
 			break
 		case 'hot':
