@@ -592,6 +592,7 @@ const toggleDarkMode = () => {
 
 const clickDarkMode = () => document.documentElement.classList.toggle('dark', gameStore.settings.darkMode)
 
+window.data = gameStore
 // 组件挂载时
 onMounted(() => {
 	initGame()

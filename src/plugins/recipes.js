@@ -1,4 +1,4 @@
-export const recipes =[
+export const recipes = [
 	// 基础采集配方
 	{
 		id: 'gather_food',
@@ -199,31 +199,36 @@ export const availableBuildings = [
 				level: 1,
 				cost: { wood: 10, stone: 5 },
 				effects: { energyRecovery: 1 },
-				requirements: { survival: 1 }
+				requirements: { survival: 1 },
+				buildTime: 60
 			},
 			{
 				level: 2,
 				cost: { wood: 20, stone: 15, metal: 5 },
 				effects: { energyRecovery: 2 },
-				requirements: { survival: 2, crafting: 1 }
+				requirements: { survival: 2, crafting: 1 },
+				buildTime: 120
 			},
 			{
 				level: 3,
 				cost: { wood: 40, stone: 30, metal: 15, tools: 2 },
 				effects: { energyRecovery: 3, maxHealth: 10 },
-				requirements: { survival: 5, crafting: 10 }
+				requirements: { survival: 5, crafting: 10 },
+				buildTime: 180
 			},
 			{
 				level: 4,
 				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 100, metal: 100, tools: 20 },
 				effects: { energyRecovery: 5, maxHealth: 50 },
-				requirements: { survival: 10, crafting: 10 }
+				requirements: { survival: 10, crafting: 10 },
+				buildTime: 240
 			},
 			{
 				level: 5,
 				cost: { crystal: 10, techFragment: 10, wood: 150, stone: 150, metal: 150, tools: 30 },
 				effects: { energyRecovery: 10, maxHealth: 100 },
-				requirements: { survival: 20, crafting: 20 }
+				requirements: { survival: 20, crafting: 20 },
+				buildTime: 300
 			}
 		]
 	},
@@ -236,31 +241,36 @@ export const availableBuildings = [
 				level: 1,
 				cost: { wood: 15, stone: 5 },
 				effects: { storageMultiplier: 1.2 },
-				requirements: { gathering: 1 }
+				requirements: { gathering: 1 },
+				buildTime: 60
 			},
 			{
 				level: 2,
 				cost: { wood: 30, stone: 15, metal: 5 },
 				effects: { storageMultiplier: 1.5 },
-				requirements: { gathering: 2, crafting: 1 }
+				requirements: { gathering: 2, crafting: 1 },
+				buildTime: 120
 			},
 			{
 				level: 3,
 				cost: { wood: 50, stone: 30, metal: 15, tools: 3 },
 				effects: { storageMultiplier: 2 },
-				requirements: { gathering: 3, crafting: 2 }
+				requirements: { gathering: 3, crafting: 2 },
+				buildTime: 180
 			},
 			{
 				level: 4,
 				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 100, metal: 100, tools: 20 },
 				effects: { storageMultiplier: 2.5 },
-				requirements: { gathering: 10, crafting: 10 }
+				requirements: { gathering: 10, crafting: 10 },
+				buildTime: 240
 			},
 			{
 				level: 5,
 				cost: { crystal: 10, techFragment: 10, wood: 125, stone: 125, metal: 125, tools: 25 },
 				effects: { storageMultiplier: 3 },
-				requirements: { gathering: 20, crafting: 20 }
+				requirements: { gathering: 20, crafting: 20 },
+				buildTime: 300
 			}
 		]
 	},
@@ -273,31 +283,36 @@ export const availableBuildings = [
 				level: 1,
 				cost: { wood: 20, stone: 10, metal: 5 },
 				effects: { craftingEfficiency: 1.1 },
-				requirements: { crafting: 1 }
+				requirements: { crafting: 1 },
+				buildTime: 60
 			},
 			{
 				level: 2,
 				cost: { wood: 35, stone: 20, metal: 15, tools: 2 },
 				effects: { craftingEfficiency: 1.25 },
-				requirements: { crafting: 2 }
+				requirements: { crafting: 2 },
+				buildTime: 120
 			},
 			{
 				level: 3,
 				cost: { wood: 60, stone: 40, metal: 30, tools: 5, parts: 3 },
 				effects: { craftingEfficiency: 1.5 },
-				requirements: { crafting: 3, research: 1 }
+				requirements: { crafting: 3, research: 1 },
+				buildTime: 180
 			},
 			{
 				level: 4,
 				cost: { crystal: 5, techFragment: 5, wood: 150, stone: 100, metal: 100, tools: 20, parts: 20 },
 				effects: { craftingEfficiency: 2 },
-				requirements: { crafting: 10, research: 10 }
+				requirements: { crafting: 10, research: 10 },
+				buildTime: 240
 			},
 			{
 				level: 5,
 				cost: { crystal: 10, techFragment: 10, metal: 150, tools: 30 },
 				effects: { craftingEfficiency: 3 },
-				requirements: { crafting: 20, research: 20 }
+				requirements: { crafting: 20, research: 20 },
+				buildTime: 300
 			}
 		]
 	},
@@ -310,31 +325,36 @@ export const availableBuildings = [
 				level: 1,
 				cost: { wood: 10, stone: 5, water: 10 },
 				effects: { foodPerDay: 3 },
-				requirements: { gathering: 2 }
+				requirements: { gathering: 2 },
+				buildTime: 60
 			},
 			{
 				level: 2,
 				cost: { wood: 20, stone: 10, water: 20, tools: 1 },
 				effects: { foodPerDay: 6 },
-				requirements: { gathering: 3 }
+				requirements: { gathering: 3 },
+				buildTime: 120
 			},
 			{
 				level: 3,
 				cost: { wood: 40, stone: 20, water: 30, tools: 3 },
 				effects: { foodPerDay: 10 },
-				requirements: { gathering: 4 }
+				requirements: { gathering: 4 },
+				buildTime: 180
 			},
 			{
 				level: 4,
 				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 100, water: 100, tools: 30 },
 				effects: { foodPerDay: 15 },
-				requirements: { gathering: 10 }
+				requirements: { gathering: 10 },
+				buildTime: 240
 			},
 			{
 				level: 5,
 				cost: { crystal: 10, techFragment: 10, wood: 150, stone: 100, water: 150, tools: 30 },
 				effects: { foodPerDay: 20 },
-				requirements: { gathering: 20 }
+				requirements: { gathering: 20 },
+				buildTime: 300
 			}
 		]
 	},
@@ -347,31 +367,36 @@ export const availableBuildings = [
 				level: 1,
 				cost: { wood: 5, stone: 15 },
 				effects: { waterPerDay: 3 },
-				requirements: { survival: 2 }
+				requirements: { survival: 2 },
+				buildTime: 60
 			},
 			{
 				level: 2,
 				cost: { wood: 10, stone: 30, tools: 1 },
 				effects: { waterPerDay: 6 },
-				requirements: { survival: 3 }
+				requirements: { survival: 3 },
+				buildTime: 120
 			},
 			{
 				level: 3,
 				cost: { wood: 20, stone: 50, metal: 10, tools: 2 },
 				effects: { waterPerDay: 10 },
-				requirements: { survival: 4 }
+				requirements: { survival: 4 },
+				buildTime: 180
 			},
 			{
 				level: 4,
 				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 100, metal: 100, tools: 30 },
 				effects: { waterPerDay: 15 },
-				requirements: { survival: 10 }
+				requirements: { survival: 10 },
+				buildTime: 240
 			},
 			{
 				level: 5,
 				cost: { crystal: 10, techFragment: 10, wood: 150, stone: 150, metal: 100, tools: 30 },
 				effects: { waterPerDay: 20 },
-				requirements: { survival: 20 }
+				requirements: { survival: 20 },
+				buildTime: 300
 			}
 		]
 	},
@@ -384,31 +409,36 @@ export const availableBuildings = [
 				level: 1,
 				cost: { wood: 15, water: 15, herb: 5 },
 				effects: { herbPerDay: 2 },
-				requirements: { gathering: 3 }
+				requirements: { gathering: 3 },
+				buildTime: 60
 			},
 			{
 				level: 2,
 				cost: { wood: 25, water: 25, herb: 10, tools: 2 },
 				effects: { herbPerDay: 4, medicinePerDay: 1 },
-				requirements: { gathering: 4, research: 2 }
+				requirements: { gathering: 4, research: 2 },
+				buildTime: 120
 			},
 			{
 				level: 3,
 				cost: { wood: 40, water: 40, herb: 20, tools: 4 },
 				effects: { herbPerDay: 7, medicinePerDay: 2 },
-				requirements: { gathering: 5, research: 3 }
+				requirements: { gathering: 5, research: 3 },
+				buildTime: 180
 			},
 			{
 				level: 4,
 				cost: { crystal: 5, techFragment: 5, wood: 100, water: 100, herb: 90, tools: 30 },
 				effects: { herbPerDay: 10, medicinePerDay: 3 },
-				requirements: { gathering: 10, research: 10 }
+				requirements: { gathering: 10, research: 10 },
+				buildTime: 240
 			},
 			{
 				level: 5,
 				cost: { crystal: 10, techFragment: 10, wood: 150, water: 150, herb: 90, tools: 30 },
 				effects: { herbPerDay: 13, medicinePerDay: 4 },
-				requirements: { gathering: 20, research: 20 }
+				requirements: { gathering: 20, research: 20 },
+				buildTime: 300
 			}
 		]
 	},
@@ -421,31 +451,36 @@ export const availableBuildings = [
 				level: 1,
 				cost: { wood: 20, stone: 30, metal: 15 },
 				effects: { toolsPerDay: 1 },
-				requirements: { crafting: 3 }
+				requirements: { crafting: 3 },
+				buildTime: 60
 			},
 			{
 				level: 2,
 				cost: { wood: 30, stone: 50, metal: 30, tools: 3 },
 				effects: { toolsPerDay: 2, partsPerDay: 1 },
-				requirements: { crafting: 4, research: 2 }
+				requirements: { crafting: 4, research: 2 },
+				buildTime: 120
 			},
 			{
 				level: 3,
 				cost: { wood: 50, stone: 80, metal: 50, tools: 5, fuel: 10 },
 				effects: { toolsPerDay: 3, partsPerDay: 2 },
-				requirements: { crafting: 5, research: 3 }
+				requirements: { crafting: 5, research: 3 },
+				buildTime: 180
 			},
 			{
 				level: 4,
 				cost: { crystal: 5, techFragment: 5, wood: 100, stone: 150, metal: 100, tools: 30, fuel: 60 },
 				effects: { toolsPerDay: 4, partsPerDay: 3 },
-				requirements: { crafting: 10, research: 10 }
+				requirements: { crafting: 10, research: 10 },
+				buildTime: 240
 			},
 			{
 				level: 5,
 				cost: { crystal: 10, techFragment: 10, wood: 100, stone: 150, metal: 100, tools: 30, electronic_components: 30, fuel: 60 },
 				effects: { toolsPerDay: 5, partsPerDay: 4 },
-				requirements: { crafting: 20, research: 20 }
+				requirements: { crafting: 20, research: 20 },
+				buildTime: 300
 			}
 		]
 	}

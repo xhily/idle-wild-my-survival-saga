@@ -140,6 +140,10 @@ export const useGameStore = defineStore('game', {
     researchActivities: [],
     // 当前进行中的探索
     explorationActivities: [],
+    // 当前进行中的建筑
+    buildingActivities: [],
+    // 当前进行中的技能
+    skillActivities: [],
     // 等待中的活动队列
     pendingActivities: [],
     // 游戏时间
@@ -226,7 +230,11 @@ export const useGameStore = defineStore('game', {
     },
     // 保存游戏
     saveGame() {
-      const filteredState = omit(this.$state, ['eventLog', 'currentActivities', 'researchActivities', 'explorationActivities', 'pendingActivities'])
+      const filteredState = omit(this.$state, [
+        'eventLog', 'currentActivities', 'researchActivities',
+        'explorationActivities', 'buildingActivities',
+        'skillActivities', 'pendingActivities'
+      ])
       const encryptedData = encryptData(filteredState)
       if (encryptedData) {
         try {
@@ -249,8 +257,6 @@ export const useGameStore = defineStore('game', {
         if (saveData) {
           try {
             this.$state = decryptData(saveData)
-            // 重新初始化建筑效果
-            this.initBuildingEffects()
             this.resetSkillEffects()
             this.addToEventLog('游戏已加载')
             return true
@@ -553,42 +559,6 @@ export const useGameStore = defineStore('game', {
         heavyRain: '暴雨'
       }
       return weatherNames[this.weather.current] || '未知'
-    },
-    // 初始化建筑效果（在建造或加载游戏时调用）
-    initBuildingEffects() {
-      // 重置资源上限到基础值
-      this.resourceLimits = {
-        food: 50,
-        water: 50,
-        wood: 50,
-        stone: 50,
-        metal: 50,
-        herb: 30,
-        rare_herb: 30,
-        medicine: 20,
-        tools: 10,
-        parts: 10,
-        advanced_parts: 10,
-        electronic_components: 10,
-        crystal: 10,
-        fuel: 20,
-        ancientRelic: 5,
-        techFragment: 5,
-      }
-      // 遍历所有建筑应用永久效果
-      for (const building of this.buildings) {
-        if (!building.effects) continue
-        // 应用存储上限效果
-        if (building.effects.storageMultiplier) {
-          for (const resource in this.resourceLimits) {
-            this.resourceLimits[resource] *= building.effects.storageMultiplier
-          }
-        }
-        // 应用最大健康效果
-        if (building.effects.maxHealth) this.player.maxHealth += building.effects.maxHealth
-        // 应用最大体力效果
-        if (building.effects.maxEnergy) this.player.maxEnergy += building.effects.maxEnergy
-      }
     },
     // 触发随机事件
     triggerRandomEvent() {

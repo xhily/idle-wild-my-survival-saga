@@ -1,12 +1,20 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { skillTree } from '../plugins/skillTree'
+
 const gameStore = useGameStore()
 
 // 当前选中的技能分支
 const activeSkillBranch = ref('gathering')
+// 技能活动计时器
+const skillTimer = ref(null)
+// 技能状态更新定时器
+const skillUpdateTimer = ref(null)
+// 活动状态响应式数据
+const skillProgress = ref({})
+const skillRemainingTime = ref({})
 
 // 获取当前技能分支
 const currentSkillBranch = computed(() => {
@@ -42,31 +50,138 @@ const canUpgradeSkill = (skill) => {
 // 升级技能
 const upgradeSkill = (skill) => {
   if (!canUpgradeSkill(skill)) return
-  // 生成效果预览信息
-  let effectPreview = ''
-  for (const [effect, value] of Object.entries(skill.effects)) {
-    effectPreview += `\n- ${formatEffectName(effect)}: ${formatEffectValue(effect, value)}`
+  // 创建技能活动
+  const skillActivity = {
+    id: `skill_${skill.id}_${Date.now()}`,
+    skillId: skill.id,
+    name: `${skill.name} ${gameStore.unlockedSkills[skill.id] ? '升级' : '升级'}`,
+    duration: skill.duration * 1000, //升级时间
+    cost: { exp: skill.cost.exp },
+    completed: false
   }
-  // 确认升级
-  ElMessageBox.confirm(
-    `确定要升级 ${skill.name} 吗？将消耗 ${skill.cost.exp} 点经验值。\n\n技能效果:${effectPreview}`,
-    '升级技能',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'info',
-    }
-  ).then(() => {
+  // 检查是否有正在进行的技能活动
+  if (gameStore.skillActivities.length < gameStore.player.level) {
     // 消耗经验值
     gameStore.player.exp -= skill.cost.exp
-    // 升级技能
-    skill.level++
-    // 应用技能效果
-    applySkillEffects(skill)
-    // 记录日志
-    gameStore.addToEventLog(`你升级了技能: ${skill.name} (等级 ${skill.level}/${skill.maxLevel})`)
-    ElMessage.success(`技能升级成功: ${skill.name} (等级 ${skill.level}/${skill.maxLevel})`)
-  }).catch(() => { })
+    skillActivity.startTime = Date.now()
+    gameStore.skillActivities.push(skillActivity)
+    startSkillTimer()
+    gameStore.addToEventLog(`开始${skillActivity.name}`)
+    // 设置定时器完成技能
+    skillTimer.value = setTimeout(() => completeSkill(skillActivity.id), skillActivity.duration)
+  } else {
+    // 加入等待队列
+    gameStore.pendingActivities.push(skillActivity)
+    gameStore.addToEventLog(`已将${skillActivity.name}加入等待队列`)
+  }
+}
+
+// 完成技能升级/升级
+const completeSkill = (activityId) => {
+  const activityIndex = gameStore.skillActivities.findIndex(a => a.id === activityId)
+  if (activityIndex === -1) return
+  const activity = gameStore.skillActivities[activityIndex]
+  const skill = currentSkillBranch.value.skills.find(s => s.id === activity.skillId)
+  // 升级技能
+  skill.level++
+  // 应用技能效果
+  applySkillEffects(skill)
+  // 从当前活动中移除
+  gameStore.skillActivities.splice(activityIndex, 1)
+  // 记录日志
+  gameStore.addToEventLog(`你完成了${activity.name} (等级 ${skill.level}/${skill.maxLevel})`)
+  // 检查是否有等待中的技能活动
+  const nextSkill = gameStore.pendingActivities.shift()
+  if (nextSkill) {
+    // 消耗经验值
+    gameStore.player.exp -= nextSkill.cost.exp
+    nextSkill.startTime = Date.now()
+    gameStore.skillActivities.push(nextSkill)
+    gameStore.addToEventLog(`开始${nextSkill.name}`)
+    // 设置定时器
+    skillTimer.value = setTimeout(() => completeSkill(nextSkill.id), nextSkill.duration)
+  }
+}
+
+// 取消技能活动
+const cancelSkill = (activityId) => {
+  // 检查当前活动
+  const currentIndex = gameStore.skillActivities.findIndex(a => a.id === activityId)
+  if (currentIndex !== -1) {
+    const activity = gameStore.skillActivities[currentIndex]
+    // 返还经验值
+    gameStore.player.exp += activity.cost.exp
+    // 清除定时器
+    if (skillTimer.value) {
+      clearTimeout(skillTimer.value)
+      skillTimer.value = null
+    }
+    gameStore.skillActivities.splice(currentIndex, 1)
+    gameStore.addToEventLog(`取消了${activity.name}并返还了经验值`)
+    // 检查并启动等待队列中的下一个技能活动
+    const nextSkill = gameStore.pendingActivities.shift()
+    if (nextSkill) {
+      // 消耗经验值
+      gameStore.player.exp -= nextSkill.cost.exp
+      nextSkill.startTime = Date.now()
+      gameStore.skillActivities.push(nextSkill)
+      gameStore.addToEventLog(`开始${nextSkill.name}`)
+      // 设置定时器
+      skillTimer.value = setTimeout(() => completeSkill(nextSkill.id), nextSkill.duration)
+    }
+    return true
+  }
+  // 检查等待队列
+  const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === activityId)
+  if (pendingIndex !== -1) {
+    const activity = gameStore.pendingActivities[pendingIndex]
+    gameStore.pendingActivities.splice(pendingIndex, 1)
+    gameStore.addToEventLog(`取消了等待中的${activity.name}`)
+    return true
+  }
+  return false
+}
+
+// 获取技能活动剩余时间
+const getSkillRemainingTime = (activity) => {
+  if (skillRemainingTime.value[activity.id] !== undefined) return skillRemainingTime.value[activity.id]
+  const now = Date.now()
+  const elapsed = now - activity.startTime
+  const remaining = Math.max(0, activity.duration - elapsed)
+  const seconds = Math.ceil(remaining / 1000)
+  return seconds < 60 ? `${seconds}秒` : `${Math.floor(seconds / 60)}分${seconds % 60}秒`
+}
+
+// 获取技能活动进度
+const getSkillProgress = (activity) => {
+  if (skillProgress.value[activity.id] !== undefined) return skillProgress.value[activity.id]
+  const now = Date.now()
+  const elapsed = now - activity.startTime
+  return Math.min(100, (elapsed / activity.duration) * 100)
+}
+
+// 更新技能活动状态
+const updateSkillStatus = () => {
+  gameStore.skillActivities.forEach(activity => {
+    const now = Date.now()
+    const elapsed = now - activity.startTime
+    const progress = Math.min(100, (elapsed / activity.duration) * 100)
+    skillProgress.value[activity.id] = progress
+    const remaining = Math.max(0, activity.duration - elapsed)
+    const seconds = Math.ceil(remaining / 1000)
+    skillRemainingTime.value[activity.id] = seconds < 60 ?
+      `${seconds}秒` : `${Math.floor(seconds / 60)}分${seconds % 60}秒`
+  })
+}
+
+// 启动技能状态更新定时器
+const startSkillTimer = () => {
+  if (skillUpdateTimer.value) return
+  skillUpdateTimer.value = setInterval(() => {
+    if (gameStore.skillActivities.length > 0) {
+      updateSkillStatus()
+    }
+  }, 1000)
 }
 
 // 应用技能效果
@@ -234,10 +349,60 @@ const formatEffectValue = (effect, value) => {
   return value
 }
 
+const isSkill = (skillId) => {
+  return gameStore.skillActivities.some(activity => activity.skillId === skillId) ||
+    gameStore.pendingActivities.some(activity => activity.skillId === skillId)
+}
+
+// 组件挂载时启动定时器
+onMounted(() => {
+  startSkillTimer()
+})
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (skillUpdateTimer.value) {
+    clearInterval(skillUpdateTimer.value)
+    skillUpdateTimer.value = null
+  }
+  if (skillTimer.value) {
+    clearTimeout(skillTimer.value)
+  }
+})
+
 </script>
 
 <template>
   <div class="skill-tree-system">
+    <div class="skill-queue" v-if="gameStore.skillActivities.length || gameStore.pendingActivities.length">
+      <h4>技能队列</h4>
+      <el-scrollbar max-height="260" always>
+        <div class="skill-list">
+          <div v-for="activity in gameStore.skillActivities" :key="activity.id" class="skill-card in-progress">
+            <div class="skill-header">
+              <div class="skill-name">{{ activity.name }}</div>
+              <div class="skill-time">剩余: {{ getSkillRemainingTime(activity) }}</div>
+            </div>
+            <el-progress :percentage="getSkillProgress(activity)" :stroke-width="10" :show-text="false" />
+            <el-button type="danger" size="small" @click="cancelSkill(activity.id)"
+              style="width: 100%; margin-top: 10px;">
+              取消升级
+            </el-button>
+          </div>
+          <div v-for="activity in gameStore.pendingActivities" :key="activity.id" class="skill-card pending">
+            <div class="skill-header">
+              <div class="skill-name">{{ activity.name }}</div>
+              <div class="skill-time">等待中</div>
+            </div>
+            <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
+            <el-button type="danger" size="small" @click="cancelSkill(activity.id)"
+              style="width: 100%; margin-top: 10px;">
+              取消队列
+            </el-button>
+          </div>
+        </div>
+      </el-scrollbar>
+    </div>
     <div class="skill-branches">
       <el-radio-group v-model="activeSkillBranch" size="large">
         <el-radio-button v-for="(branch, key) in skillTree" :key="key" :value="key">
@@ -291,8 +456,8 @@ const formatEffectValue = (effect, value) => {
               </template>
             </div>
             <div class="skill-cost">升级消耗: {{ skill.cost.exp }} 经验值</div>
-            <el-button style="width: 100%;" size="small" type="primary" :disabled="!canUpgradeSkill(skill)"
-              @click="upgradeSkill(skill)">
+            <el-button style="width: 100%;" :loading="isSkill(skill.id)" size="small" type="primary"
+              :disabled="!canUpgradeSkill(skill)" @click="upgradeSkill(skill)">
               {{ gameStore.unlockedSkills[skill.id] == skill.maxLevel ? '已满级' : gameStore.unlockedSkills[skill.id] === 0
                 ? '解锁' :
                 '升级' }}
@@ -305,6 +470,44 @@ const formatEffectValue = (effect, value) => {
 </template>
 
 <style scoped>
+.skill-queue {
+  margin-bottom: 20px;
+}
+
+.skill-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  margin: 10px;
+}
+
+.skill-card {
+  background-color: var(--el-bg-color);
+  border-radius: 4px;
+  padding: 12px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.skill-card.pending {
+  border-left: 4px solid #E6A23C;
+  opacity: 0.8;
+}
+
+.skill-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.skill-name {
+  font-weight: bold;
+}
+
+.skill-time {
+  color: var(--el-text-color-secondary);
+  font-size: 0.9em;
+}
+
 .skill-tree-system {
   background-color: var(--el-bg-color-overlay);
   border-radius: 8px;

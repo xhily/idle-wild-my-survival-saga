@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onUnmounted, onMounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
-import { ElMessage } from 'element-plus'
 import { technologies } from '../plugins/recipes'
 
 const gameStore = useGameStore()
@@ -104,14 +103,12 @@ const researchTech = () => {
     updateResearchStatus()
     startResearchTimer()
     gameStore.addToEventLog(`开始研究${tech.name}`)
-    ElMessage.success(`开始研究${tech.name}`)
     // 设置定时器完成研究
     researchTimer.value = setTimeout(() => completeResearch(researchActivity.id, tech), researchActivity.duration)
   } else {
     // 加入等待队列
     gameStore.pendingActivities.push(researchActivity)
     gameStore.addToEventLog(`已将研究${tech.name}加入等待队列`)
-    ElMessage.info(`研究${tech.name}已加入等待队列`)
   }
   selectedTech.value = null
 }
@@ -135,7 +132,6 @@ const completeResearch = (activityId, tech) => {
   // 增加研究技能经验
   gameStore.addSkillExp('research', 2)
   gameStore.addToEventLog(`你成功研究了${tech.name}！`)
-  ElMessage.success(`研究成功：${tech.name}`)
   // 检查是否有等待中的研究活动
   const nextResearch = gameStore.pendingActivities.find(a => a.recipeId.startsWith('research_'))
   if (nextResearch) {
@@ -157,7 +153,6 @@ const completeResearch = (activityId, tech) => {
       nextResearch.startTime = Date.now()
       gameStore.researchActivities.push(nextResearch)
       gameStore.addToEventLog(`开始研究${nextTech.name}`)
-      ElMessage.success(`开始研究${nextTech.name}`)
       // 设置定时器
       researchTimer.value = setTimeout(() => completeResearch(nextResearch.id, nextTech), nextResearch.duration)
     }
@@ -188,7 +183,6 @@ const cancelResearch = (activityId) => {
       }
       gameStore.researchActivities.splice(currentIndex, 1)
       gameStore.addToEventLog(`取消了研究${tech.name}并返还了资源`)
-      ElMessage.success(`已取消研究${tech.name}并返还了资源`)
       // 移除研究的科技ID
       researchingTech.value.splice(researchingTech.value.indexOf(tech.id), 1)
       // 检查并启动等待队列中的下一个研究活动
@@ -212,7 +206,6 @@ const cancelResearch = (activityId) => {
           nextResearch.startTime = Date.now()
           gameStore.researchActivities.push(nextResearch)
           gameStore.addToEventLog(`开始研究${nextTech.name}`)
-          ElMessage.success(`开始研究${nextTech.name}`)
           // 设置定时器
           researchTimer.value = setTimeout(() => completeResearch(nextResearch.id, nextTech), nextResearch.duration)
         }
@@ -226,7 +219,6 @@ const cancelResearch = (activityId) => {
     const activity = gameStore.pendingActivities[pendingIndex]
     gameStore.pendingActivities.splice(pendingIndex, 1)
     gameStore.addToEventLog(`取消了等待中的研究${activity.name}`)
-    ElMessage.warning(`已取消等待中的研究${activity.name}`)
     return true
   }
   return false
@@ -346,36 +338,37 @@ onUnmounted(() => {
         </el-alert>
       </div>
       <div class="research-queue"
-        v-if="gameStore.researchActivities.some(a => a.recipeId.startsWith('research_')) || gameStore.pendingActivities.some(a => a.recipeId.startsWith('research_'))">
+        v-if="gameStore.researchActivities.length || gameStore.pendingActivities.some(a => a.recipeId.startsWith('research_'))">
         <h4>研究队列</h4>
-        <div class="research-list">
-          <div v-for="activity in gameStore.researchActivities.filter(a => a.recipeId.startsWith('research_'))"
-            :key="activity.id" class="research-card in-progress">
-            <div class="research-header">
-              <div class="research-name">{{ activity.name }}</div>
-              <div class="research-time">
-                剩余: {{ getActivityRemainingTime(activity) }}
+        <el-scrollbar max-height="260" always>
+          <div class="research-list">
+            <div v-for="activity in gameStore.researchActivities" :key="activity.id" class="research-card in-progress">
+              <div class="research-header">
+                <div class="research-name">{{ activity.name }}</div>
+                <div class="research-time">
+                  剩余: {{ getActivityRemainingTime(activity) }}
+                </div>
               </div>
+              <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
+              <el-button type="danger" size="small" @click="cancelResearch(activity.id)"
+                style="width: 100%; margin-top: 10px;">
+                取消研究
+              </el-button>
             </div>
-            <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
-            <el-button type="danger" size="small" @click="cancelResearch(activity.id)"
-              style="width: 100%; margin-top: 10px;">
-              取消研究
-            </el-button>
-          </div>
-          <div v-for="activity in gameStore.pendingActivities.filter(a => a.recipeId.startsWith('research_'))"
-            :key="activity.id" class="research-card pending">
-            <div class="research-header">
-              <div class="research-name">{{ activity.name }}</div>
-              <div class="research-time">等待中</div>
+            <div v-for="activity in gameStore.pendingActivities.filter(a => a.recipeId.startsWith('research_'))"
+              :key="activity.id" class="research-card pending">
+              <div class="research-header">
+                <div class="research-name">{{ activity.name }}</div>
+                <div class="research-time">等待中</div>
+              </div>
+              <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
+              <el-button type="danger" size="small" @click="cancelResearch(activity.id)"
+                style="width: 100%; margin-top: 10px;">
+                取消队列
+              </el-button>
             </div>
-            <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
-            <el-button type="danger" size="small" @click="cancelResearch(activity.id)"
-              style="width: 100%; margin-top: 10px;">
-              取消队列
-            </el-button>
           </div>
-        </div>
+        </el-scrollbar>
       </div>
       <div v-if="selectedTech" class="tech-details">
         <h4>科技详情</h4>

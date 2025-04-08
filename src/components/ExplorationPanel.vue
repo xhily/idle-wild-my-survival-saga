@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
-import { ElMessage } from 'element-plus'
 
 const gameStore = useGameStore()
 
@@ -180,14 +179,12 @@ const startExploration = () => {
     explorationActivity.startTime = Date.now()
     gameStore.explorationActivities.push(explorationActivity)
     gameStore.addToEventLog(`开始探索${region.name}`)
-    ElMessage.success(`开始探索${region.name}`)
     // 设置定时器完成探索
     setTimeout(() => completeExploration(explorationActivity.id, region), duration)
   } else {
     // 否则加入等待队列
     gameStore.pendingActivities.push(explorationActivity)
     gameStore.addToEventLog(`已将探索${region.name}加入等待队列`)
-    ElMessage.info(`探索${region.name}已加入等待队列`)
   }
   // 重置选中
   selectedRegion.value = null
@@ -213,7 +210,6 @@ const cancelExploration = (activityId) => {
       // 移除活动
       gameStore.explorationActivities.splice(currentIndex, 1)
       gameStore.addToEventLog(`取消了${region.name}探索并返还了资源`)
-      ElMessage.success(`已取消${region.name}探索并返还了资源`)
       // 检查并启动等待队列中的下一个探索活动
       const nextExploration = gameStore.pendingActivities.find(a => a.recipeId.startsWith('explore_'))
       if (nextExploration) {
@@ -225,7 +221,6 @@ const cancelExploration = (activityId) => {
           nextExploration.startTime = Date.now()
           gameStore.explorationActivities.push(nextExploration)
           gameStore.addToEventLog(`开始探索${nextRegion.name}`)
-          ElMessage.success(`开始探索${nextRegion.name}`)
         }
       }
       return true
@@ -237,7 +232,6 @@ const cancelExploration = (activityId) => {
     const activity = gameStore.pendingActivities[pendingIndex]
     gameStore.pendingActivities.splice(pendingIndex, 1)
     gameStore.addToEventLog(`取消了等待中的${activity.name}探索`)
-    ElMessage.warning(`已取消等待中的${activity.name}探索`)
     return true
   }
   return false
@@ -271,7 +265,6 @@ const completeExploration = (activityId, region) => {
       nextExploration.startTime = Date.now()
       gameStore.explorationActivities.push(nextExploration)
       gameStore.addToEventLog(`开始探索${nextRegion.name}`)
-      ElMessage.success(`开始探索${nextRegion.name}`)
       // 设置定时器
       setTimeout(() => completeExploration(nextExploration.id, nextRegion), nextExploration.duration)
     }
@@ -521,37 +514,37 @@ onUnmounted(() => {
         <div>{{ getExplorationSkillEffects() }}</div>
       </el-alert>
     </div>
-    <div class="current-explorations"
-      v-if="gameStore.explorationActivities.some(a => a.recipeId.startsWith('explore_')) || gameStore.pendingActivities.some(a => a.recipeId.startsWith('explore_'))">
-      <h4>探索队列</h4>
-      <div class="exploration-list">
-        <div v-for="activity in gameStore.explorationActivities.filter(a => a.recipeId.startsWith('explore_'))"
-          :key="activity.id" class="exploration-card in-progress">
-          <div class="exploration-header">
-            <div class="exploration-name">{{ activity.name }}</div>
-            <div class="exploration-time">
-              剩余: {{ getActivityRemainingTime(activity) }}
+    <div class="current-explorations" v-if="gameStore.explorationActivities.length || gameStore.pendingActivities.some(a => a.recipeId.startsWith('explore_'))">
+      <el-scrollbar max-height="260" always>
+        <div class="exploration-list">
+          <div v-for="activity in gameStore.explorationActivities.filter(a => a.recipeId.startsWith('explore_'))"
+            :key="activity.id" class="exploration-card in-progress">
+            <div class="exploration-header">
+              <div class="exploration-name">{{ activity.name }}</div>
+              <div class="exploration-time">
+                剩余: {{ getActivityRemainingTime(activity) }}
+              </div>
             </div>
+            <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
+            <el-button type="danger" size="small" @click="cancelExploration(activity.id)"
+              style="width: 100%; margin-top: 10px;">
+              取消探索
+            </el-button>
           </div>
-          <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
-          <el-button type="danger" size="small" @click="cancelExploration(activity.id)"
-            style="width: 100%; margin-top: 10px;">
-            取消探索
-          </el-button>
-        </div>
-        <div v-for="activity in gameStore.pendingActivities.filter(a => a.recipeId.startsWith('explore_'))"
-          :key="activity.id" class="exploration-card pending">
-          <div class="exploration-header">
-            <div class="exploration-name">{{ activity.name }}</div>
-            <div class="exploration-time">等待中</div>
+          <div v-for="activity in gameStore.pendingActivities.filter(a => a.recipeId.startsWith('explore_'))"
+            :key="activity.id" class="exploration-card pending">
+            <div class="exploration-header">
+              <div class="exploration-name">{{ activity.name }}</div>
+              <div class="exploration-time">等待中</div>
+            </div>
+            <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
+            <el-button type="danger" size="small" @click="cancelExploration(activity.id)"
+              style="width: 100%; margin-top: 10px;">
+              取消队列
+            </el-button>
           </div>
-          <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
-          <el-button type="danger" size="small" @click="cancelExploration(activity.id)"
-            style="width: 100%; margin-top: 10px;">
-            取消队列
-          </el-button>
         </div>
-      </div>
+      </el-scrollbar>
     </div>
     <div class="available-regions">
       <h4>可探索区域</h4>

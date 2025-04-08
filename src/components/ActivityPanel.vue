@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
-import { ElMessage } from 'element-plus'
 import { recipes } from '../plugins/recipes'
 
 const gameStore = useGameStore()
@@ -465,34 +464,36 @@ const pendingActivities = computed(() =>
   <el-scrollbar class="activity-panel">
     <div class="current-activities" v-if="currentActivities.length > 0 || pendingActivities.length > 0">
       <h4>活动队列</h4>
-      <div class="activity-list">
-        <div v-for="activity in currentActivities" :key="activity.id" class="activity-card in-progress">
-          <div class="activity-header">
-            <div class="activity-name">{{ activity.name }}</div>
-            <div class="activity-time">剩余: {{ getActivityRemainingTime(activity) }}</div>
+      <el-scrollbar max-height="260" always>
+        <div class="activity-list">
+          <div v-for="activity in currentActivities" :key="activity.id" class="activity-card in-progress">
+            <div class="activity-header">
+              <div class="activity-name">{{ activity.name }}</div>
+              <div class="activity-time">剩余: {{ getActivityRemainingTime(activity) }}</div>
+            </div>
+            <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
+            <div class="activity-actions">
+              <el-button style="width: 100%;margin-top: 5px;" type="danger" size="small"
+                @click="cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
+                取消
+              </el-button>
+            </div>
           </div>
-          <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
-          <div class="activity-actions">
-            <el-button style="width: 100%;margin-top: 5px;" type="danger" size="small"
-              @click="cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
-              取消
-            </el-button>
+          <div v-for="activity in pendingActivities" :key="activity.id" class="activity-card pending">
+            <div class="activity-header">
+              <div class="activity-name">{{ activity.name }}</div>
+              <div class="activity-time">等待中</div>
+            </div>
+            <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
+            <div class="activity-actions">
+              <el-button style="width: 100%;margin-top: 5px;" type="danger" size="small"
+                @click="cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
+                取消
+              </el-button>
+            </div>
           </div>
         </div>
-        <div v-for="activity in pendingActivities" :key="activity.id" class="activity-card pending">
-          <div class="activity-header">
-            <div class="activity-name">{{ activity.name }}</div>
-            <div class="activity-time">等待中</div>
-          </div>
-          <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
-          <div class="activity-actions">
-            <el-button style="width: 100%;margin-top: 5px;" type="danger" size="small"
-              @click="cancelActivity(activity.id)" :disabled="gameStore.gameState !== 'playing'">
-              取消
-            </el-button>
-          </div>
-        </div>
-      </div>
+      </el-scrollbar>
     </div>
     <div class="available-activities">
       <h4>可用活动</h4>
