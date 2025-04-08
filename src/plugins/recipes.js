@@ -221,7 +221,7 @@ export const availableBuildings = [
 			},
 			{
 				level: 5,
-				cost: { crystal: 10, techFragment: 10, wood: 150, stone: 150, metal: 150, tools: 100 },
+				cost: { crystal: 10, techFragment: 10, wood: 150, stone: 150, metal: 150, tools: 30 },
 				effects: { energyRecovery: 10, maxHealth: 100 },
 				requirements: { survival: 20, crafting: 20 }
 			}

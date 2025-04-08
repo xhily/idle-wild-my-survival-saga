@@ -67,43 +67,6 @@ body {
   cursor: pointer;
   background-color: #0000004d;
 }
-
-/* @media (orientation: portrait) {
-
-  html,
-  body {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    margin: 0;
-    overflow: auto;
-  }
-
-  html::after {
-    content: '为了更好的体验，请将手机横过来或者打开折叠屏';
-    text-align: center;
-    font-size: 16px;
-    color: #fff;
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    z-index: 99999;
-  }
-
-  html::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    background: #333;
-    z-index: 99999;
-  }
-} */
 </style>
 
 <style scoped>
