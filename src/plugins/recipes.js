@@ -12,7 +12,7 @@ export const recipes = [
 	{
 		id: 'gather_water',
 		name: '收集水',
-		inputs: { food: 2, energy: 10 },
+		inputs: { energy: 10 },
 		outputs: { water: [5, 15] },
 		duration: 60,
 		skillRequired: { gathering: 1 },

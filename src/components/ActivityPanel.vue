@@ -38,9 +38,15 @@ const meetsSkillRequirements = (recipe) => {
 // 检查是否有足够的资源
 const hasEnoughResources = (recipe) => {
   if (!recipe.inputs) return true
+  // 检查体力是否足够
+  if (recipe.inputs.energy && gameStore.player.energy < recipe.inputs.energy) {
+    return false
+  }
+  // 检查其他资源是否足够
   for (const [resource, amount] of Object.entries(recipe.inputs)) {
-    if (resource === 'energy') if (gameStore.player.energy < amount) return false
-    else if (gameStore.resources[resource] < amount) return false
+    if (resource !== 'energy' && gameStore.resources[resource] < amount) {
+      return false
+    }
   }
   return true
 }
@@ -48,6 +54,11 @@ const hasEnoughResources = (recipe) => {
 // 开始活动
 const startActivity = (recipeId) => {
   const recipe = recipes.find(r => r.id === recipeId)
+  // 双重检查资源是否足够
+  if (!hasEnoughResources(recipe)) {
+    gameStore.addToEventLog('资源不足，无法开始制作')
+    return
+  }
   // 检查技能要求
   for (const [skill, level] of Object.entries(recipe.skillRequired)) {
     if (gameStore.skills[skill] < level) {

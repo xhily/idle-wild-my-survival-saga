@@ -296,7 +296,7 @@ const showActiveEffects = () => {
   ElMessageBox.alert(effectsContent, '技能效果总览', {
     dangerouslyUseHTMLString: true,
     confirmButtonText: '关闭'
-  })
+  }).then(() => { }).catch(() => { })
 }
 
 // 格式化效果名称
@@ -352,6 +352,18 @@ const formatEffectValue = (effect, value) => {
 const isSkill = (skillId) => {
   return gameStore.skillActivities.some(activity => activity.skillId === skillId) ||
     gameStore.pendingActivities.some(activity => activity.skillId === skillId)
+}
+
+const skillBug = () => {
+  ElMessageBox.confirm('修复技能问题需要重置技能数据, 你确定要修复吗?', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(() => {
+    gameStore.unlockedSkills = {}
+    gameStore.saveGame()
+    gameStore.addToEventLog('技能问题已修复')
+  }).catch(() => { })
 }
 
 // 组件挂载时启动定时器
@@ -419,6 +431,7 @@ onUnmounted(() => {
       <div class="branch-info">{{ currentSkillBranch.description }}</div>
       <div class="player-exp">可用经验值: {{ gameStore.player.exp }}</div>
       <el-button size="small" style="margin-top: 10px;" type="info" @click="showActiveEffects">查看当前激活效果</el-button>
+      <el-button size="small" style="margin-top: 10px;" type="info" @click="skillBug">修复技能无法升级问题</el-button>
     </div>
     <div class="skills-container">
       <div class="skill-path">

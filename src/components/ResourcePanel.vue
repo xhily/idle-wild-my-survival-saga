@@ -99,8 +99,6 @@ const resetResourceLimits = () => {
     // 资源上限
     if (typeof gameStore.resourceLimits[resource] !== 'number') {
       gameStore.resourceLimits[resource] = resourceLimits[resource]
-    } else if (gameStore.resourceLimits[resource] >= 200) {
-      gameStore.resourceLimits[resource] = 200
     }
   }
 }

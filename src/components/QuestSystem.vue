@@ -33,8 +33,10 @@ const questList = [
     description: '收集材料建造一个基本的庇护所，抵御恶劣天气。',
     difficulty: 2,
     objectives: {
-      wood: 30,
-      stone: 20
+      wood: 50,
+      stone: 50,
+      parts: 10,
+      tools: 10
     },
     rewards: {
       exp: 50,
@@ -54,8 +56,8 @@ const questList = [
     description: '收集各种药用植物，用于制作医疗物品。',
     difficulty: 2,
     objectives: {
-      herb: 15,
-      rare_herb: 3
+      herb: 60,
+      rare_herb: 30
     },
     rewards: {
       exp: 40,
@@ -74,7 +76,7 @@ const questList = [
     description: '制作基本工具，提高资源收集效率。',
     difficulty: 2,
     objectives: {
-      tools: 2
+      tools: 20
     },
     rewards: {
       exp: 45
@@ -91,7 +93,7 @@ const questList = [
     description: '探索周围的区域，寻找有用的资源和信息。',
     difficulty: 3,
     objectives: {
-      explorationCount: 20 // 完成10次探索
+      crystal: 20 // 完成10次探索
     },
     rewards: {
       exp: 60,
@@ -131,9 +133,9 @@ const questList = [
     description: '收集材料建造气象站，预测天气变化。',
     difficulty: 4,
     objectives: {
-      metal: 25,
-      electronic_components: 3,
-      advanced_parts: 2
+      metal: 50,
+      electronic_components: 10,
+      advanced_parts: 10
     },
     rewards: {
       exp: 120
@@ -152,8 +154,8 @@ const questList = [
     difficulty: 3,
     objectives: {
       crystal: 10,
-      rare_herb: 8,
-      metal: 15
+      rare_herb: 30,
+      metal: 50
     },
     rewards: {
       exp: 80,
@@ -172,9 +174,9 @@ const questList = [
     description: '建造通讯装置，尝试与外界取得联系。',
     difficulty: 5,
     objectives: {
-      electronic_components: 5,
-      crystal: 15,
-      metal: 20
+      electronic_components: 10,
+      crystal: 10,
+      metal: 50
     },
     rewards: {
       exp: 150,
@@ -193,7 +195,7 @@ const questList = [
     description: '证明你是真正的生存大师，完成一系列挑战。',
     difficulty: 5,
     objectives: {
-      days: 60, // 生存60天
+      days: 120, // 生存60天
       completedQuests: 8 // 完成8个任务
     },
     rewards: {

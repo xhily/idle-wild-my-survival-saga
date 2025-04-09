@@ -691,7 +691,7 @@ onUnmounted(() => {
 						<ExplorationPanel />
 					</el-tab-pane>
 					<el-tab-pane label="交易" name="trading">
-						<TradingSystem />
+						<TradingSystem :key="centerPanelTab == 'trading'" />
 					</el-tab-pane>
 					<el-tab-pane label="任务" name="quests">
 						<QuestSystem />
