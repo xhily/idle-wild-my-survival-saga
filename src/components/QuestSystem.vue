@@ -366,6 +366,10 @@ const completeQuest = (quest) => {
     gameStore.addToEventLog(`任务 ${newCompletedQuest.name} 不在进行中`)
     return
   }
+  // 检查资源要求
+  for (const [resource, amount] of Object.entries(quest.objectives)) {
+    gameStore.resources[resource] -= amount
+  }
   // 从进行中列表移除任务
   const completedQuest = gameStore.activeQuests.splice(questIndex, 1)[0]
   // 添加到已完成列表

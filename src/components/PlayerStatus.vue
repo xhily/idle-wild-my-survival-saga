@@ -45,18 +45,6 @@ const plusPlayerHealth = () => {
 	gameStore.resources.medicine -= 1
 	gameStore.addToEventLog('你使用了药品，恢复了10点健康')
 }
-
-// 获取技能名称
-const getSkillName = (key) => {
-	const skillNames = {
-		gathering: '采集',
-		crafting: '制作',
-		combat: '战斗',
-		survival: '生存',
-		research: '研究'
-	}
-	return skillNames[key] || key
-}
 </script>
 
 <template>
@@ -106,7 +94,7 @@ const getSkillName = (key) => {
 			<h4>技能 <span class="skill-total">(总等级: {{ totalSkillLevel }})</span></h4>
 			<div class="skill-grid">
 				<div v-for="(level, skill) in gameStore.skills" :key="skill" class="skill-item">
-					<div class="skill-name">{{ getSkillName(skill) }}</div>
+					<div class="skill-name">{{ gameStore.getResourceName(skill) }}</div>
 					<div class="skill-level">Lv.{{ level }}</div>
 				</div>
 			</div>

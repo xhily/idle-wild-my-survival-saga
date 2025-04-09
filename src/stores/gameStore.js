@@ -3,6 +3,7 @@ import { omit } from 'lodash-es'
 import { encryptData, decryptData } from '../plugins/crypto'
 import { skillTree } from '../plugins/skillTree'
 import { merchants } from '../plugins/merchants'
+import { resources, resourceLimits } from '../plugins/resource'
 
 export const useGameStore = defineStore('game', {
   state: () => ({
@@ -85,45 +86,9 @@ export const useGameStore = defineStore('game', {
       }
     },
     // 基础资源
-    resources: {
-      food: 10,
-      water: 10,
-      wood: 0,
-      stone: 0,
-      metal: 0,
-      herb: 0,
-      rare_herb: 0,
-      // 高级资源
-      medicine: 0,
-      tools: 0,
-      parts: 0,
-      advanced_parts: 0,
-      electronic_components: 0,
-      fuel: 0,
-      crystal: 0,
-      // 特殊资源
-      ancientRelic: 0,
-      techFragment: 0,
-    },
+    resources,
     // 资源上限
-    resourceLimits: {
-      food: 50,
-      water: 50,
-      wood: 50,
-      stone: 50,
-      metal: 50,
-      herb: 30,
-      rare_herb: 30,
-      medicine: 20,
-      tools: 10,
-      parts: 10,
-      advanced_parts: 10,
-      electronic_components: 10,
-      crystal: 10,
-      fuel: 20,
-      ancientRelic: 5,
-      techFragment: 5,
-    },
+    resourceLimits,
     // 技能等级
     skills: {
       gathering: 1, // 采集
@@ -258,6 +223,7 @@ export const useGameStore = defineStore('game', {
           try {
             this.$state = decryptData(saveData)
             this.resetSkillEffects()
+            this.initBuildingEffects()
             this.addToEventLog('游戏已加载')
             return true
           } catch (error) {
@@ -266,6 +232,22 @@ export const useGameStore = defineStore('game', {
         }
       }
       return false
+    },
+    // 初始化建筑资源上限效果
+    initBuildingEffects() {
+      // 遍历所有建筑应用永久效果
+      for (const building of this.buildings) {
+        if (!building.effects) continue
+        // 应用存储上限效果
+        if (building.effects.storageMultiplier) {
+          for (const resource in resourceLimits) {
+            this.resourceLimits[resource] = resourceLimits[resource] * building.effects.storageMultiplier
+            if (this.resources[resource] > this.resourceLimits[resource]) {
+              this.resources[resource] = this.resourceLimits[resource]
+            }
+          }
+        }
+      }
     },
     // 重置错误的技能效果
     resetSkillEffects() {
@@ -292,17 +274,6 @@ export const useGameStore = defineStore('game', {
           }
         }
       }
-    },
-    // 获取技能名称
-    getSkillName(skillId) {
-      const skillNames = {
-        gathering: '采集',
-        crafting: '制作',
-        combat: '战斗',
-        survival: '生存',
-        research: '研究'
-      }
-      return skillNames[skillId] || skillId
     },
     findSkillEffectById(skillId) {
       for (const branch of Object.values(skillTree)) {
@@ -352,21 +323,13 @@ export const useGameStore = defineStore('game', {
     // 增加技能经验
     addSkillExp(skill, exp) {
       if (!this.skills.hasOwnProperty(skill)) return false
-      // 技能名称映射
-      const skillNames = {
-        gathering: '采集',
-        crafting: '制作',
-        combat: '战斗',
-        survival: '生存',
-        research: '研究'
-      }
       // 改进的技能成长系统
       // 技能等级越高，提升越困难
       const currentLevel = this.skills[skill]
       const chanceToLevel = 0.1 * exp / Math.sqrt(currentLevel)
       if (Math.random() < chanceToLevel) {
         this.skills[skill] += 1
-        this.addToEventLog(`${skillNames[skill] || skill}技能提升到${this.skills[skill]}级！`)
+        this.addToEventLog(`${this.getResourceName[skill] || skill}技能提升到${this.skills[skill]}级！`)
         // 技能提升带来的额外奖励
         if (this.skills[skill] % 5 === 0) { // 每5级有特殊奖励
           switch (skill) {

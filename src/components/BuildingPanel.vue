@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { availableBuildings } from '../plugins/recipes'
+import { resourceLimits } from '../plugins/resource'
 
 const gameStore = useGameStore()
 
@@ -243,14 +244,15 @@ const startBuildingTimer = () => {
   }, 1000)
 }
 
+
 const initBuildingEffects = () => {
   // 遍历所有建筑应用永久效果
   for (const building of gameStore.buildings) {
     if (!building.effects) continue
     // 应用存储上限效果
     if (building.effects.storageMultiplier) {
-      for (const resource in gameStore.resourceLimits) {
-        gameStore.resourceLimits[resource] *= building.effects.storageMultiplier
+      for (const resource in resourceLimits) {
+        gameStore.resourceLimits[resource] = resourceLimits[resource] * building.effects.storageMultiplier
       }
     }
     // 应用最大健康效果
@@ -319,6 +321,7 @@ const isBuilding = (buildingId) => {
 // 组件挂载时启动定时器
 onMounted(() => {
   startBuildingTimer()
+  console.log(gameStore.buildings)
 })
 
 // 组件卸载时清除定时器

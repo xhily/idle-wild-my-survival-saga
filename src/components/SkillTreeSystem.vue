@@ -193,7 +193,7 @@ const applySkillEffects = (skill) => {
   if (skill.level === 1) {
     // 如果是首次解锁技能，增加对应分支的基础技能等级
     gameStore.skills[branchKey] += 1
-    gameStore.addToEventLog(`你的${gameStore.getSkillName(branchKey)}技能等级提升到了 ${gameStore.skills[branchKey]}!`)
+    gameStore.addToEventLog(`你的${gameStore.getResourceName(branchKey)}技能等级提升到了 ${gameStore.skills[branchKey]}!`)
   }
 }
 
@@ -464,7 +464,7 @@ onUnmounted(() => {
               </div>
               <template v-for="(level, baseSkill) in skill.requires" :key="baseSkill">
                 <div v-if="baseSkill !== 'skills'">
-                  需要 {{ gameStore.getSkillName(baseSkill) }} 等级 {{ level }}
+                  需要 {{ gameStore.getResourceName(baseSkill) }} 等级 {{ level }}
                 </div>
               </template>
             </div>
