@@ -69,6 +69,8 @@ const calculateSeasonBuildingMultiplier = () => {
 const applyBuildingEffectsHourly = () => {
 	// 计算季节对建筑效果的影响
 	const seasonMultiplier = calculateSeasonBuildingMultiplier()
+	// 获取天气对建筑生产的影响
+	const weatherMultiplier = getWeatherBuildingMultiplier()
 	// 遍历所有建筑
 	for (const building of gameStore.buildings) {
 		if (!building.effects) continue
@@ -118,8 +120,6 @@ const getWeatherBuildingMultiplier = () => {
 const applyBuildingEffectsDay = () => {
 	// 获取季节对建筑生产的影响
 	const seasonMultiplier = calculateSeasonBuildingMultiplier()
-	// 获取天气对建筑生产的影响
-	const weatherMultiplier = getWeatherBuildingMultiplier()
 	// 遍历所有建筑
 	for (const building of gameStore.buildings) {
 		if (!building.effects) continue
