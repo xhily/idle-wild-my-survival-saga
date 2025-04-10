@@ -93,7 +93,6 @@ export const useGameStore = defineStore('game', {
     resourceLimits,
     // 技能等级
     skills,
-    survival: 0,
     // 已解锁的建筑
     buildings: [],
     // 当前进行中的活动
@@ -234,7 +233,7 @@ export const useGameStore = defineStore('game', {
         // 应用存储上限效果
         if (building.effects.storageMultiplier) {
           for (const resource in resourceLimits) {
-            this.resourceLimits[resource] = resourceLimits[resource] * building.effects.storageMultiplier + this.survival
+            this.resourceLimits[resource] = resourceLimits[resource] * building.effects.storageMultiplier
             if (this.resources[resource] > this.resourceLimits[resource]) {
               this.resources[resource] = this.resourceLimits[resource]
             }
