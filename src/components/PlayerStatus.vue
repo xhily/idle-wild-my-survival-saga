@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useGameStore } from '../stores/gameStore'
+import { skills } from '../plugins/skillTree'
 
 const gameStore = useGameStore()
 
@@ -29,7 +30,15 @@ const energyStatus = computed(() => {
 
 // 计算玩家技能总和
 const totalSkillLevel = computed(() => {
-	return Object.values(gameStore.skills).reduce((sum, level) => sum + level, 0)
+	const skillsValues = Object.values(gameStore.skills)
+	// 如果是类型1（对象数组）
+	if (skillsValues.length > 0 && typeof skillsValues[0] === 'number') {
+		gameStore.skills = skills
+		gameStore.saveGame()
+		return gameStore.skills
+	}
+	// 默认处理类型2（数字数组）
+	return skillsValues.reduce((sum, skill) => sum + skill.level, 0)
 })
 
 const plusPlayerHealth = () => {
@@ -41,9 +50,34 @@ const plusPlayerHealth = () => {
 		ElMessage.error('暂时不需要药品恢复健康')
 		return
 	}
-	gameStore.player.health += 10
+	const healAmount = Math.min(
+		Math.floor(gameStore.player.maxHealth * 0.1), // 恢复10%
+		gameStore.player.maxHealth - gameStore.player.health // 但不能超过最大生命值
+	)
+	gameStore.player.health += healAmount
 	gameStore.resources.medicine -= 1
-	gameStore.addToEventLog('你使用了药品，恢复了10点健康')
+	gameStore.addToEventLog('你使用了药品，恢复了10%健康')
+}
+
+// 计算当前技能的进度百分比
+const skillProgressPercentage = (skill) => {
+	return (skill.exp / skill.expToNextLevel) * 100
+}
+
+// 提升人口
+const checkLevelUp = () => {
+	while (gameStore.player.exp >= gameStore.player.expToNextLevel) {
+		gameStore.player.exp -= gameStore.player.expToNextLevel
+		gameStore.player.level += 1
+		// 增加下一级所需经验
+		gameStore.player.expToNextLevel = Math.floor(gameStore.player.expToNextLevel * 1.5)
+		// 升级奖励
+		gameStore.player.maxHealth += gameStore.player.maxHealth * 0.05
+		gameStore.player.health = gameStore.player.maxHealth
+		gameStore.player.maxEnergy += gameStore.player.maxEnergy * 0.05
+		gameStore.player.energy = gameStore.player.maxEnergy
+		gameStore.addToEventLog(`幸存者增加了！当前幸存者: ${gameStore.player.level}人`)
+	}
 }
 </script>
 
@@ -53,6 +87,12 @@ const plusPlayerHealth = () => {
 			<div class="stat-label">
 				<span class="stat-icon">👨‍🔧</span>
 				<span>幸存者</span>
+				<span class="stat-icon-plus" @click="checkLevelUp"
+					v-if="gameStore.player.exp >= gameStore.player.expToNextLevel">
+					<el-icon>
+						<Plus />
+					</el-icon>
+				</span>
 				<span class="stat-value">{{ gameStore.player.level }}人</span>
 			</div>
 			<el-progress :percentage="(gameStore.player.exp / gameStore.player.expToNextLevel) * 100" :show-text="false"
@@ -93,9 +133,13 @@ const plusPlayerHealth = () => {
 		<div class="player-skills">
 			<h4>技能 <span class="skill-total">(总等级: {{ totalSkillLevel }})</span></h4>
 			<div class="skill-grid">
-				<div v-for="(level, skill) in gameStore.skills" :key="skill" class="skill-item">
-					<div class="skill-name">{{ gameStore.getResourceName(skill) }}</div>
-					<div class="skill-level">Lv.{{ level }}</div>
+				<div v-for="(item, index) in Object.keys(gameStore.skills)" :key="index" class="skill-item">
+					<div class="skill-name">{{ gameStore.getResourceName(item) }}</div>
+					<div class="skill-level">Lv.{{ gameStore.skills[item].level }}</div>
+					<div class="skill-progress-bar">
+						<div class="progress-fill"
+							:style="{ width: skillProgressPercentage(gameStore.skills[item]) + '%' }"></div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -182,6 +226,7 @@ const plusPlayerHealth = () => {
 	padding: 8px;
 	border-radius: 4px;
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-between;
 	align-items: center;
 }
@@ -193,6 +238,21 @@ const plusPlayerHealth = () => {
 .skill-level {
 	font-weight: bold;
 	color: #409EFF;
+}
+
+.skill-progress-bar {
+	height: 4px;
+	width: 100%;
+	background-color: var(--el-border-color-lighter);
+	border-radius: 2px;
+	overflow: hidden;
+	margin: 2px 0;
+}
+
+.progress-fill {
+	height: 100%;
+	background-color: var(--el-color-primary);
+	border-radius: 2px;
 }
 
 .survival-info {

@@ -30,7 +30,7 @@ const craftingActivities = computed(() => {
 const meetsSkillRequirements = (recipe) => {
   if (!recipe.skillRequired) return true
   for (const [skill, level] of Object.entries(recipe.skillRequired)) {
-    if (gameStore.skills[skill] < level) return false
+    if (gameStore.skills[skill].level < level) return false
   }
   return true
 }
@@ -61,7 +61,7 @@ const startActivity = (recipeId) => {
   }
   // 检查技能要求
   for (const [skill, level] of Object.entries(recipe.skillRequired)) {
-    if (gameStore.skills[skill] < level) {
+    if (gameStore.skills[skill].level < level) {
       gameStore.addToEventLog(`你的${skill}技能等级不足，无法进行${recipe.name}`)
       return
     }
@@ -118,20 +118,27 @@ const startActivity = (recipeId) => {
     gameStore.pendingActivities.push(activity)
     gameStore.addToEventLog(`已将${recipe.name}加入等待队列`)
   }
+  gameStore.saveGame()
 }
 
 const activityTimer = (activity) => {
   activity.timer = setTimeout(() => {
     completeActivity(activity.id)
     // 检查是否有等待中的活动
-    if (gameStore.pendingActivities.length > 0) {
-      const nextActivity = gameStore.pendingActivities.shift()
-      nextActivity.startTime = Date.now()
-      gameStore.currentActivities.push(nextActivity)
-      activityTimer(nextActivity)
-      gameStore.addToEventLog(`开始${nextActivity.name}`)
-    }
+    startNextActivity()
   }, activity.duration)
+}
+
+// 开始下一个活动
+const startNextActivity = () => {
+  if (gameStore.pendingActivities.length) {
+    const nextActivity = gameStore.pendingActivities.shift()
+    nextActivity.startTime = Date.now()
+    gameStore.currentActivities.push(nextActivity)
+    activityTimer(nextActivity)
+    gameStore.saveGame()
+    gameStore.addToEventLog(`开始${nextActivity.name}`)
+  }
 }
 
 // 完成活动
@@ -180,7 +187,7 @@ const completeActivity = (activityId) => {
     }
   }
   // 对制作活动应用技能效果并添加资源
-  if (recipe.category === 'crafting' && Object.keys(modifiedOutputs).length > 0) {
+  if (recipe.category === 'crafting' && Object.keys(modifiedOutputs).length) {
     // 应用制作技能效果
     const finalOutputs = applyCraftingSkillEffects(recipe, modifiedOutputs)
     // 添加最终资源
@@ -232,7 +239,7 @@ const applyCraftingSkillEffects = (recipe, outputs) => {
   if (gameStore.skillTreeEffects.extraCraftingOutput > 0 && Math.random() < gameStore.skillTreeEffects.extraCraftingOutput) {
     // 随机选择一种资源增加产量
     const resources = Object.keys(modifiedOutputs)
-    if (resources.length > 0) {
+    if (resources.length) {
       const resource = resources[Math.floor(Math.random() * resources.length)]
       if (typeof modifiedOutputs[resource] === 'number') {
         modifiedOutputs[resource] += 1
@@ -327,7 +334,7 @@ const getSkillEffectText = (recipe) => {
   }
   // 通用体力消耗减少
   if (gameStore.skillTreeEffects.energyConsumption < 0 && !effects.some(e => e.includes('体力消耗'))) effects.push(`体力消耗 ${Math.round(gameStore.skillTreeEffects.energyConsumption * 100)}%`)
-  return effects.length > 0 ? effects.join('，') : '无加成效果'
+  return effects.length ? effects.join('，') : '无加成效果'
 }
 
 // 活动进度和时间的响应式数据
@@ -340,6 +347,11 @@ const updateActivitiesStatus = () => {
     const now = Date.now()
     const elapsed = now - activity.startTime
     const progress = Math.min(100, (elapsed / activity.duration) * 100)
+    if (progress >= 100) {
+      completeActivity(activity.id)
+      startNextActivity()
+      return
+    }
     activityProgress.value[activity.id] = progress
     const remaining = Math.max(0, activity.duration - elapsed)
     const seconds = Math.floor(remaining / 1000)
@@ -374,7 +386,7 @@ const startActivityTimer = () => {
   if (activityTimerId.value) return
   // 每秒更新一次活动状态
   activityTimerId.value = setInterval(() => {
-    if (gameStore.gameState === 'playing' && gameStore.currentActivities.length > 0) updateActivitiesStatus()
+    if (gameStore.gameState === 'playing' && gameStore.currentActivities.length) updateActivitiesStatus()
   }, 1000)
 }
 
@@ -409,13 +421,7 @@ const cancelActivity = (activityId) => {
     gameStore.currentActivities.splice(currentIndex, 1)
     gameStore.addToEventLog(`取消了${activity.name}活动并返还了资源`)
     // 检查并启动等待队列中的下一个活动
-    if (gameStore.pendingActivities.length > 0) {
-      const nextActivity = gameStore.pendingActivities.shift()
-      nextActivity.startTime = Date.now()
-      gameStore.currentActivities.push(nextActivity)
-      activityTimer(nextActivity)
-      gameStore.addToEventLog(`开始${nextActivity.name}`)
-    }
+    startNextActivity()
   }
   // 检查等待队列
   const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === activityId)
@@ -443,6 +449,7 @@ const cancelActivity = (activityId) => {
     }
     gameStore.pendingActivities.splice(pendingIndex, 1)
     gameStore.addToEventLog(`取消了等待中的${activity.name}活动并返还了资源`)
+    gameStore.saveGame()
   }
 }
 
@@ -473,7 +480,7 @@ const pendingActivities = computed(() =>
 </script>
 <template>
   <el-scrollbar class="activity-panel">
-    <div class="current-activities" v-if="currentActivities.length > 0 || pendingActivities.length > 0">
+    <div class="current-activities" v-if="currentActivities.length || pendingActivities.length">
       <h4>活动队列</h4>
       <el-scrollbar max-height="260" always>
         <div class="activity-list">

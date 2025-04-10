@@ -118,7 +118,6 @@ const questList = [
     },
     rewards: {
       exp: 100,
-      unlockTech: 'advanced_technology'
     },
     timeLimit: 240, // 240小时内完成
     unlockRequirements: {
@@ -226,7 +225,7 @@ const availableQuests = computed(() => {
       // 检查技能要求
       if (quest.unlockRequirements.skills) {
         for (const [skill, level] of Object.entries(quest.unlockRequirements.skills)) {
-          if (gameStore.skills[skill] < level) return false
+          if (gameStore.skills[skill].level < level) return false
         }
       }
     }
@@ -380,7 +379,6 @@ const completeQuest = (quest) => {
       case 'exp':
         // 增加经验值
         gameStore.player.exp += amount
-        gameStore.checkLevelUp()
         break
       case 'maxHealth':
         // 增加最大健康

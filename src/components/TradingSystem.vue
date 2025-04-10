@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useGameStore } from '../stores/gameStore'
-import { merchants } from '../plugins/merchants'
 import { ElMessage } from 'element-plus'
 
 const gameStore = useGameStore()
@@ -155,7 +154,6 @@ const executeSpecialTrade = (trade) => {
 		if (resource === 'exp') {
 			// 直接增加经验值并检查升级
 			gameStore.player.exp += amount
-			gameStore.checkLevelUp()
 		} else if (resource === 'maxHealth') {
 			gameStore.player.maxHealth += amount
 			gameStore.player.health = Math.min(gameStore.player.health + amount, gameStore.player.maxHealth)
@@ -236,7 +234,7 @@ const executeSpecialTrade = (trade) => {
 					</div>
 				</el-tab-pane>
 				<el-tab-pane label="特殊交易" name="special"
-					v-if="activeMerchant.specialTrades && activeMerchant.specialTrades.length > 0">
+					v-if="activeMerchant.specialTrades && activeMerchant.specialTrades.length">
 					<div class="special-trades">
 						<div v-for="trade in activeMerchant.specialTrades" :key="trade.id" class="special-trade-item">
 							<div class="trade-description">

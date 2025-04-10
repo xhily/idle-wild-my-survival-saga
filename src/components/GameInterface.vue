@@ -40,6 +40,7 @@ const advanceTime = (minutes) => {
 		gameStore.gameTime.hour -= 24
 		gameStore.gameTime.day += 1
 		gameStore.player.days += 1
+		gameStore.eventTriggered = false
 		// 每日更新
 		dailyUpdate()
 	}
@@ -71,6 +72,17 @@ const applyBuildingEffectsHourly = () => {
 	// 遍历所有建筑
 	for (const building of gameStore.buildings) {
 		if (!building.effects) continue
+		// 应用每日资源生产（考虑季节和天气影响）
+		if (building.effects.foodPerDay) {
+			const amount = Math.ceil(building.effects.foodPerDay * seasonMultiplier.production * weatherMultiplier.production)
+			gameStore.addResource('food', amount)
+			gameStore.addToEventLog(`${building.name}提供了${amount}单位食物`)
+		}
+		if (building.effects.waterPerDay) {
+			const amount = Math.ceil(building.effects.waterPerDay * weatherMultiplier.waterCollection)
+			gameStore.addResource('water', amount)
+			gameStore.addToEventLog(`${building.name}提供了${amount}单位水`)
+		}
 		// 应用体力恢复效果（考虑季节影响）
 		if (building.effects.energyRecovery) {
 			const recovery = building.effects.energyRecovery * seasonMultiplier.energy
@@ -111,17 +123,6 @@ const applyBuildingEffectsDay = () => {
 	// 遍历所有建筑
 	for (const building of gameStore.buildings) {
 		if (!building.effects) continue
-		// 应用每日资源生产（考虑季节和天气影响）
-		if (building.effects.foodPerDay) {
-			const amount = Math.ceil(building.effects.foodPerDay * seasonMultiplier.production * weatherMultiplier.production)
-			gameStore.addResource('food', amount)
-			gameStore.addToEventLog(`${building.name}提供了${amount}单位食物`)
-		}
-		if (building.effects.waterPerDay) {
-			const amount = Math.ceil(building.effects.waterPerDay * weatherMultiplier.waterCollection)
-			gameStore.addResource('water', amount)
-			gameStore.addToEventLog(`${building.name}提供了${amount}单位水`)
-		}
 		// 应用其他资源生产
 		if (building.effects.woodPerDay) {
 			const amount = Math.ceil(building.effects.woodPerDay * seasonMultiplier.production)
@@ -329,7 +330,7 @@ const dailyUpdate = () => {
 	} else {
 		gameStore.achievements.healthyDays = 0 // 重置连续健康天数
 	}
-	if (gameStore.availableMerchants().length > 0) {
+	if (gameStore.availableMerchants().length) {
 		gameStore.addToEventLog(`今天有商人出现`)
 	}
 	gameStore.addToEventLog(`第${gameStore.gameTime.day}天开始了`)
@@ -356,27 +357,28 @@ const hourlyUpdate = () => {
 	// 根据时间段自然恢复体力
 	let baseEnergyRecovery = 0
 	// 夜间休息恢复更多体力
-	baseEnergyRecovery = gameStore.gameTime.hour >= 22 || gameStore.gameTime.hour <= 6 ? 5 : 1
+	baseEnergyRecovery = gameStore.gameTime.hour >= 22 || gameStore.gameTime.hour <= 6 ? 0.05 : 0.01
 	// 应用天气对体力恢复的影响
 	if (gameStore.weather.current === 'hot' || gameStore.weather.current === 'cold') baseEnergyRecovery *= 0.8 // 极端天气减少体力恢复
 	// 应用基础体力恢复
-	gameStore.player.energy = Math.min(gameStore.player.energy + baseEnergyRecovery, gameStore.player.maxEnergy)
+	gameStore.player.energy = Math.min(gameStore.player.energy + gameStore.player.energy * baseEnergyRecovery, gameStore.player.maxEnergy)
 	// 应用技能中的健康恢复效果
 	if (gameStore.skillTreeEffects.healthRecovery > 0) {
 		const healthRecovery = Math.floor(gameStore.player.maxHealth * 0.01 * gameStore.skillTreeEffects.healthRecovery)
 		gameStore.player.health = Math.min(gameStore.player.health + healthRecovery, gameStore.player.maxHealth)
 	}
 	// 检查资源状态并影响健康
-	if (gameStore.resources.food <= 0 || gameStore.resources.water <= 0) {
+	if (gameStore.resources.food == 0 || gameStore.resources.water == 0) {
 		// 极端天气下，缺乏资源的影响更严重
-		let healthPenalty = 5
+		let healthPenalty = 0.05
 		if (['hot', 'cold', 'storm'].includes(gameStore.weather.current)) {
-			healthPenalty = 8
+			healthPenalty = 0.08
 			gameStore.addToEventLog(`在${gameStore.getWeatherName()}天气下，缺乏基本资源使你的健康迅速恶化！`)
 		} else {
 			gameStore.addToEventLog('你感到饥饿和口渴，健康下降了')
 		}
-		gameStore.player.health -= healthPenalty
+		gameStore.player.health -= gameStore.player.maxHealth * healthPenalty
+		gameStore.player.energy -= gameStore.player.maxEnergy * healthPenalty
 	}
 	// 检查游戏结束条件
 	if (gameStore.player.health <= 0) gameStore.gameOver()
@@ -395,24 +397,25 @@ const applyWeatherEffects = () => {
 		case 'rainy':
 			// 下雨时随机增加水资源
 			if (Math.random() < 0.2) {
-				const waterAmount = Math.floor(Math.random() * 3) + 1
-				gameStore.addResource('water', waterAmount)
+				const lossAmount = Math.floor(gameStore.resources.water * 0.2)
+				gameStore.addResource('water', lossAmount)
 			}
 			break
 		case 'heavyRain':
 			// 暴雨时更多水资源，但有洪水风险
 			if (Math.random() < 0.4) {
-				const waterAmount = Math.floor(Math.random() * 5) + 2
+				const waterAmount = Math.floor(gameStore.resources.water * 0.4)
 				gameStore.addResource('water', waterAmount)
 			}
 			// 洪水风险
 			if (Math.random() < 0.05) {
-				gameStore.addToEventLog('暴雨引发了洪水，你损失了一些资源！')
 				// 随机损失资源
 				const resources = ['food', 'wood', 'herb']
 				const randomResource = resources[Math.floor(Math.random() * resources.length)]
-				const lossAmount = Math.floor(Math.random() * 5) + 1
+				const lossAmount = Math.floor(gameStore.resources[randomResource] * 0.05)
 				gameStore.consumeResource(randomResource, lossAmount)
+				gameStore.addToEventLog(`暴雨引发了洪水，你损失了${lossAmount}%单位的${gameStore.getResourceName(randomResource)}！`)
+
 			}
 			gameStore.weather.effects.gatheringEfficiency = 0.7 // 采集效率-30%
 			// 极端天气成就跟踪
@@ -435,7 +438,7 @@ const applyWeatherEffects = () => {
 			gameStore.weather.effects.waterConsumption = 1.3 // 水分消耗+30%
 			// 有中暑风险
 			if (Math.random() < 0.1 && gameStore.resources.water < 5) {
-				gameStore.player.health -= 5
+				gameStore.player.health -= gameStore.player.maxHealth * 0.05
 				gameStore.addToEventLog('酷热天气导致你中暑，健康下降了！')
 			}
 			// 极端天气成就跟踪
@@ -445,7 +448,7 @@ const applyWeatherEffects = () => {
 			gameStore.weather.effects.foodConsumption = 1.3 // 食物消耗+30%
 			// 有冻伤风险
 			if (Math.random() < 0.1 && gameStore.resources.food < 5) {
-				gameStore.player.health -= 5
+				gameStore.player.health -= gameStore.player.maxHealth * 0.05
 				gameStore.addToEventLog('寒冷天气导致你受冻，健康下降了！')
 			}
 			// 极端天气成就跟踪
@@ -489,16 +492,17 @@ const applyWeatherEffects = () => {
 				const hasShelter = gameStore.buildings.some(b => b.id === 'shelter' && b.level >= 1)
 				if (hasShelter) {
 					gameStore.addToEventLog('风暴肆虐，但你的庇护所提供了保护。')
-					gameStore.player.health -= 5 // 仍有轻微影响
+					gameStore.player.health -= gameStore.player.maxHealth * 0.05 // 仍有轻微影响
 				} else {
 					gameStore.addToEventLog('风暴肆虐，你的健康都受到了严重影响！')
-					gameStore.player.health -= 10
+					gameStore.player.health -= gameStore.player.maxHealth * 0.1
 					// 随机损失资源
 					const resources = ['food', 'water', 'wood', 'herb']
 					for (let i = 0; i < 2; i++) {
 						const randomResource = resources[Math.floor(Math.random() * resources.length)]
-						const lossAmount = Math.floor(Math.random() * 5) + 3
+						const lossAmount = Math.floor(gameStore.resources[randomResource] * 0.05)
 						gameStore.consumeResource(randomResource, lossAmount)
+						gameStore.addToEventLog(`风暴肆虐，你损失了${lossAmount}%单位的${gameStore.getResourceName(randomResource)}！`)
 					}
 				}
 			}
@@ -592,7 +596,6 @@ const toggleDarkMode = () => {
 
 const clickDarkMode = () => document.documentElement.classList.toggle('dark', gameStore.settings.darkMode)
 
-window.data = gameStore
 // 组件挂载时
 onMounted(() => {
 	initGame()

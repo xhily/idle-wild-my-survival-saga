@@ -18,22 +18,22 @@ export const resourceLimits = {
 }
 
 export const resources = {
-  food: 10,
-  water: 10,
+  food: 50,
+  water: 50,
   wood: 0,
   stone: 0,
   metal: 0,
   herb: 0,
   rare_herb: 0,
   // 高级资源
-  medicine: 0,
+  medicine: 1,
   tools: 0,
   parts: 0,
   advanced_parts: 0,
   electronic_components: 0,
   fuel: 0,
-  crystal: 0,
   // 特殊资源
+  crystal: 0,
   ancientRelic: 0,
   techFragment: 0,
 }

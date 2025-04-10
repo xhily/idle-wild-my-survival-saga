@@ -1,87 +1,19 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
+import { explorationRegions } from '../plugins/explorationRegions'
 
 const gameStore = useGameStore()
 
 // 当前选中的区域
 const selectedRegion = ref(null)
 
-// 探索区域列表
-const explorationRegions = computed(() => [
-  {
-    id: 'forest',
-    name: '森林',
-    description: '茂密的森林，蕴含丰富的木材和草药资源',
-    difficulty: 1,
-    unlockRequirements: { survival: 1 },
-    resources: ['wood', 'herb', 'food'],
-    dangers: ['predator', 'storm'],
-    image: '🌲',
-    explorationTime: 180, // 秒
-    energyCost: 30,
-    resourceCost: { food: 2, water: 2 }
-  },
-  {
-    id: 'hills',
-    name: '丘陵',
-    description: '崎岖的丘陵地带，可以找到石头和少量金属',
-    difficulty: 2,
-    unlockRequirements: { survival: 2 },
-    resources: ['stone', 'metal'],
-    dangers: ['rockslide', 'predator'],
-    image: '⛰️',
-    explorationTime: 240,
-    energyCost: 40,
-    resourceCost: { food: 3, water: 3 }
-  },
-  {
-    id: 'ruins',
-    name: '废墟',
-    description: '古老的废墟，可能藏有珍贵的科技碎片和遗物',
-    difficulty: 3,
-    unlockRequirements: { survival: 3, combat: 2 },
-    resources: ['metal', 'parts', 'techFragment', 'ancientRelic'],
-    dangers: ['rockslide', 'radiation', 'hostiles'],
-    image: '🏚️',
-    explorationTime: 360,
-    energyCost: 50,
-    resourceCost: { food: 5, water: 5, medicine: 1 }
-  },
-  {
-    id: 'cave',
-    name: '洞穴',
-    description: '黑暗的洞穴系统，蕴含丰富的矿物资源',
-    difficulty: 4,
-    unlockRequirements: { survival: 4, combat: 3 },
-    resources: ['stone', 'metal', 'crystal'],
-    dangers: ['rockslide', 'thirst', 'creatures'],
-    image: '🕳️',
-    explorationTime: 420,
-    energyCost: 60,
-    resourceCost: { food: 6, water: 6, medicine: 2, tools: 1 }
-  },
-  {
-    id: 'wasteland',
-    name: '荒漠',
-    description: '危险的辐射区域，但可能有高级科技残骸',
-    difficulty: 5,
-    unlockRequirements: { survival: 5, combat: 4 },
-    resources: ['metal', 'parts', 'techFragment', 'ancientRelic'],
-    dangers: ['radiation', 'storm', 'hostiles', 'thirst'],
-    image: '🏜️',
-    explorationTime: 480,
-    energyCost: 70,
-    resourceCost: { food: 8, water: 10, medicine: 3, tools: 2 }
-  }
-])
-
 // 可探索的区域（根据玩家技能等级过滤）
 const availableRegions = computed(() => {
-  return explorationRegions.value.filter(region => {
+  return explorationRegions.filter(region => {
     // 检查技能要求
     for (const [skill, level] of Object.entries(region.unlockRequirements)) {
-      if (gameStore.skills[skill] < level) return false
+      if (gameStore.skills[skill].level < level) return false
     }
     return true
   })
@@ -96,13 +28,13 @@ const getExplorationSkillEffects = () => {
   if (gameStore.skillTreeEffects.energyConsumption < 0) effects.push(`体力消耗 ${Math.round(gameStore.skillTreeEffects.energyConsumption * 100)}%`)
   // 天气抵抗（如果有）
   if (gameStore.skillTreeEffects.weatherResistance > 0) effects.push(`天气影响减少 +${Math.round(gameStore.skillTreeEffects.weatherResistance * 100)}%`)
-  return effects.length > 0 ? effects.join('，') : '无加成效果'
+  return effects.length ? effects.join('，') : '无加成效果'
 }
 
 // 检查是否有足够的资源进行探索
 const canExplore = computed(() => {
   if (!selectedRegion.value) return false
-  const region = explorationRegions.value.find(r => r.id === selectedRegion.value)
+  const region = explorationRegions.find(r => r.id === selectedRegion.value)
   if (!region) return false
   // 检查体力
   if (gameStore.skillTreeEffects.energyConsumption < 0) {
@@ -148,7 +80,7 @@ const getDangersText = (region) => {
 // 开始探索
 const startExploration = () => {
   if (!selectedRegion.value || !canExplore.value) return
-  const region = explorationRegions.value.find(r => r.id === selectedRegion.value)
+  const region = explorationRegions.find(r => r.id === selectedRegion.value)
   // 计算活动持续时间
   let duration = region.explorationTime
   if (gameStore.skillTreeEffects.gatheringEfficiency > 0) {
@@ -188,6 +120,7 @@ const startExploration = () => {
   }
   // 重置选中
   selectedRegion.value = null
+  gameStore.saveGame()
 }
 
 // 取消探索活动
@@ -196,7 +129,7 @@ const cancelExploration = (activityId) => {
   const currentIndex = gameStore.explorationActivities.findIndex(a => a.id === activityId)
   if (currentIndex !== -1) {
     const activity = gameStore.explorationActivities[currentIndex]
-    const region = explorationRegions.value.find(r => r.id === activity.region)
+    const region = explorationRegions.find(r => r.id === activity.region)
     if (region) {
       // 返还资源
       for (const [resource, amount] of Object.entries(region.resourceCost)) {
@@ -210,10 +143,11 @@ const cancelExploration = (activityId) => {
       // 移除活动
       gameStore.explorationActivities.splice(currentIndex, 1)
       gameStore.addToEventLog(`取消了${region.name}探索并返还了资源`)
+      gameStore.saveGame()
       // 检查并启动等待队列中的下一个探索活动
       const nextExploration = gameStore.pendingActivities.find(a => a.recipeId.startsWith('explore_'))
       if (nextExploration) {
-        const nextRegion = explorationRegions.value.find(r => r.id === nextExploration.region)
+        const nextRegion = explorationRegions.find(r => r.id === nextExploration.region)
         if (nextRegion) {
           // 从等待队列移除并添加到当前活动
           const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextExploration.id)
@@ -221,6 +155,7 @@ const cancelExploration = (activityId) => {
           nextExploration.startTime = Date.now()
           gameStore.explorationActivities.push(nextExploration)
           gameStore.addToEventLog(`开始探索${nextRegion.name}`)
+          gameStore.saveGame()
         }
       }
       return true
@@ -232,6 +167,7 @@ const cancelExploration = (activityId) => {
     const activity = gameStore.pendingActivities[pendingIndex]
     gameStore.pendingActivities.splice(pendingIndex, 1)
     gameStore.addToEventLog(`取消了等待中的${activity.name}探索`)
+    gameStore.saveGame()
     return true
   }
   return false
@@ -252,7 +188,7 @@ const completeExploration = (activityId, region) => {
   // 检查是否有等待中的探索活动
   const nextExploration = gameStore.pendingActivities.find(a => a.recipeId.startsWith('explore_'))
   if (nextExploration) {
-    const nextRegion = explorationRegions.value.find(r => r.id === nextExploration.region)
+    const nextRegion = explorationRegions.find(r => r.id === nextExploration.region)
     if (nextRegion) {
       // 消耗资源
       gameStore.player.energy -= nextRegion.energyCost
@@ -276,7 +212,7 @@ const generateExplorationResults = (region) => {
   // 基础发现率
   const baseDiscoveryChance = 0.7
   // 根据难度和技能调整发现率
-  const survivalBonus = (gameStore.skills.survival - region.difficulty) * 0.05
+  const survivalBonus = (gameStore.skills.survival.level - region.difficulty) * 0.05
   const discoveryChance = Math.min(0.95, Math.max(0.3, baseDiscoveryChance + survivalBonus))
   // 资源发现
   let resourcesFound = false
@@ -287,11 +223,8 @@ const generateExplorationResults = (region) => {
     if (['techFragment', 'ancientRelic'].includes(resource)) resourceChance *= 0.3
     if (Math.random() < resourceChance) {
       // 确定资源数量，基于难度和随机因素
-      const baseAmount = region.difficulty * 2
-      const randomFactor = Math.random() * 0.5 + 0.75 // 0.75 到 1.25 的随机因子
-      const amount = Math.max(1, Math.floor(baseAmount * randomFactor))
-      gameStore.addResource(resource, amount)
-      gameStore.addToEventLog(`在${region.name}中发现了 ${gameStore.getResourceName(resource)}x${amount}`)
+      gameStore.addResource(resource, region.amount)
+      gameStore.addToEventLog(`在${region.name}中发现了 ${gameStore.getResourceName(resource)}x${region.amount}`)
       resourcesFound = true
     }
   }
@@ -304,7 +237,7 @@ const generateExplorationResults = (region) => {
     handleDangerEvent(danger, region)
   }
   // 特殊发现（低概率）
-  const specialDiscoveryChance = 0.05 + (gameStore.skills.survival * 0.01)
+  const specialDiscoveryChance = 0.05 + (gameStore.skills.survival.level * 0.01)
   if (Math.random() < specialDiscoveryChance) handleSpecialDiscovery(region)
 }
 
@@ -312,23 +245,23 @@ const generateExplorationResults = (region) => {
 const handleDangerEvent = (danger, region) => {
   switch (danger) {
     case 'predator':
-      if (gameStore.skills.combat >= region.difficulty) {
+      if (gameStore.skills.combat.level >= region.difficulty) {
         gameStore.addToEventLog(`你在${region.name}遇到了野兽袭击，但成功击退了它`)
         gameStore.addResource('food', region.difficulty * 3)
         gameStore.addToEventLog('你获得了一些食物')
         gameStore.addSkillExp('combat', 2)
       } else {
-        gameStore.player.health -= 10 * (region.difficulty - gameStore.skills.combat)
+        gameStore.player.health -= Math.floor(0.1 * region.difficulty * gameStore.player.health)
         gameStore.addToEventLog(`你在${region.name}遭遇野兽袭击，受到了伤`)
       }
       break
     case 'storm':
-      gameStore.player.energy -= 10
+      gameStore.player.energy -= Math.floor(gameStore.player.energy * 0.1)
       gameStore.addToEventLog(`你在${region.name}遭遇了风暴，消耗了额外的体力`)
       break
     case 'rockslide':
       if (Math.random() < 0.5) {
-        gameStore.player.health -= 15
+        gameStore.player.health -= Math.floor(gameStore.player.health * 0.15)
         gameStore.addToEventLog(`你在${region.name}遭遇了坍塌，受到了伤`)
       } else {
         gameStore.addToEventLog(`你在${region.name}险些遭遇坍塌，幸好及时躲避`)
@@ -339,16 +272,16 @@ const handleDangerEvent = (danger, region) => {
         gameStore.consumeResource('medicine', 1)
         gameStore.addToEventLog(`你在${region.name}受到了辐射，但使用药品进行了治疗`)
       } else {
-        gameStore.player.health -= 20
+        gameStore.player.health -= Math.floor(gameStore.player.health * 0.2)
         gameStore.addToEventLog(`你在${region.name}受到了辐射伤害，健康状况恶化`)
       }
       break
     case 'hostiles':
-      if (gameStore.skills.combat > region.difficulty) {
+      if (gameStore.skills.combat.level > region.difficulty) {
         gameStore.addToEventLog(`你在${region.name}遇到了敌对人员，但成功击退了他们`)
         gameStore.addSkillExp('combat', 3)
       } else {
-        gameStore.player.health -= 15
+        gameStore.player.health -= Math.floor(gameStore.player.health * 0.15)
         // 随机失去一些资源
         const resourceTypes = ['food', 'water', 'medicine', 'tools']
         const lostResource = resourceTypes[Math.floor(Math.random() * resourceTypes.length)]
@@ -363,7 +296,7 @@ const handleDangerEvent = (danger, region) => {
       break
     case 'creatures':
       if (Math.random() < 0.7) {
-        gameStore.player.health -= 10
+        gameStore.player.health -= Math.floor(gameStore.player.health * 0.1)
         gameStore.addToEventLog(`你在${region.name}遇到了奇怪的生物，感到恐惧`)
       } else {
         gameStore.addToEventLog(`你在${region.name}发现了奇怪的生物，但它们似乎对你不感兴趣`)
@@ -383,7 +316,7 @@ const handleSpecialDiscovery = (region) => {
         gameStore.addResource('food', 10)
         gameStore.addResource('water', 10)
         gameStore.addResource('medicine', 2)
-        gameStore.addToEventLog(`你在${region.name}发现了一个隐藏的补给缓存！`)
+        gameStore.addToEventLog(`你在${region.name}发现了一个隐藏的补给资源！`)
       },
       weight: 10
     },
@@ -449,6 +382,11 @@ const updateActivitiesStatus = () => {
     const now = Date.now()
     const elapsed = now - activity.startTime
     const progress = Math.min(100, (elapsed / activity.duration) * 100)
+    // 检查是否已完成
+    if (progress >= 100) {
+      completeExploration(activity.id, explorationRegions.find(r => r.id === activity.region))
+      return
+    }
     activityProgress.value[activity.id] = progress
     const remaining = Math.max(0, activity.duration - elapsed)
     const seconds = Math.ceil(remaining / 1000)
@@ -483,7 +421,7 @@ const startActivityTimer = () => {
   if (activityTimerId.value) return
   // 每秒更新一次活动状态
   activityTimerId.value = setInterval(() => {
-    if (gameStore.gameState === 'playing' && gameStore.explorationActivities.length > 0) updateActivitiesStatus()
+    if (gameStore.gameState === 'playing' && gameStore.explorationActivities.length) updateActivitiesStatus()
   }, 1000)
 }
 
@@ -494,6 +432,10 @@ const clickSelectedRegion = (id) => {
   }
   selectedRegion.value = id
 }
+
+const pendingActivities = computed(() => {
+  return gameStore.pendingActivities.filter(a => a.id.startsWith('explore_'))
+})
 
 // 组件挂载时启动定时器
 onMounted(() => startActivityTimer())
@@ -514,11 +456,12 @@ onUnmounted(() => {
         <div>{{ getExplorationSkillEffects() }}</div>
       </el-alert>
     </div>
-    <div class="current-explorations" v-if="gameStore.explorationActivities.length || gameStore.pendingActivities.some(a => a.recipeId.startsWith('explore_'))">
+    <div class="current-explorations" v-if="gameStore.explorationActivities.length || pendingActivities.length">
+      <h4>探索队列</h4>
       <el-scrollbar max-height="260" always>
         <div class="exploration-list">
-          <div v-for="activity in gameStore.explorationActivities.filter(a => a.recipeId.startsWith('explore_'))"
-            :key="activity.id" class="exploration-card in-progress">
+          <div v-for="activity in gameStore.explorationActivities" :key="activity.id"
+            class="exploration-card in-progress">
             <div class="exploration-header">
               <div class="exploration-name">{{ activity.name }}</div>
               <div class="exploration-time">
@@ -531,8 +474,7 @@ onUnmounted(() => {
               取消探索
             </el-button>
           </div>
-          <div v-for="activity in gameStore.pendingActivities.filter(a => a.recipeId.startsWith('explore_'))"
-            :key="activity.id" class="exploration-card pending">
+          <div v-for="activity in pendingActivities" :key="activity.id" class="exploration-card pending">
             <div class="exploration-header">
               <div class="exploration-name">{{ activity.name }}</div>
               <div class="exploration-time">等待中</div>

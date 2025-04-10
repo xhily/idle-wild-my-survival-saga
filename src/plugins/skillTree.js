@@ -230,3 +230,36 @@ export const skillTree = {
     ]
   }
 }
+
+export const skills = {
+  // 采集
+  gathering: {
+    level: 1,
+    exp: 0,
+    expToNextLevel: 100
+  },
+  // 制作
+  crafting: {
+    level: 1,
+    exp: 0,
+    expToNextLevel: 100
+  },
+  // 战斗
+  combat: {
+    level: 1,
+    exp: 0,
+    expToNextLevel: 100
+  },
+  // 生存
+  survival: {
+    level: 1,
+    exp: 0,
+    expToNextLevel: 100
+  },
+  // 研究
+  research: {
+    level: 1,
+    exp: 0,
+    expToNextLevel: 100
+  },
+}

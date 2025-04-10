@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { omit } from 'lodash-es'
 import { encryptData, decryptData } from '../plugins/crypto'
-import { skillTree } from '../plugins/skillTree'
+import { skillTree, skills } from '../plugins/skillTree'
 import { merchants } from '../plugins/merchants'
 import { resources, resourceLimits } from '../plugins/resource'
 
@@ -85,18 +85,15 @@ export const useGameStore = defineStore('game', {
         explorationEfficiency: 1.0 // 探索效率修正
       }
     },
+    // 今天是否已经触发了事件
+    eventTriggered: false,
     // 基础资源
     resources,
     // 资源上限
     resourceLimits,
     // 技能等级
-    skills: {
-      gathering: 1, // 采集
-      crafting: 1, // 制作
-      combat: 1, // 战斗
-      survival: 1, // 生存
-      research: 1, // 研究
-    },
+    skills,
+    survival: 0,
     // 已解锁的建筑
     buildings: [],
     // 当前进行中的活动
@@ -195,11 +192,7 @@ export const useGameStore = defineStore('game', {
     },
     // 保存游戏
     saveGame() {
-      const filteredState = omit(this.$state, [
-        'eventLog', 'currentActivities', 'researchActivities',
-        'explorationActivities', 'buildingActivities',
-        'skillActivities', 'pendingActivities'
-      ])
+      const filteredState = omit(this.$state, ['eventLog'])
       const encryptedData = encryptData(filteredState)
       if (encryptedData) {
         try {
@@ -241,7 +234,7 @@ export const useGameStore = defineStore('game', {
         // 应用存储上限效果
         if (building.effects.storageMultiplier) {
           for (const resource in resourceLimits) {
-            this.resourceLimits[resource] = resourceLimits[resource] * building.effects.storageMultiplier
+            this.resourceLimits[resource] = resourceLimits[resource] * building.effects.storageMultiplier + this.survival
             if (this.resources[resource] > this.resourceLimits[resource]) {
               this.resources[resource] = this.resourceLimits[resource]
             }
@@ -298,21 +291,6 @@ export const useGameStore = defineStore('game', {
       this.resources[resource] = Math.min(newAmount, this.resourceLimits[resource])
       return true
     },
-    // 检查玩家是否可以升级
-    checkLevelUp() {
-      while (this.player.exp >= this.player.expToNextLevel) {
-        this.player.exp -= this.player.expToNextLevel
-        this.player.level += 1
-        // 增加下一级所需经验
-        this.player.expToNextLevel = Math.floor(this.player.expToNextLevel * 1.5)
-        // 升级奖励
-        this.player.maxHealth += 5
-        this.player.health = this.player.maxHealth
-        this.player.maxEnergy += 5
-        this.player.energy = this.player.maxEnergy
-        this.addToEventLog(`幸存者增加了！当前幸存者: ${this.player.level}人`)
-      }
-    },
     // 消耗资源
     consumeResource(resource, amount) {
       if (!this.resources.hasOwnProperty(resource)) return false
@@ -322,39 +300,15 @@ export const useGameStore = defineStore('game', {
     },
     // 增加技能经验
     addSkillExp(skill, exp) {
-      if (!this.skills.hasOwnProperty(skill)) return false
-      // 改进的技能成长系统
       // 技能等级越高，提升越困难
-      const currentLevel = this.skills[skill]
-      const chanceToLevel = 0.1 * exp / Math.sqrt(currentLevel)
-      if (Math.random() < chanceToLevel) {
+      this.skills[skill].exp += exp
+      this.addToEventLog(`你获得了${exp}点${this.getResourceName(skill)}技能经验`)
+      if (this.skills[skill].exp >= this.skills[skill].expToNextLevel) {
+        this.skills[skill].exp -= this.skills[skill].expToNextLevel
         this.skills[skill] += 1
-        this.addToEventLog(`${this.getResourceName[skill] || skill}技能提升到${this.skills[skill]}级！`)
-        // 技能提升带来的额外奖励
-        if (this.skills[skill] % 5 === 0) { // 每5级有特殊奖励
-          switch (skill) {
-            case 'gathering':
-              this.player.maxEnergy += 5
-              this.addToEventLog('你的采集技能提高，增加了最大体力！')
-              break
-            case 'crafting':
-              // 解锁新的制作配方
-              this.addToEventLog('你的制作技能提高，可以制作更复杂的物品了！')
-              break
-            case 'combat':
-              this.player.maxHealth += 10
-              this.player.health += 10
-              this.addToEventLog('你的战斗技能提高，增加了最大健康！')
-              break
-            case 'survival':
-              // 提高资源上限
-              for (const key in this.resourceLimits) {
-                this.resourceLimits[key] *= 1.1
-              }
-              this.addToEventLog('你的生存技能提高，可以储存更多资源了！')
-              break
-          }
-        }
+        // 增加下一级所需经验
+        this.skills[skill].expToNextLevel = Math.floor(this.skills[skill].expToNextLevel * 1.5)
+        this.addToEventLog(`${this.getResourceName(skill)}技能提升到${this.skills[skill]}级！`)
       }
       return true
     },
@@ -575,10 +529,10 @@ export const useGameStore = defineStore('game', {
             const hasShelter = this.buildings.some(b => b.id === 'shelter' && b.level >= 1)
             if (hasShelter) {
               this.addToEventLog('一场暴风雨来袭，但你的庇护所提供了良好的保护')
-              this.player.health -= 5 // 仍有轻微影响
+              this.player.health -= this.player.health * 0.05 // 仍有轻微影响
             } else {
               this.addToEventLog('一场暴风雨来袭，你被淋得浑身湿透，健康都受到了影响')
-              this.player.health -= 10
+              this.player.health -= this.player.health * 0.1
             }
           },
           weight: 5,
@@ -590,8 +544,8 @@ export const useGameStore = defineStore('game', {
               this.consumeResource('medicine', 1)
               this.addToEventLog('你感到身体不适，但幸好有药品治疗，很快就恢复了')
             } else {
-              this.player.health -= 15
-              this.player.energy -= 20
+              this.player.health -= this.player.health * 0.15
+              this.player.energy -= this.player.energy * 0.2
               this.addToEventLog('你生病了，没有药品治疗，健康状况恶化')
             }
           },
@@ -605,7 +559,7 @@ export const useGameStore = defineStore('game', {
               this.addResource('food', 20)
               this.addSkillExp('combat', 2)
             } else {
-              this.player.health -= 20
+              this.player.health -= this.player.health * 0.2
               this.addToEventLog('一只野兽袭击了你，你勉强逃脱，但受了伤')
             }
           },
