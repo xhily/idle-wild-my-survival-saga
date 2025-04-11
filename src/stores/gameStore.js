@@ -311,10 +311,10 @@ export const useGameStore = defineStore('game', {
       this.addToEventLog(`你获得了${exp}点${this.getResourceName(skill)}技能经验`)
       if (this.newSkills[skill].exp >= this.newSkills[skill].expToNextLevel) {
         this.newSkills[skill].exp -= this.newSkills[skill].expToNextLevel
-        this.newSkills[skill] += 1
+        this.newSkills[skill].level += 1
         // 增加下一级所需经验
         this.newSkills[skill].expToNextLevel = Math.floor(this.newSkills[skill].expToNextLevel * 1.5)
-        this.addToEventLog(`${this.getResourceName(skill)}技能提升到${this.newSkills[skill]}级！`)
+        this.addToEventLog(`${this.getResourceName(skill)}技能提升到${this.newSkills[skill].level}级！`)
       }
       this.saveGame()
     },
