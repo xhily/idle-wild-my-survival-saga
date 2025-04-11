@@ -329,7 +329,6 @@ const getSkillEffectText = (recipe) => {
     // 稀有资源几率
     if (recipe.id.includes('herb') && gameStore.skillTreeEffects.rareHerbChance > 0) effects.push(`稀有草药几率 +${Math.round(gameStore.skillTreeEffects.rareHerbChance * 100)}%`)
   } else if (category === 'crafting') {
-    console.log(gameStore.skillTreeEffects)
     // 制作速度加成
     if (gameStore.skillTreeEffects.craftingSpeed > 0) effects.push(`制作速度 +${Math.round(gameStore.skillTreeEffects.craftingSpeed * 100)}%`)
     // 资源节约几率
