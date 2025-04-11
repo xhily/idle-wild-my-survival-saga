@@ -11,133 +11,6 @@ const tradeTab = ref('buy')
 // 当前选中的商人
 const activeMerchant = ref(null)
 
-// 商人列表
-const merchants = [
-	{
-		id: 'wandering_trader',
-		name: '流浪商人',
-		icon: '🧙‍♂️',
-		description: '定期出现的神秘商人，提供各种稀有资源',
-		greeting: '你好，旅行者！我有一些稀有物品，你可能会感兴趣...',
-		availability: {
-			minDay: 5,
-			frequency: 7, // 每7天出现一次
-			duration: 1,  // 持续1天
-		},
-		sellItems: [
-			{ id: 'rare_herb', name: '稀有草药', resourceId: 'herb', buyPrice: { food: 10, water: 10, herb: 10 }, stock: 5, icon: '🌿', amount: 3 },
-			{ id: 'advanced_parts', name: '高级零件', resourceId: 'advanced_parts', buyPrice: { parts: 10, tools: 5, metal: 8, wood: 15 }, stock: 2, icon: '🔧', amount: 1 },
-			{ id: 'ancientRelic', name: '古代遗物', resourceId: 'ancientRelic', buyPrice: { crystal: 1 }, stock: 1, icon: '🏺', amount: 1 }
-		],
-		buyItems: [
-			{ id: 'sell_food', name: '食物', resourceId: 'food', sellPrice: { water: 1 }, icon: '🍖' },
-			{ id: 'sell_water', name: '水', resourceId: 'water', sellPrice: { food: 1 }, icon: '💧' },
-			{ id: 'sell_relic', name: '古代遗物', resourceId: 'ancientRelic', sellPrice: { crystal:1, food: 30, water: 30 }, icon: '🏺' }
-		],
-		specialTrades: [
-			{
-				id: 'knowledge_exchange',
-				name: '知识交换',
-				description: '用你的资源换取宝贵的研究知识',
-				inputs: { ancientRelic: 1, crystal:1, techFragment: 2 },
-				outputs: { exp: 50 }
-			}
-		]
-	},
-	{
-		id: 'settlement_trader',
-		name: '定居点商人',
-		icon: '👨‍🌾',
-		description: '来自附近定居点的友好商人，提供基础资源交易',
-		greeting: '欢迎！我们定居点有很多物资可以交换。',
-		availability: {
-			minDay: 10,
-			frequency: 5, // 每5天出现一次
-			duration: 2,  // 持续2天
-		},
-		sellItems: [
-			{ id: 'bulk_food', name: '大量食物', resourceId: 'food', buyPrice: { wood: 15, stone: 10 }, stock: 30, icon: '🍗', amount: 20 },
-			{ id: 'bulk_water', name: '大量水', resourceId: 'water', buyPrice: { wood: 15, stone: 10 }, stock: 30, icon: '🚰', amount: 20 },
-			{ id: 'medicine_pack', name: '药品', resourceId: 'medicine', buyPrice: { food: 15, herb: 5 }, stock: 5, icon: '💊' }
-		],
-		buyItems: [
-			{ id: 'sell_wood', name: '木材', resourceId: 'wood', sellPrice: { food: 1 }, icon: '🌲' },
-			{ id: 'sell_stone', name: '石头', resourceId: 'stone', sellPrice: { food: 1 }, icon: '🗿' },
-			{ id: 'sell_metal', name: '金属', resourceId: 'metal', sellPrice: { food: 3 }, icon: '⚙️' }
-		],
-		specialTrades: [
-			{
-				id: 'community_support',
-				name: '社区支持',
-				description: '为定居点提供资源，获得他们的支持',
-				inputs: { food: 20, water: 20, medicine: 2 },
-				outputs: { maxHealth: 5, maxEnergy: 5 }
-			}
-		]
-	},
-	{
-		id: 'mysterious_stranger',
-		name: '精灵',
-		icon: '🧚',
-		description: '罕见的精灵，提供独特而危险的交易',
-		greeting: '嘘...我有些特别的东西，但代价可能很高...',
-		availability: {
-			minDay: 20,
-			frequency: 15, // 每15天出现一次
-			duration: 1,   // 持续1天
-		},
-		sellItems: [
-			{ id: 'advanced_tech', name: '科技碎片', resourceId: 'techFragment', buyPrice: { crystal:1, ancientRelic: 2 }, stock: 3, icon: '💾', amount: 2 },
-			{ id: 'rare_material', name: '水晶', resourceId: 'crystal', buyPrice: { metal: 15, tools: 2 }, stock: 3, icon: '💎', amount: 1 }
-		],
-		buyItems: [
-			{ id: 'sell_tech', name: '科技碎片', resourceId: 'techFragment', sellPrice: { food: 25, water: 25 }, icon: '💾' },
-			{ id: 'sell_parts', name: '零件', resourceId: 'parts', sellPrice: { food: 15, metal: 5 }, icon: '⚙️' }
-		],
-		specialTrades: [
-			{
-				id: 'risky_experiment',
-				name: '危险实验',
-				description: '参与一项危险的实验，可能获得巨大收益或损失',
-				inputs: { fuel:10, medicine: 20, ancientRelic: 10, crystal: 10 },
-				outputs: { exp: 1000 }
-			}
-		]
-	},
-	{
-		id: 'vampire_stranger',
-		name: '吸血鬼',
-		icon: '🧛',
-		description: '罕见的吸血鬼，顾名思义',
-		greeting: '虽然价格高但是值得...',
-		availability: {
-			minDay: 30,
-			frequency: 30, // 每15天出现一次
-			duration: 1, // 持续1天
-		},
-		sellItems: [
-			{ id: 'advanced_tech', name: '科技碎片', resourceId: 'techFragment', buyPrice: { ancientRelic: 4 }, stock: 3, icon: '💾', amount: 2 },
-			{ id: 'rare_material', name: '水晶', resourceId: 'crystal', buyPrice: { techFragment: 4 }, stock: 3, icon: '💎', amount: 2 },
-			{ id: 'rare_ancientRelic', name: '古代遗物', resourceId: 'ancientRelic', buyPrice: { crystal: 4 }, stock: 3, icon: '🏺', amount: 2 }
-		],
-		buyItems: [],
-		specialTrades: []
-	}
-]
-
-// 计算当前可用的商人
-const availableMerchants = computed(() => {
-	const currentDay = gameStore.gameTime.day
-	return merchants.filter(merchant => {
-		// 检查是否达到最小天数要求
-		if (currentDay < merchant.availability.minDay) return false
-		// 计算商人是否在当前日期出现
-		const daysSinceMinDay = currentDay - merchant.availability.minDay
-		const cyclePosition = daysSinceMinDay % merchant.availability.frequency
-		return cyclePosition < merchant.availability.duration
-	})
-})
-
 // 选择商人
 const selectMerchant = (merchant) => {
 	activeMerchant.value = merchant
@@ -162,7 +35,7 @@ const playerSellableItems = computed(() => {
 const formatPrice = (priceObj) => {
 	return Object.entries(priceObj)
 		.map(([resource, amount]) => {
-			if (resource === 'health' || resource === 'energy' || resource === 'mental') return `${resource === 'health' ? '健康' : resource === 'energy' ? '体力' : '精神'} ${amount}`
+			if (resource === 'health' || resource === 'energy') return `${resource === 'health' ? '健康' : '体力'} ${amount}`
 			return `${gameStore.getResourceName(resource)} ${amount}`
 		})
 		.join(', ')
@@ -223,7 +96,6 @@ const sellItem = (item) => {
 	for (const [resource, amount] of Object.entries(item.sellPrice)) {
 		if (resource === 'health') gameStore.player.health = Math.min(gameStore.player.health + amount, gameStore.player.maxHealth)
 		else if (resource === 'energy') gameStore.player.energy = Math.min(gameStore.player.energy + amount, gameStore.player.maxEnergy)
-		else if (resource === 'mental') gameStore.player.mental = Math.min(gameStore.player.mental + amount, gameStore.player.maxMental)
 		else gameStore.addResource(resource, amount)
 	}
 	// 记录交易日志
@@ -238,8 +110,6 @@ const canExecuteSpecialTrade = (trade) => {
 			if (gameStore.player.health < amount) return false
 		} else if (resource === 'energy') {
 			if (gameStore.player.energy < amount) return false
-		} else if (resource === 'mental') {
-			if (gameStore.player.mental < amount) return false
 		} else if (gameStore.resources[resource] < amount) {
 			return false
 		}
@@ -270,13 +140,6 @@ const executeSpecialTrade = (trade) => {
 				return
 			}
 			gameStore.player.energy -= amount
-		} else if (resource === 'mental') {
-			// 确保精神不会变为负数
-			if (gameStore.player.mental < amount) {
-				ElMessage.error('精神不足')
-				return
-			}
-			gameStore.player.mental -= amount
 		} else {
 			// 确保资源不会变为负数
 			if (gameStore.resources[resource] < amount) {
@@ -291,16 +154,12 @@ const executeSpecialTrade = (trade) => {
 		if (resource === 'exp') {
 			// 直接增加经验值并检查升级
 			gameStore.player.exp += amount
-			gameStore.checkLevelUp()
 		} else if (resource === 'maxHealth') {
 			gameStore.player.maxHealth += amount
 			gameStore.player.health = Math.min(gameStore.player.health + amount, gameStore.player.maxHealth)
 		} else if (resource === 'maxEnergy') {
 			gameStore.player.maxEnergy += amount
 			gameStore.player.energy = Math.min(gameStore.player.energy + amount, gameStore.player.maxEnergy)
-		} else if (resource === 'maxMental') {
-			gameStore.player.maxMental += amount
-			gameStore.player.mental = Math.min(gameStore.player.mental + amount, gameStore.player.maxMental)
 		} else {
 			gameStore.addResource(resource, amount)
 		}
@@ -315,9 +174,9 @@ const executeSpecialTrade = (trade) => {
 	<div class="trading-system">
 		<div v-if="!activeMerchant" class="merchant-selection">
 			<h4>可用商人</h4>
-			<el-empty v-if="availableMerchants.length === 0" description="暂无商人可交易"></el-empty>
+			<el-empty v-if="gameStore.availableMerchants().length === 0" description="暂无商人可交易"></el-empty>
 			<div v-else class="merchant-list">
-				<div v-for="merchant in availableMerchants" :key="merchant.id" class="merchant-card"
+				<div v-for="merchant in gameStore.availableMerchants()" :key="merchant.id" class="merchant-card"
 					@click="selectMerchant(merchant)">
 					<div class="merchant-icon">{{ merchant.icon }}</div>
 					<div class="merchant-info">
@@ -349,7 +208,9 @@ const executeSpecialTrade = (trade) => {
 									<div class="item-stock" :class="{ 'low-stock': item.stock < 5 }">库存: {{ item.stock }}</div>
 									<div v-if="item.amount && item.amount > 1" class="item-amount">获得: {{ item.amount }}单位</div>
 								</div>
-								<el-button @click="buyItem(item)" :disabled="!canAfford(item.buyPrice) || item.stock <= 0" size="small">
+								<el-button @click="buyItem(item)"
+									:disabled="!canAfford(item.buyPrice) || item.stock <= 0 || gameStore.gameState !== 'playing'"
+									size="small">
 									购买
 								</el-button>
 							</div>
@@ -367,7 +228,9 @@ const executeSpecialTrade = (trade) => {
 									<div class="item-price">价格: {{ formatPrice(item.sellPrice) }}</div>
 									<div class="item-stock">拥有: {{ gameStore.resources[item.resourceId] }}</div>
 								</div>
-								<el-button @click="sellItem(item)" :disabled="gameStore.resources[item.resourceId] <= 0" size="small">
+								<el-button @click="sellItem(item)"
+									:disabled="gameStore.resources[item.resourceId] <= 0 || gameStore.gameState !== 'playing'"
+									size="small">
 									出售
 								</el-button>
 							</div>
@@ -375,7 +238,7 @@ const executeSpecialTrade = (trade) => {
 					</div>
 				</el-tab-pane>
 				<el-tab-pane label="特殊交易" name="special"
-					v-if="activeMerchant.specialTrades && activeMerchant.specialTrades.length > 0">
+					v-if="activeMerchant.specialTrades && activeMerchant.specialTrades.length">
 					<div class="special-trades">
 						<div v-for="trade in activeMerchant.specialTrades" :key="trade.id" class="special-trade-item">
 							<div class="trade-description">
@@ -398,7 +261,8 @@ const executeSpecialTrade = (trade) => {
 									</div>
 								</div>
 							</div>
-							<el-button @click="executeSpecialTrade(trade)" :disabled="!canExecuteSpecialTrade(trade)" size="small">
+							<el-button @click="executeSpecialTrade(trade)"
+								:disabled="!canExecuteSpecialTrade(trade) || gameStore.gameState !== 'playing'" size="small">
 								交易
 							</el-button>
 						</div>
