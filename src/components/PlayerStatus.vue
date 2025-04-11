@@ -32,8 +32,13 @@ const energyStatus = computed(() => {
 
 // 计算玩家技能总和
 const totalSkillLevel = computed(() => {
-	// 默认处理类型2（数字数组）
-	return Object.values(gameStore.newSkills).reduce((sum, skill) => sum + skill.level, 0)
+  const validSkills = Object.values(gameStore.newSkills).map((item, index) => {
+    if (typeof item === 'string') {
+      return Object.values(skills)[index]
+    }
+    return item
+  })
+  return validSkills.reduce((sum, skill) => sum + skill.level, 0)
 })
 
 const plusPlayerHealth = () => {

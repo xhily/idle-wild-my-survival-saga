@@ -224,6 +224,7 @@ export const useGameStore = defineStore('game', {
             this.$state = decryptData(saveData)
             this.resetSkillEffects()
             this.initBuildingEffects()
+            this.fixSkills()
             this.addToEventLog('游戏已加载')
             return true
           } catch (error) {
@@ -248,6 +249,17 @@ export const useGameStore = defineStore('game', {
           }
         }
       }
+    },
+    // 修复技能问题
+    fixSkills() {
+      // 初始化修复技能问题
+      const skillsArray = Object.values(this.newSkills)
+      const fixedSkills = {}
+      Object.keys(this.newSkills).forEach((key, index) => {
+        const item = skillsArray[index]
+        fixedSkills[key] = typeof item === 'string' ? Object.values(skills)[index] : item
+      })
+      this.newSkills = fixedSkills
     },
     // 重置错误的技能效果
     resetSkillEffects() {
