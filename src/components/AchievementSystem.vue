@@ -85,7 +85,7 @@ initAchievements()
               <div class="achievement-name">{{ achievement.name }}</div>
               <div class="achievement-description">{{ achievement.description }}</div>
               <div class="achievement-reward" v-if="achievement.reward">
-                奖励: <span v-if="achievement.reward.exp">+{{ achievement.reward.exp }} 经验</span>
+                奖励: <span v-if="achievement.reward.exp">+{{ achievement.reward.exp }} 幸存者经验</span>
               </div>
             </div>
           </div>

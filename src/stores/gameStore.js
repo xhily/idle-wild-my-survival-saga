@@ -97,16 +97,24 @@ export const useGameStore = defineStore('game', {
     buildings: [],
     // 当前进行中的活动
     currentActivities: [],
-    // 当前进行中的研究
-    researchActivities: [],
-    // 当前进行中的探索
-    explorationActivities: [],
-    // 当前进行中的建筑
-    buildingActivities: [],
-    // 当前进行中的技能
-    skillActivities: [],
     // 等待中的活动队列
     pendingActivities: [],
+    // 当前进行中的研究
+    researchActivities: [],
+    // 等待中的研究队列
+    pendingResearchActivities: [],
+    // 当前进行中的探索
+    explorationActivities: [],
+    // 等待中的探索队列
+    pendingExplorationActivities: [],
+    // 当前进行中的建筑
+    buildingActivities: [],
+    // 等待中的建筑队列
+    pendingBuildingActivities: [],
+    // 当前进行中的技能
+    skillActivities: [],
+    // 等待中的技能队列
+    pendingSkillActivities: [],
     // 游戏时间
     gameTime: {
       day: 1,
@@ -299,7 +307,6 @@ export const useGameStore = defineStore('game', {
     },
     // 增加技能经验
     addSkillExp(skill, exp) {
-      // 技能等级越高，提升越困难
       this.newSkills[skill].exp += exp
       this.addToEventLog(`你获得了${exp}点${this.getResourceName(skill)}技能经验`)
       if (this.newSkills[skill].exp >= this.newSkills[skill].expToNextLevel) {

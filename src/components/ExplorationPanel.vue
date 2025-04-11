@@ -115,7 +115,7 @@ const startExploration = () => {
     setTimeout(() => completeExploration(explorationActivity.id, region), duration)
   } else {
     // 否则加入等待队列
-    gameStore.pendingActivities.push(explorationActivity)
+    gameStore.pendingExplorationActivities.push(explorationActivity)
     gameStore.addToEventLog(`已将探索${region.name}加入等待队列`)
   }
   // 重置选中
@@ -145,13 +145,13 @@ const cancelExploration = (activityId) => {
       gameStore.addToEventLog(`取消了${region.name}探索并返还了资源`)
       gameStore.saveGame()
       // 检查并启动等待队列中的下一个探索活动
-      const nextExploration = gameStore.pendingActivities.find(a => a.recipeId.startsWith('explore_'))
+      const nextExploration = gameStore.pendingExplorationActivities.find(a => a.recipeId.startsWith('explore_'))
       if (nextExploration) {
         const nextRegion = explorationRegions.find(r => r.id === nextExploration.region)
         if (nextRegion) {
           // 从等待队列移除并添加到当前活动
-          const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextExploration.id)
-          if (pendingIndex !== -1) gameStore.pendingActivities.splice(pendingIndex, 1)
+          const pendingIndex = gameStore.pendingExplorationActivities.findIndex(a => a.id === nextExploration.id)
+          if (pendingIndex !== -1) gameStore.pendingExplorationActivities.splice(pendingIndex, 1)
           nextExploration.startTime = Date.now()
           gameStore.explorationActivities.push(nextExploration)
           gameStore.addToEventLog(`开始探索${nextRegion.name}`)
@@ -162,10 +162,10 @@ const cancelExploration = (activityId) => {
     }
   }
   // 检查等待队列
-  const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === activityId)
+  const pendingIndex = gameStore.pendingExplorationActivities.findIndex(a => a.id === activityId)
   if (pendingIndex !== -1) {
-    const activity = gameStore.pendingActivities[pendingIndex]
-    gameStore.pendingActivities.splice(pendingIndex, 1)
+    const activity = gameStore.pendingExplorationActivities[pendingIndex]
+    gameStore.pendingExplorationActivities.splice(pendingIndex, 1)
     gameStore.addToEventLog(`取消了等待中的${activity.name}探索`)
     gameStore.saveGame()
     return true
@@ -186,7 +186,7 @@ const completeExploration = (activityId, region) => {
   gameStore.player.explorationCount += 1
   if (region.difficulty >= 3) gameStore.addSkillExp('combat', 10)
   // 检查是否有等待中的探索活动
-  const nextExploration = gameStore.pendingActivities.find(a => a.recipeId.startsWith('explore_'))
+  const nextExploration = gameStore.pendingExplorationActivities.find(a => a.recipeId.startsWith('explore_'))
   if (nextExploration) {
     const nextRegion = explorationRegions.find(r => r.id === nextExploration.region)
     if (nextRegion) {
@@ -196,8 +196,8 @@ const completeExploration = (activityId, region) => {
         gameStore.consumeResource(resource, amount)
       }
       // 从等待队列移除并添加到当前活动
-      const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextExploration.id)
-      if (pendingIndex !== -1) gameStore.pendingActivities.splice(pendingIndex, 1)
+      const pendingIndex = gameStore.pendingExplorationActivities.findIndex(a => a.id === nextExploration.id)
+      if (pendingIndex !== -1) gameStore.pendingExplorationActivities.splice(pendingIndex, 1)
       nextExploration.startTime = Date.now()
       gameStore.explorationActivities.push(nextExploration)
       gameStore.addToEventLog(`开始探索${nextRegion.name}`)
@@ -433,10 +433,6 @@ const clickSelectedRegion = (id) => {
   selectedRegion.value = id
 }
 
-const pendingActivities = computed(() => {
-  return gameStore.pendingActivities.filter(a => a.id.startsWith('explore_'))
-})
-
 // 组件挂载时启动定时器
 onMounted(() => startActivityTimer())
 
@@ -456,7 +452,7 @@ onUnmounted(() => {
         <div>{{ getExplorationSkillEffects() }}</div>
       </el-alert>
     </div>
-    <div class="current-explorations" v-if="gameStore.explorationActivities.length || pendingActivities.length">
+    <div class="current-explorations" v-if="gameStore.explorationActivities.length || gameStore.pendingExplorationActivities.length">
       <h4>探索队列</h4>
       <el-scrollbar max-height="260" always>
         <div class="exploration-list">
@@ -474,7 +470,7 @@ onUnmounted(() => {
               取消探索
             </el-button>
           </div>
-          <div v-for="activity in pendingActivities" :key="activity.id" class="exploration-card pending">
+          <div v-for="activity in gameStore.pendingExplorationActivities" :key="activity.id" class="exploration-card pending">
             <div class="exploration-header">
               <div class="exploration-name">{{ activity.name }}</div>
               <div class="exploration-time">等待中</div>

@@ -108,7 +108,7 @@ const buildOrUpgrade = (building) => {
     // 设置定时器完成建筑
     buildingTimer.value = setTimeout(() => completeBuilding(buildingActivity.id), buildingActivity.duration)
   } else {
-    gameStore.pendingActivities.push(buildingActivity)
+    gameStore.pendingBuildingActivities.push(buildingActivity)
     gameStore.addToEventLog(`已将${buildingActivity.name}加入等待队列`)
   }
   gameStore.saveGame()
@@ -146,7 +146,7 @@ const completeBuilding = (activityId) => {
   // 重新初始化建筑效果
   initBuildingEffects()
   // 检查是否有等待中的建筑活动
-  const nextBuilding = gameStore.pendingActivities.shift()
+  const nextBuilding = gameStore.pendingBuildingActivities.shift()
   if (nextBuilding) {
     // 消耗资源
     for (const [resource, amount] of Object.entries(nextBuilding.cost)) {
@@ -179,7 +179,7 @@ const cancelBuilding = (activityId) => {
     gameStore.saveGame()
     gameStore.addToEventLog(`取消了${activity.name}并返还了资源`)
     // 检查并启动等待队列中的下一个建筑活动
-    const nextBuilding = gameStore.pendingActivities.shift()
+    const nextBuilding = gameStore.pendingBuildingActivities.shift()
     if (nextBuilding) {
       // 消耗资源
       for (const [resource, amount] of Object.entries(nextBuilding.cost)) {
@@ -194,10 +194,10 @@ const cancelBuilding = (activityId) => {
     return true
   }
   // 检查等待队列
-  const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === activityId)
+  const pendingIndex = gameStore.pendingBuildingActivities.findIndex(a => a.id === activityId)
   if (pendingIndex !== -1) {
-    const activity = gameStore.pendingActivities[pendingIndex]
-    gameStore.pendingActivities.splice(pendingIndex, 1)
+    const activity = gameStore.pendingBuildingActivities[pendingIndex]
+    gameStore.pendingBuildingActivities.splice(pendingIndex, 1)
     gameStore.addToEventLog(`取消了等待中的${activity.name}`)
     gameStore.saveGame()
     return true
@@ -322,12 +322,8 @@ const formatEffectText = (effect, value) => {
 // 检查建筑是否正在建造或升级中
 const isBuilding = (buildingId) => {
   return gameStore.buildingActivities.some(activity => activity.buildingId === buildingId) ||
-    gameStore.pendingActivities.some(activity => activity.buildingId === buildingId)
+    gameStore.pendingBuildingActivities.some(activity => activity.id === buildingId)
 }
-
-const pendingActivities = computed(() => {
-  return gameStore.pendingActivities.filter(a => a.id.startsWith('building_'))
-})
 
 // 组件挂载时启动定时器
 onMounted(() => startBuildingTimer())
@@ -346,7 +342,7 @@ onUnmounted(() => {
 
 <template>
   <div class="building-panel">
-    <div class="building-queue" v-if="gameStore.buildingActivities.length || pendingActivities.length">
+    <div class="building-queue" v-if="gameStore.buildingActivities.length || gameStore.pendingBuildingActivities.length">
       <h4>建筑队列</h4>
       <el-scrollbar max-height="260" always>
         <div class="building-list">
@@ -361,7 +357,7 @@ onUnmounted(() => {
               取消建造
             </el-button>
           </div>
-          <div v-for="activity in pendingActivities" :key="activity.id" class="building-card pending">
+          <div v-for="activity in gameStore.pendingBuildingActivities" :key="activity.id" class="building-card pending">
             <div class="building-header">
               <div class="building-name">{{ activity.name }}</div>
               <div class="building-time">等待中</div>

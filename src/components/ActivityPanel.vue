@@ -420,6 +420,7 @@ const cancelActivity = (activityId) => {
     if (activity.timer) clearTimeout(activity.timer)
     gameStore.currentActivities.splice(currentIndex, 1)
     gameStore.addToEventLog(`取消了${activity.name}活动并返还了资源`)
+    gameStore.saveGame()
     // 检查并启动等待队列中的下一个活动
     startNextActivity()
   }

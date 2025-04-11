@@ -73,7 +73,7 @@ const upgradeSkill = (skill) => {
     gameStore.saveGame()
   } else {
     // 加入等待队列
-    gameStore.pendingActivities.push(skillActivity)
+    gameStore.pendingSkillActivities.push(skillActivity)
     gameStore.addToEventLog(`已将${skillActivity.name}加入等待队列`)
     gameStore.saveGame()
   }
@@ -95,7 +95,7 @@ const completeSkill = (activityId) => {
   gameStore.addToEventLog(`你完成了${activity.name} (等级 ${skill.level}/${skill.maxLevel})`)
   gameStore.saveGame()
   // 检查是否有等待中的技能活动
-  const nextSkill = gameStore.pendingActivities.shift()
+  const nextSkill = gameStore.pendingSkillActivities.shift()
   if (nextSkill) {
     // 消耗经验值
     gameStore.player.exp -= nextSkill.cost.exp
@@ -125,7 +125,7 @@ const cancelSkill = (activityId) => {
     gameStore.addToEventLog(`取消了${activity.name}并返还了经验值`)
     gameStore.saveGame()
     // 检查并启动等待队列中的下一个技能活动
-    const nextSkill = gameStore.pendingActivities.shift()
+    const nextSkill = gameStore.pendingSkillActivities.shift()
     if (nextSkill) {
       // 消耗经验值
       gameStore.player.exp -= nextSkill.cost.exp
@@ -139,10 +139,10 @@ const cancelSkill = (activityId) => {
     return true
   }
   // 检查等待队列
-  const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === activityId)
+  const pendingIndex = gameStore.pendingSkillActivities.findIndex(a => a.id === activityId)
   if (pendingIndex !== -1) {
-    const activity = gameStore.pendingActivities[pendingIndex]
-    gameStore.pendingActivities.splice(pendingIndex, 1)
+    const activity = gameStore.pendingSkillActivities[pendingIndex]
+    gameStore.pendingSkillActivities.splice(pendingIndex, 1)
     gameStore.addToEventLog(`取消了等待中的${activity.name}`)
     gameStore.saveGame()
     return true
@@ -365,15 +365,12 @@ const formatEffectValue = (effect, value) => {
 
 const isSkill = (skillId) => {
   return gameStore.skillActivities.some(activity => activity.skillId === skillId) ||
-    gameStore.pendingActivities.some(activity => activity.skillId === skillId)
+    gameStore.pendingSkillActivities.some(activity => activity.skillId === skillId)
 }
 
-const pendingActivities = computed(() => {
-  return gameStore.pendingActivities.filter(a => a.id.startsWith('skill_'))
-})
 
 const skillBug = () => {
-  if (pendingActivities.length || gameStore.skillActivities.length) {
+  if (gameStore.pendingSkillActivities.length || gameStore.skillActivities.length) {
     ElMessage.warning('你有未完成的技能活动或等待中的技能活动, 无法修复技能问题')
     return
   }
@@ -409,7 +406,7 @@ onUnmounted(() => {
 
 <template>
   <div class="skill-tree-system">
-    <div class="skill-queue" v-if="gameStore.skillActivities.length || pendingActivities.length">
+    <div class="skill-queue" v-if="gameStore.skillActivities.length || gameStore.pendingSkillActivities.length">
       <h4>技能队列</h4>
       <el-scrollbar max-height="260" always>
         <div class="skill-list">
@@ -424,7 +421,7 @@ onUnmounted(() => {
               取消升级
             </el-button>
           </div>
-          <div v-for="activity in pendingActivities" :key="activity.id" class="skill-card pending">
+          <div v-for="activity in gameStore.pendingSkillActivities" :key="activity.id" class="skill-card pending">
             <div class="skill-header">
               <div class="skill-name">{{ activity.name }}</div>
               <div class="skill-time">等待中</div>

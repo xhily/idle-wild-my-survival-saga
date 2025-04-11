@@ -105,7 +105,7 @@ const researchTech = () => {
     researchTimer.value = setTimeout(() => completeResearch(researchActivity.id, tech), researchActivity.duration)
   } else {
     // 加入等待队列
-    gameStore.pendingActivities.push(researchActivity)
+    gameStore.pendingResearchActivities.push(researchActivity)
     gameStore.addToEventLog(`已将研究${tech.name}加入等待队列`)
   }
   selectedTech.value = null
@@ -129,7 +129,7 @@ const completeResearch = (activityId, tech) => {
   gameStore.addToEventLog(`你成功研究了${tech.name}！`)
   gameStore.saveGame()
   // 检查是否有等待中的研究活动
-  const nextResearch = gameStore.pendingActivities.find(a => a.id.startsWith('research_'))
+  const nextResearch = gameStore.pendingResearchActivities.find(a => a.id.startsWith('research_'))
   if (nextResearch) {
     const nextTech = technologies.find(t => t.id === nextResearch.tech)
     if (nextTech) {
@@ -144,8 +144,8 @@ const completeResearch = (activityId, tech) => {
         gameStore.consumeResource(resource, actualAmount)
       }
       // 从等待队列移除并添加到当前活动
-      const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextResearch.id)
-      if (pendingIndex !== -1) gameStore.pendingActivities.splice(pendingIndex, 1)
+      const pendingIndex = gameStore.pendingResearchActivities.findIndex(a => a.id === nextResearch.id)
+      if (pendingIndex !== -1) gameStore.pendingResearchActivities.splice(pendingIndex, 1)
       nextResearch.startTime = Date.now()
       gameStore.researchActivities.push(nextResearch)
       gameStore.addToEventLog(`开始研究${nextTech.name}`)
@@ -182,7 +182,7 @@ const cancelResearch = (activityId) => {
       gameStore.addToEventLog(`取消了研究${tech.name}并返还了资源`)
       gameStore.saveGame()
       // 检查并启动等待队列中的下一个研究活动
-      const nextResearch = gameStore.pendingActivities.find(a => a.id.startsWith('research_'))
+      const nextResearch = gameStore.pendingResearchActivities.find(a => a.id.startsWith('research_'))
       if (nextResearch) {
         const nextTech = technologies.find(t => t.id === nextResearch.tech)
         if (nextTech) {
@@ -197,8 +197,8 @@ const cancelResearch = (activityId) => {
             gameStore.consumeResource(resource, actualAmount)
           }
           // 从等待队列移除并添加到当前活动
-          const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === nextResearch.id)
-          if (pendingIndex !== -1) gameStore.pendingActivities.splice(pendingIndex, 1)
+          const pendingIndex = gameStore.pendingResearchActivities.findIndex(a => a.id === nextResearch.id)
+          if (pendingIndex !== -1) gameStore.pendingResearchActivities.splice(pendingIndex, 1)
           nextResearch.startTime = Date.now()
           gameStore.researchActivities.push(nextResearch)
           gameStore.addToEventLog(`开始研究${nextTech.name}`)
@@ -211,10 +211,10 @@ const cancelResearch = (activityId) => {
     }
   }
   // 检查等待队列
-  const pendingIndex = gameStore.pendingActivities.findIndex(a => a.id === activityId)
+  const pendingIndex = gameStore.pendingResearchActivities.findIndex(a => a.id === activityId)
   if (pendingIndex !== -1) {
-    const activity = gameStore.pendingActivities[pendingIndex]
-    gameStore.pendingActivities.splice(pendingIndex, 1)
+    const activity = gameStore.pendingResearchActivities[pendingIndex]
+    gameStore.pendingResearchActivities.splice(pendingIndex, 1)
     gameStore.addToEventLog(`取消了等待中的研究${activity.name}`)
     gameStore.saveGame()
     return true
@@ -316,13 +316,9 @@ const clickSelectedTech = (id) => {
   }
 }
 
-const pendingActivities = computed(() => {
-  return gameStore.pendingActivities.filter(a => a.id.startsWith('research_'))
-})
-
 const isLoading = (tech) => {
   return gameStore.researchActivities.some(activity => activity.tech === tech) ||
-    gameStore.pendingActivities.some(activity => activity.tech === tech)
+    gameStore.pendingResearchActivities.some(activity => activity.tech === tech)
 }
 
 // 组件挂载时启动定时器
@@ -350,7 +346,7 @@ onUnmounted(() => {
           <div>{{ getResearchSkillEffects() }}</div>
         </el-alert>
       </div>
-      <div class="research-queue" v-if="gameStore.researchActivities.length || pendingActivities.length">
+      <div class="research-queue" v-if="gameStore.researchActivities.length || gameStore.pendingResearchActivities.length">
         <h4>研究队列</h4>
         <el-scrollbar max-height="260" always>
           <div class="research-list">
@@ -367,7 +363,7 @@ onUnmounted(() => {
                 取消研究
               </el-button>
             </div>
-            <div v-for="activity in pendingActivities" :key="activity.id" class="research-card pending">
+            <div v-for="activity in gameStore.pendingResearchActivities" :key="activity.id" class="research-card pending">
               <div class="research-header">
                 <div class="research-name">{{ activity.name }}</div>
                 <div class="research-time">等待中</div>

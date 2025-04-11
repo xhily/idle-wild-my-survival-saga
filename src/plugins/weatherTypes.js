@@ -298,7 +298,7 @@ export const weatherTypes = {
           // 获得额外的经验
           const expGain = Math.floor(Math.random() * 15) + 10
           store.addExperience(expGain)
-          store.addToEventLog(`极光的美景给你带来灵感，获得了${expGain}点经验！`)
+          store.addToEventLog(`极光的美景给你带来灵感，获得了${expGain}点幸存者经验！`)
         },
       },
     ],
