@@ -33,7 +33,7 @@ const canUpgradeSkill = (skill) => {
     // 检查基础技能等级要求
     for (const [baseSkill, level] of Object.entries(skill.requires)) {
       if (baseSkill === 'skills') continue // 跳过特殊技能要求
-      if (gameStore.skills[baseSkill].level < level) return false
+      if (gameStore.newSkills[baseSkill].level < level) return false
     }
     // 检查特殊技能要求
     if (skill.requires.skills) {
@@ -205,9 +205,9 @@ const applySkillEffects = (skill) => {
   const branchKey = activeSkillBranch.value
   if (skill.level === 1) {
     // 如果是首次解锁技能，增加对应分支的基础技能等级
-    gameStore.skills[branchKey].level += 1
-    gameStore.skills[branchKey].expToNextLevel = Math.floor(gameStore.skills[branchKey].expToNextLevel * 1.5)
-    gameStore.addToEventLog(`你的${gameStore.getResourceName(branchKey)}技能等级提升到了 ${gameStore.skills[branchKey]}!`)
+    gameStore.newSkills[branchKey].level += 1
+    gameStore.newSkills[branchKey].expToNextLevel = Math.floor(gameStore.newSkills[branchKey].expToNextLevel * 1.5)
+    gameStore.addToEventLog(`你的${gameStore.getResourceName(branchKey)}技能等级提升到了 ${gameStore.newSkills[branchKey]}!`)
   }
 }
 

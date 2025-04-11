@@ -13,7 +13,7 @@ const availableRegions = computed(() => {
   return explorationRegions.filter(region => {
     // 检查技能要求
     for (const [skill, level] of Object.entries(region.unlockRequirements)) {
-      if (gameStore.skills[skill].level < level) return false
+      if (gameStore.newSkills[skill].level < level) return false
     }
     return true
   })
@@ -212,7 +212,7 @@ const generateExplorationResults = (region) => {
   // 基础发现率
   const baseDiscoveryChance = 0.7
   // 根据难度和技能调整发现率
-  const survivalBonus = (gameStore.skills.survival.level - region.difficulty) * 0.05
+  const survivalBonus = (gameStore.newSkills.survival.level - region.difficulty) * 0.05
   const discoveryChance = Math.min(0.95, Math.max(0.3, baseDiscoveryChance + survivalBonus))
   // 资源发现
   let resourcesFound = false
@@ -237,7 +237,7 @@ const generateExplorationResults = (region) => {
     handleDangerEvent(danger, region)
   }
   // 特殊发现（低概率）
-  const specialDiscoveryChance = 0.05 + (gameStore.skills.survival.level * 0.01)
+  const specialDiscoveryChance = 0.05 + (gameStore.newSkills.survival.level * 0.01)
   if (Math.random() < specialDiscoveryChance) handleSpecialDiscovery(region)
 }
 
@@ -245,7 +245,7 @@ const generateExplorationResults = (region) => {
 const handleDangerEvent = (danger, region) => {
   switch (danger) {
     case 'predator':
-      if (gameStore.skills.combat.level >= region.difficulty) {
+      if (gameStore.newSkills.combat.level >= region.difficulty) {
         gameStore.addToEventLog(`你在${region.name}遇到了野兽袭击，但成功击退了它`)
         gameStore.addResource('food', region.difficulty * 3)
         gameStore.addToEventLog('你获得了一些食物')
@@ -277,7 +277,7 @@ const handleDangerEvent = (danger, region) => {
       }
       break
     case 'hostiles':
-      if (gameStore.skills.combat.level > region.difficulty) {
+      if (gameStore.newSkills.combat.level > region.difficulty) {
         gameStore.addToEventLog(`你在${region.name}遇到了敌对人员，但成功击退了他们`)
         gameStore.addSkillExp('combat', 30)
       } else {

@@ -15,7 +15,7 @@ import RandomEventSystem from './RandomEventSystem.vue'
 import TradingSystem from './TradingSystem.vue'
 import QuestSystem from './QuestSystem.vue'
 import SkillTreeSystem from './SkillTreeSystem.vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { saveAs } from 'file-saver'
 
 const gameStore = useGameStore()
@@ -537,9 +537,16 @@ const initGame = () => {
 
 // 重新开始游戏
 const restartGame = () => {
-	gameStore.initGame()
-	ElMessage.success('游戏已重新开始')
-	startGameTimer()
+	ElMessageBox.confirm('你确定要删除数据吗?', '提示', {
+		type: 'warning',
+		distinguishCancelAndClose: true,
+		confirmButtonText: '确定',
+		cancelButtonText: '不确定',
+	}).then(() => {
+		gameStore.initGame()
+		ElMessage.success('游戏已重新开始')
+		startGameTimer()
+	}).catch(() => { })
 }
 
 // 保存游戏
@@ -627,7 +634,7 @@ onUnmounted(() => {
 					</el-icon>
 					保存数据
 				</el-button>
-				<el-button class="button" @click="gameStore.initGame" size="small">
+				<el-button class="button" @click="restartGame" size="small">
 					<el-icon>
 						<Delete />
 					</el-icon>

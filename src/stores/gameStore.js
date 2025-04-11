@@ -92,7 +92,7 @@ export const useGameStore = defineStore('game', {
     // 资源上限
     resourceLimits,
     // 技能等级
-    skills,
+    newSkills: skills,
     // 已解锁的建筑
     buildings: [],
     // 当前进行中的活动
@@ -300,14 +300,14 @@ export const useGameStore = defineStore('game', {
     // 增加技能经验
     addSkillExp(skill, exp) {
       // 技能等级越高，提升越困难
-      this.skills[skill].exp += exp
+      this.newSkills[skill].exp += exp
       this.addToEventLog(`你获得了${exp}点${this.getResourceName(skill)}技能经验`)
-      if (this.skills[skill].exp >= this.skills[skill].expToNextLevel) {
-        this.skills[skill].exp -= this.skills[skill].expToNextLevel
-        this.skills[skill] += 1
+      if (this.newSkills[skill].exp >= this.newSkills[skill].expToNextLevel) {
+        this.newSkills[skill].exp -= this.newSkills[skill].expToNextLevel
+        this.newSkills[skill] += 1
         // 增加下一级所需经验
-        this.skills[skill].expToNextLevel = Math.floor(this.skills[skill].expToNextLevel * 1.5)
-        this.addToEventLog(`${this.getResourceName(skill)}技能提升到${this.skills[skill]}级！`)
+        this.newSkills[skill].expToNextLevel = Math.floor(this.newSkills[skill].expToNextLevel * 1.5)
+        this.addToEventLog(`${this.getResourceName(skill)}技能提升到${this.newSkills[skill]}级！`)
       }
       this.saveGame()
     },
@@ -489,7 +489,7 @@ export const useGameStore = defineStore('game', {
         },
         {
           id: 'animal', name: '野生动物', effect: () => {
-            if (this.skills.combat > 2) {
+            if (this.newSkills.combat > 2) {
               this.addResource('food', 15)
               this.addToEventLog('你成功猎到了一只野兔，获得了食物')
             } else {
@@ -553,7 +553,7 @@ export const useGameStore = defineStore('game', {
         },
         {
           id: 'predator', name: '掠食者', effect: () => {
-            if (this.skills.combat >= 3) {
+            if (this.newSkills.combat >= 3) {
               this.addToEventLog('一只野兽袭击了你，但你成功击退了它，还获得了一些食物')
               this.addResource('food', 20)
               this.addSkillExp('combat', 20)

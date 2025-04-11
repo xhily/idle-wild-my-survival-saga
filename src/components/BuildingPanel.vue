@@ -26,7 +26,7 @@ const canSeeBuilding = (building) => {
   if (!firstLevel.requirements) return true
   // 检查是否满足所有技能要求
   for (const [skill, level] of Object.entries(firstLevel.requirements)) {
-    if (gameStore.skills[skill].level < level) return false
+    if (gameStore.newSkills[skill].level < level) return false
   }
   return true
 }
@@ -46,7 +46,7 @@ const canBuildOrUpgrade = (building) => {
   const nextLevel = building.levels[currentLevel]
   // 检查技能要求
   for (const [skill, level] of Object.entries(nextLevel.requirements)) {
-    if (gameStore.skills[skill].level < level) return false
+    if (gameStore.newSkills[skill].level < level) return false
   }
   // 检查资源要求
   for (const [resource, amount] of Object.entries(nextLevel.cost)) {
@@ -73,7 +73,7 @@ const buildOrUpgrade = (building) => {
   }
   // 检查技能要求
   for (const [skill, requiredLevel] of Object.entries(levelConfig.requirements)) {
-    if (gameStore.skills[skill].level < requiredLevel) {
+    if (gameStore.newSkills[skill].level < requiredLevel) {
       gameStore.addToEventLog(`你的${skill}技能等级不足，需要达到${requiredLevel}级`)
       return
     }

@@ -49,7 +49,7 @@ const unlockAchievement = (achievement) => {
 
 // 监听游戏状态变化，检查成就
 watch(
-  () => [gameStore.player.days, gameStore.resources, gameStore.skills, gameStore.buildings, technologies],
+  () => [gameStore.player.days, gameStore.resources, gameStore.newSkills, gameStore.buildings, technologies],
   () => checkAchievements(),
   { deep: true }
 )

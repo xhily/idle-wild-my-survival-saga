@@ -28,17 +28,12 @@ const energyStatus = computed(() => {
 	return { text: '精疲力尽', color: '#F56C6C' }
 })
 
+
+
 // 计算玩家技能总和
 const totalSkillLevel = computed(() => {
-	const skillsValues = Object.values(gameStore.skills)
-	// 如果是类型1（对象数组）
-	if (skillsValues.length > 0 && typeof skillsValues[0] === 'number') {
-		gameStore.skills = skills
-		gameStore.saveGame()
-		return gameStore.skills
-	}
 	// 默认处理类型2（数字数组）
-	return skillsValues.reduce((sum, skill) => sum + skill.level, 0)
+	return Object.values(gameStore.newSkills).reduce((sum, skill) => sum + skill.level, 0)
 })
 
 const plusPlayerHealth = () => {
@@ -54,11 +49,6 @@ const plusPlayerHealth = () => {
 	gameStore.player.health += healAmount
 	gameStore.resources.medicine -= 1
 	gameStore.addToEventLog('你使用了药品，恢复了10%健康')
-}
-
-// 计算当前技能的进度百分比
-const skillProgressPercentage = (skill) => {
-	return (skill.exp / skill.expToNextLevel) * 100
 }
 
 // 提升人口
@@ -130,11 +120,11 @@ const checkLevelUp = () => {
 		<div class="player-skills">
 			<h4>技能 <span class="skill-total">(总等级: {{ totalSkillLevel }})</span></h4>
 			<div class="skill-grid">
-				<div v-for="(item, index) in Object.keys(gameStore.skills)" :key="index" class="skill-item">
-					<div class="skill-name">{{ gameStore.getResourceName(item) }}</div>
-					<div class="skill-level">Lv.{{ gameStore.skills[item].level }}</div>
+				<div v-for="(item, index) in Object.values(gameStore.newSkills)" :key="index" class="skill-item">
+					<div class="skill-name">{{ gameStore.getResourceName(item.name) }}</div>
+					<div class="skill-level">Lv.{{ item.level }}</div>
 					<div class="skill-progress-bar">
-						<div class="progress-fill" :style="{ width: skillProgressPercentage(gameStore.skills[item]) + '%' }"></div>
+						<div class="progress-fill" :style="{ width: (item.exp / item.expToNextLevel) * 100 + '%' }"></div>
 					</div>
 				</div>
 			</div>

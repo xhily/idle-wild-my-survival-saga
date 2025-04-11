@@ -76,7 +76,7 @@ export const achievements = [
     name: '采集大师',
     description: '采集技能达到5级',
     icon: '🧺',
-    condition: (store) => store.skills.gathering >= 5,
+    condition: (store) => store.newSkills.gathering >= 5,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -85,7 +85,7 @@ export const achievements = [
     name: '采集大师-2',
     description: '采集技能达到20级',
     icon: '🧺',
-    condition: (store) => store.skills.gathering >= 20,
+    condition: (store) => store.newSkills.gathering >= 20,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -94,7 +94,7 @@ export const achievements = [
     name: '采集大师-3',
     description: '采集技能达到50级',
     icon: '🧺',
-    condition: (store) => store.skills.gathering >= 50,
+    condition: (store) => store.newSkills.gathering >= 50,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -103,7 +103,7 @@ export const achievements = [
     name: '制作大师',
     description: '制作技能达到5级',
     icon: '🔨',
-    condition: (store) => store.skills.crafting >= 5,
+    condition: (store) => store.newSkills.crafting >= 5,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -112,7 +112,7 @@ export const achievements = [
     name: '制作大师-2',
     description: '制作技能达到20级',
     icon: '🔨',
-    condition: (store) => store.skills.crafting >= 20,
+    condition: (store) => store.newSkills.crafting >= 20,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -121,7 +121,7 @@ export const achievements = [
     name: '制作大师-3',
     description: '制作技能达到50级',
     icon: '🔨',
-    condition: (store) => store.skills.crafting >= 50,
+    condition: (store) => store.newSkills.crafting >= 50,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -130,7 +130,7 @@ export const achievements = [
     name: '生存大师',
     description: '生存技能达到5级',
     icon: '🏕️',
-    condition: (store) => store.skills.survival >= 5,
+    condition: (store) => store.newSkills.survival >= 5,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -139,7 +139,7 @@ export const achievements = [
     name: '生存大师-2',
     description: '生存技能达到20级',
     icon: '🏕️',
-    condition: (store) => store.skills.survival >= 20,
+    condition: (store) => store.newSkills.survival >= 20,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -148,7 +148,7 @@ export const achievements = [
     name: '生存大师-3',
     description: '生存技能达到50级',
     icon: '🏕️',
-    condition: (store) => store.skills.survival >= 50,
+    condition: (store) => store.newSkills.survival >= 50,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -157,7 +157,7 @@ export const achievements = [
     name: '研究大师',
     description: '研究技能达到5级',
     icon: '🔬',
-    condition: (store) => store.skills.research >= 5,
+    condition: (store) => store.newSkills.research >= 5,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -166,7 +166,7 @@ export const achievements = [
     name: '研究大师-2',
     description: '研究技能达到20级',
     icon: '🔬',
-    condition: (store) => store.skills.research >= 20,
+    condition: (store) => store.newSkills.research >= 20,
     reward: { exp: 80 },
     unlocked: false
   },
@@ -175,7 +175,7 @@ export const achievements = [
     name: '研究大师-3',
     description: '研究技能达到50级',
     icon: '🔬',
-    condition: (store) => store.skills.research >= 50,
+    condition: (store) => store.newSkills.research >= 50,
     reward: { exp: 80 },
     unlocked: false
   },

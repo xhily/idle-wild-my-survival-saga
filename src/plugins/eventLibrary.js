@@ -145,9 +145,9 @@ export const eventLibrary = [
               return '旅行者感谢你的帮助，给了你1个科技碎片'
             },
             () => {
-              store.player.exp += 10
-              store.addToEventLog('旅行者感谢你的帮助，分享了一些有趣的故事，你获得了许多经验')
-              return '旅行者感谢你的帮助，分享了一些有趣的故事，你获得了许多经验'
+              store.player.exp += store.player.expToNextLevel * 0.1
+              store.addToEventLog('旅行者感谢你的帮助，分享了一些有趣的故事，你获得了许多幸存者经验')
+              return '旅行者感谢你的帮助，分享了一些有趣的故事，你获得了许多幸存者经验'
             }
           ]
           return rewards[Math.floor(Math.random() * rewards.length)]()
@@ -185,7 +185,7 @@ export const eventLibrary = [
       {
         text: '尝试挽救',
         effect: (store) => {
-          if (store.skills.survival >= 3) {
+          if (store.newSkills.survival >= 3) {
             const amount = Math.floor(store.resources.food * 0.15)
             store.consumeResource('food', amount)
             store.addToEventLog(`凭借你的生存技能，你只损失了${amount}单位食物`)
@@ -213,7 +213,7 @@ export const eventLibrary = [
       {
         text: '尝试修复',
         effect: (store) => {
-          if (store.skills.crafting >= 2 && store.resources.metal >= 1) {
+          if (store.newSkills.crafting >= 2 && store.resources.metal >= 1) {
             store.consumeResource('metal', 1)
             store.addToEventLog('你成功修复了损坏的工具')
             return '你成功修复了损坏的工具'

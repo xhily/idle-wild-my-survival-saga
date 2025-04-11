@@ -30,7 +30,7 @@ const craftingActivities = computed(() => {
 const meetsSkillRequirements = (recipe) => {
   if (!recipe.skillRequired) return true
   for (const [skill, level] of Object.entries(recipe.skillRequired)) {
-    if (gameStore.skills[skill].level < level) return false
+    if (gameStore.newSkills[skill].level < level) return false
   }
   return true
 }
@@ -61,7 +61,7 @@ const startActivity = (recipeId) => {
   }
   // 检查技能要求
   for (const [skill, level] of Object.entries(recipe.skillRequired)) {
-    if (gameStore.skills[skill].level < level) {
+    if (gameStore.newSkills[skill].level < level) {
       gameStore.addToEventLog(`你的${skill}技能等级不足，无法进行${recipe.name}`)
       return
     }

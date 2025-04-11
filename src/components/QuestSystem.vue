@@ -225,7 +225,7 @@ const availableQuests = computed(() => {
       // 检查技能要求
       if (quest.unlockRequirements.skills) {
         for (const [skill, level] of Object.entries(quest.unlockRequirements.skills)) {
-          if (gameStore.skills[skill].level < level) return false
+          if (gameStore.newSkills[skill].level < level) return false
         }
       }
     }
