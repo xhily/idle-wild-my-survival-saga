@@ -361,7 +361,7 @@ const hourlyUpdate = () => {
 	// 应用天气对体力恢复的影响
 	if (gameStore.weather.current === 'hot' || gameStore.weather.current === 'cold') baseEnergyRecovery *= 0.8 // 极端天气减少体力恢复
 	// 应用基础体力恢复
-	gameStore.player.energy = Math.min(gameStore.player.energy + gameStore.player.energy * baseEnergyRecovery, gameStore.player.maxEnergy)
+	gameStore.player.energy = Math.min(gameStore.player.energy + gameStore.player.maxEnergy * baseEnergyRecovery, gameStore.player.maxEnergy)
 	// 应用技能中的健康恢复效果
 	if (gameStore.skillTreeEffects.healthRecovery > 0) {
 		const healthRecovery = Math.floor(gameStore.player.maxHealth * 0.01 * gameStore.skillTreeEffects.healthRecovery)

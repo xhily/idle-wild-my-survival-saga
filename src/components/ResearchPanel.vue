@@ -125,7 +125,7 @@ const completeResearch = (activityId, tech) => {
   if (!gameStore.researched.includes(tech.id)) gameStore.researched.push(tech.id)
   tech.researched = true
   // 增加研究技能经验
-  gameStore.addSkillExp('research', 2)
+  gameStore.addSkillExp('research', 20)
   gameStore.addToEventLog(`你成功研究了${tech.name}！`)
   gameStore.saveGame()
   // 检查是否有等待中的研究活动

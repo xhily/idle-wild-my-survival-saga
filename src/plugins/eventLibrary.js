@@ -57,7 +57,7 @@ export const eventLibrary = [
         text: '仔细研究',
         effect: (store) => {
           store.addResource('techFragment', 2)
-          store.addSkillExp('research', 3)
+          store.addSkillExp('research', 30)
           store.addToEventLog('你获得了2个科技碎片并提升了研究技能')
           return '你获得了2个科技碎片并提升了研究技能'
         }
@@ -289,7 +289,7 @@ export const eventLibrary = [
             }
           })
 
-          store.addSkillExp('survival', 2)
+          store.addSkillExp('survival', 20)
           store.addToEventLog('你成功加固了营地，减少了风暴造成的损失')
           return '你成功加固了营地，减少了风暴造成的损失'
         }
@@ -309,7 +309,7 @@ export const eventLibrary = [
       {
         text: '询问生存技巧',
         effect: (store) => {
-          store.addSkillExp('survival', 5)
+          store.addSkillExp('survival', 50)
           store.addToEventLog('神秘来客教给你一些高级生存技巧')
           return '神秘来客教给你一些高级生存技巧，你的生存技能得到提升'
         }
@@ -326,7 +326,7 @@ export const eventLibrary = [
       {
         text: '保持警惕',
         effect: (store) => {
-          store.addSkillExp('combat', 2)
+          store.addSkillExp('combat', 20)
           store.addToEventLog('你对神秘来客保持警惕，提高了你的战斗意识')
           return '你对神秘来客保持警惕，提高了你的战斗意识'
         }

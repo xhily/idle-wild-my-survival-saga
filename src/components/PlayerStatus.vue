@@ -50,10 +50,7 @@ const plusPlayerHealth = () => {
 		ElMessage.error('暂时不需要药品恢复健康')
 		return
 	}
-	const healAmount = Math.min(
-		Math.floor(gameStore.player.maxHealth * 0.1), // 恢复10%
-		gameStore.player.maxHealth - gameStore.player.health // 但不能超过最大生命值
-	)
+	const healAmount = Math.min(Math.floor(gameStore.player.maxHealth * 0.1), gameStore.player.maxHealth)
 	gameStore.player.health += healAmount
 	gameStore.resources.medicine -= 1
 	gameStore.addToEventLog('你使用了药品，恢复了10%健康')
@@ -137,8 +134,7 @@ const checkLevelUp = () => {
 					<div class="skill-name">{{ gameStore.getResourceName(item) }}</div>
 					<div class="skill-level">Lv.{{ gameStore.skills[item].level }}</div>
 					<div class="skill-progress-bar">
-						<div class="progress-fill"
-							:style="{ width: skillProgressPercentage(gameStore.skills[item]) + '%' }"></div>
+						<div class="progress-fill" :style="{ width: skillProgressPercentage(gameStore.skills[item]) + '%' }"></div>
 					</div>
 				</div>
 			</div>

@@ -501,7 +501,7 @@ export const useGameStore = defineStore('game', {
         {
           id: 'stranger', name: '陌生人', effect: () => {
             this.addToEventLog('你遇到了一个陌生人，他给了你一些建议就离开了')
-            this.addSkillExp('survival', 2)
+            this.addSkillExp('survival', 20)
           },
           weight: 6
         },
@@ -556,7 +556,7 @@ export const useGameStore = defineStore('game', {
             if (this.skills.combat >= 3) {
               this.addToEventLog('一只野兽袭击了你，但你成功击退了它，还获得了一些食物')
               this.addResource('food', 20)
-              this.addSkillExp('combat', 2)
+              this.addSkillExp('combat', 20)
             } else {
               this.player.health -= this.player.health * 0.2
               this.addToEventLog('一只野兽袭击了你，你勉强逃脱，但受了伤')
@@ -621,6 +621,7 @@ export const useGameStore = defineStore('game', {
     // 游戏结束
     gameOver() {
       this.gameState = 'gameover'
+      this.saveGame()
       this.addToEventLog('你没能生存下来...')
     },
     // 添加事件日志

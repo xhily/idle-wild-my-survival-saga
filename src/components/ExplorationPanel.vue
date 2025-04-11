@@ -182,9 +182,9 @@ const completeExploration = (activityId, region) => {
   // 生成探索结果
   generateExplorationResults(region)
   // 增加相关技能经验
-  gameStore.addSkillExp('survival', 2)
+  gameStore.addSkillExp('survival', 20)
   gameStore.player.explorationCount += 1
-  if (region.difficulty >= 3) gameStore.addSkillExp('combat', 1)
+  if (region.difficulty >= 3) gameStore.addSkillExp('combat', 10)
   // 检查是否有等待中的探索活动
   const nextExploration = gameStore.pendingActivities.find(a => a.recipeId.startsWith('explore_'))
   if (nextExploration) {
@@ -249,7 +249,7 @@ const handleDangerEvent = (danger, region) => {
         gameStore.addToEventLog(`你在${region.name}遇到了野兽袭击，但成功击退了它`)
         gameStore.addResource('food', region.difficulty * 3)
         gameStore.addToEventLog('你获得了一些食物')
-        gameStore.addSkillExp('combat', 2)
+        gameStore.addSkillExp('combat', 20)
       } else {
         gameStore.player.health -= Math.floor(0.1 * region.difficulty * gameStore.player.health)
         gameStore.addToEventLog(`你在${region.name}遭遇野兽袭击，受到了伤`)
@@ -279,7 +279,7 @@ const handleDangerEvent = (danger, region) => {
     case 'hostiles':
       if (gameStore.skills.combat.level > region.difficulty) {
         gameStore.addToEventLog(`你在${region.name}遇到了敌对人员，但成功击退了他们`)
-        gameStore.addSkillExp('combat', 3)
+        gameStore.addSkillExp('combat', 30)
       } else {
         gameStore.player.health -= Math.floor(gameStore.player.health * 0.15)
         // 随机失去一些资源
@@ -333,7 +333,7 @@ const handleSpecialDiscovery = (region) => {
       name: '幸存者',
       effect: () => {
         gameStore.addToEventLog(`你在${region.name}遇到了一位幸存者，他分享了一些生存知识`)
-        gameStore.addSkillExp('survival', 3)
+        gameStore.addSkillExp('survival', 30)
       },
       weight: 8
     },
@@ -350,7 +350,7 @@ const handleSpecialDiscovery = (region) => {
       effect: () => {
         // 解锁新区域的逻辑可以在这里实现
         gameStore.addToEventLog(`你在${region.name}发现了一张地图，标记了一些新的区域`)
-        gameStore.addSkillExp('exploration', 2)
+        gameStore.addSkillExp('exploration', 20)
       },
       weight: 4
     }

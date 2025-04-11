@@ -203,7 +203,7 @@ const completeActivity = (activityId) => {
   // 如果是探索活动，增加探索计数
   if (recipe.category === 'exploration') gameStore.achievements.explorationCount += 1
   // 增加相关技能经验
-  for (const skill in recipe.skillRequired) gameStore.addSkillExp(skill, 1)
+  for (const skill in recipe.skillRequired) gameStore.addSkillExp(skill, 10)
   return true
 }
 
