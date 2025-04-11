@@ -455,7 +455,8 @@ const abandonQuest = (quest) => {
                 <div class="quest-time-limit" v-if="quest.timeLimit">
                   时间限制: {{ formatTimeLimit(quest.timeLimit) }}
                 </div>
-                <el-button @click="acceptQuest(quest)" type="primary" size="small" class="accept-button">
+                <el-button @click="acceptQuest(quest)" :disabled="gameStore.gameState !== 'playing'" type="primary"
+                  size="small" class="accept-button">
                   接受任务
                 </el-button>
               </div>
@@ -502,10 +503,11 @@ const abandonQuest = (quest) => {
                   </div>
                 </div>
                 <el-button @click="completeQuest(quest)" type="success" size="small" class="complete-button"
-                  :disabled="!canCompleteQuest(quest)">
+                  :disabled="!canCompleteQuest(quest) || gameStore.gameState !== 'playing'">
                   完成任务
                 </el-button>
-                <el-button @click="abandonQuest(quest)" type="danger" size="small" class="abandon-button">
+                <el-button @click="abandonQuest(quest)" type="danger" size="small" class="abandon-button"
+                  :disabled="gameStore.gameState !== 'playing'">
                   放弃任务
                 </el-button>
               </div>

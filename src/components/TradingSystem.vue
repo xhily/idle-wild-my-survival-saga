@@ -208,7 +208,9 @@ const executeSpecialTrade = (trade) => {
 									<div class="item-stock" :class="{ 'low-stock': item.stock < 5 }">库存: {{ item.stock }}</div>
 									<div v-if="item.amount && item.amount > 1" class="item-amount">获得: {{ item.amount }}单位</div>
 								</div>
-								<el-button @click="buyItem(item)" :disabled="!canAfford(item.buyPrice) || item.stock <= 0" size="small">
+								<el-button @click="buyItem(item)"
+									:disabled="!canAfford(item.buyPrice) || item.stock <= 0 || gameStore.gameState !== 'playing'"
+									size="small">
 									购买
 								</el-button>
 							</div>
@@ -226,7 +228,9 @@ const executeSpecialTrade = (trade) => {
 									<div class="item-price">价格: {{ formatPrice(item.sellPrice) }}</div>
 									<div class="item-stock">拥有: {{ gameStore.resources[item.resourceId] }}</div>
 								</div>
-								<el-button @click="sellItem(item)" :disabled="gameStore.resources[item.resourceId] <= 0" size="small">
+								<el-button @click="sellItem(item)"
+									:disabled="gameStore.resources[item.resourceId] <= 0 || gameStore.gameState !== 'playing'"
+									size="small">
 									出售
 								</el-button>
 							</div>
@@ -257,7 +261,8 @@ const executeSpecialTrade = (trade) => {
 									</div>
 								</div>
 							</div>
-							<el-button @click="executeSpecialTrade(trade)" :disabled="!canExecuteSpecialTrade(trade)" size="small">
+							<el-button @click="executeSpecialTrade(trade)"
+								:disabled="!canExecuteSpecialTrade(trade) || gameStore.gameState !== 'playing'" size="small">
 								交易
 							</el-button>
 						</div>

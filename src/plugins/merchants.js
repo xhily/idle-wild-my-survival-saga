@@ -55,7 +55,7 @@ export const merchants = [
         id: 'community_support',
         name: '社区支持',
         description: '为定居点提供资源，获得他们的支持',
-        inputs: { food: 20, water: 20, medicine: 2 },
+        inputs: { crystal: 1, food: 20, water: 20, medicine: 2 },
         outputs: { maxHealth: 5, maxEnergy: 5 }
       }
     ]

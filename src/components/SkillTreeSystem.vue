@@ -416,8 +416,8 @@ onUnmounted(() => {
               <div class="skill-time">剩余: {{ getSkillRemainingTime(activity) }}</div>
             </div>
             <el-progress :percentage="getSkillProgress(activity)" :stroke-width="10" :show-text="false" />
-            <el-button type="danger" size="small" @click="cancelSkill(activity.id)"
-              style="width: 100%; margin-top: 10px;">
+            <el-button type="danger" :disabled="gameStore.gameState !== 'playing'" size="small"
+              @click="cancelSkill(activity.id)" style="width: 100%; margin-top: 10px;">
               取消升级
             </el-button>
           </div>
@@ -427,8 +427,8 @@ onUnmounted(() => {
               <div class="skill-time">等待中</div>
             </div>
             <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
-            <el-button type="danger" size="small" @click="cancelSkill(activity.id)"
-              style="width: 100%; margin-top: 10px;">
+            <el-button type="danger" size="small" :disabled="gameStore.gameState !== 'playing'"
+              @click="cancelSkill(activity.id)" style="width: 100%; margin-top: 10px;">
               取消队列
             </el-button>
           </div>
@@ -490,7 +490,7 @@ onUnmounted(() => {
             </div>
             <div class="skill-cost">升级消耗: {{ skill.cost.exp }} 经验值</div>
             <el-button style="width: 100%;" :loading="isSkill(skill.id)" size="small" type="primary"
-              :disabled="!canUpgradeSkill(skill)" @click="upgradeSkill(skill)">
+              :disabled="!canUpgradeSkill(skill) || gameStore.gameState !== 'playing'" @click="upgradeSkill(skill)">
               {{ gameStore.unlockedSkills[skill.id] == skill.maxLevel ? '已满级' : gameStore.unlockedSkills[skill.id] === 0
                 ? '解锁' :
                 '升级' }}

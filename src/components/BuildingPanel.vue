@@ -266,6 +266,8 @@ const initBuildingEffects = () => {
     if (building.effects.maxHealth) gameStore.player.maxHealth += building.effects.maxHealth
     // 应用最大体力效果
     if (building.effects.maxEnergy) gameStore.player.maxEnergy += building.effects.maxEnergy
+    // 制作效率
+    if (building.effects.craftingSpeed) gameStore.skillTreeEffects.craftingSpeed += building.effects.craftingSpeed
   }
 }
 
@@ -342,7 +344,8 @@ onUnmounted(() => {
 
 <template>
   <div class="building-panel">
-    <div class="building-queue" v-if="gameStore.buildingActivities.length || gameStore.pendingBuildingActivities.length">
+    <div class="building-queue"
+      v-if="gameStore.buildingActivities.length || gameStore.pendingBuildingActivities.length">
       <h4>建筑队列</h4>
       <el-scrollbar max-height="260" always>
         <div class="building-list">
@@ -352,8 +355,8 @@ onUnmounted(() => {
               <div class="building-time">剩余: {{ getBuildingRemainingTime(activity) }}</div>
             </div>
             <el-progress :percentage="getBuildingProgress(activity)" :stroke-width="10" :show-text="false" />
-            <el-button type="danger" size="small" @click="cancelBuilding(activity.id)"
-              style="width: 100%; margin-top: 10px;">
+            <el-button type="danger" size="small" :disabled="gameStore.gameState !== 'playing'"
+              @click="cancelBuilding(activity.id)" style="width: 100%; margin-top: 10px;">
               取消建造
             </el-button>
           </div>
@@ -363,8 +366,8 @@ onUnmounted(() => {
               <div class="building-time">等待中</div>
             </div>
             <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
-            <el-button type="danger" size="small" @click="cancelBuilding(activity.id)"
-              style="width: 100%; margin-top: 10px;">
+            <el-button type="danger" size="small" :disabled="gameStore.gameState !== 'playing'"
+              @click="cancelBuilding(activity.id)" style="width: 100%; margin-top: 10px;">
               取消队列
             </el-button>
           </div>
@@ -399,7 +402,8 @@ onUnmounted(() => {
                 </el-descriptions-item>
               </template>
             </el-descriptions>
-            <el-button type="primary" style="width: 100%;" :disabled="!canBuildOrUpgrade(building)"
+            <el-button type="primary" style="width: 100%;"
+              :disabled="!canBuildOrUpgrade(building) || gameStore.gameState !== 'playing'"
               :loading="isBuilding(building.id)" @click="buildOrUpgrade(building)" class="build-button">
               {{ getBuildingLevel(building.id) === 0 ? '建造' : '升级' }}
             </el-button>

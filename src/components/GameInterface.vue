@@ -557,6 +557,17 @@ const saveGame = () => {
 
 // 暂停/继续游戏
 const togglePause = () => {
+	console.log(gameStore.buildings)
+	// 所有活动队列统计
+	const activeQueues = gameStore.currentActivities.length + gameStore.pendingActivities.length +
+		gameStore.researchActivities.length + gameStore.pendingResearchActivities.length +
+		gameStore.explorationActivities.length + gameStore.pendingExplorationActivities.length +
+		gameStore.buildingActivities.length + gameStore.pendingBuildingActivities.length +
+		gameStore.skillActivities.length + gameStore.pendingSkillActivities.length
+	if (activeQueues) {
+		ElMessage.warning('活动队列正在进行中, 无法暂停游戏')
+		return
+	}
 	if (gameStore.gameState === 'playing') {
 		gameStore.gameState = 'paused'
 		ElMessage.info('游戏已暂停')
@@ -634,7 +645,7 @@ onUnmounted(() => {
 					</el-icon>
 					保存数据
 				</el-button>
-				<el-button class="button" @click="restartGame" size="small">
+				<el-button class="button" @click="restartGame" :disabled="gameState !== 'playing'" size="small">
 					<el-icon>
 						<Delete />
 					</el-icon>
@@ -649,7 +660,7 @@ onUnmounted(() => {
 					</el-icon>
 					{{ gameState === 'playing' ? '暂停游戏' : '继续游戏' }}
 				</el-button>
-				<el-button class="button" @click="download" size="small">
+				<el-button class="button" @click="download" :disabled="gameState !== 'playing'" size="small">
 					<el-icon>
 						<Download />
 					</el-icon>
@@ -728,7 +739,7 @@ onUnmounted(() => {
 			<span>生存天数: {{ gameStore.player.days }}</span>
 			<template #footer>
 				<span class="dialog-footer">
-					<el-button @click="restartGame">重新开始</el-button>
+					<el-button @click="gameStore.initGame">重新开始</el-button>
 				</span>
 			</template>
 		</el-dialog>

@@ -452,7 +452,8 @@ onUnmounted(() => {
         <div>{{ getExplorationSkillEffects() }}</div>
       </el-alert>
     </div>
-    <div class="current-explorations" v-if="gameStore.explorationActivities.length || gameStore.pendingExplorationActivities.length">
+    <div class="current-explorations"
+      v-if="gameStore.explorationActivities.length || gameStore.pendingExplorationActivities.length">
       <h4>探索队列</h4>
       <el-scrollbar max-height="260" always>
         <div class="exploration-list">
@@ -465,19 +466,20 @@ onUnmounted(() => {
               </div>
             </div>
             <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
-            <el-button type="danger" size="small" @click="cancelExploration(activity.id)"
-              style="width: 100%; margin-top: 10px;">
+            <el-button type="danger" size="small" :disabled="gameStore.gameState !== 'playing'"
+              @click="cancelExploration(activity.id)" style="width: 100%; margin-top: 10px;">
               取消探索
             </el-button>
           </div>
-          <div v-for="activity in gameStore.pendingExplorationActivities" :key="activity.id" class="exploration-card pending">
+          <div v-for="activity in gameStore.pendingExplorationActivities" :key="activity.id"
+            class="exploration-card pending">
             <div class="exploration-header">
               <div class="exploration-name">{{ activity.name }}</div>
               <div class="exploration-time">等待中</div>
             </div>
             <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
-            <el-button type="danger" size="small" @click="cancelExploration(activity.id)"
-              style="width: 100%; margin-top: 10px;">
+            <el-button type="danger" size="small" :disabled="gameStore.gameState !== 'playing'"
+              @click="cancelExploration(activity.id)" style="width: 100%; margin-top: 10px;">
               取消队列
             </el-button>
           </div>
@@ -507,7 +509,8 @@ onUnmounted(() => {
             </div>
           </div>
           <div v-if="selectedRegion === region.id" class="exploration-actions">
-            <el-button type="primary" @click="startExploration" :disabled="!canExplore">
+            <el-button type="primary" @click="startExploration"
+              :disabled="!canExplore || gameStore.gameState !== 'playing'">
               {{ canExplore ? '开始探索' : '资源不足' }}
             </el-button>
           </div>

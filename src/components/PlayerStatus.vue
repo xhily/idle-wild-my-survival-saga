@@ -7,11 +7,11 @@ const gameStore = useGameStore()
 
 // 计算玩家属性百分比
 const healthPercentage = computed(() => {
-	return (gameStore.player.health / gameStore.player.maxHealth) * 100
+	return Math.min(100, (gameStore.player.health / gameStore.player.maxHealth) * 100)
 })
 
 const energyPercentage = computed(() => {
-	return (gameStore.player.energy / gameStore.player.maxEnergy) * 100
+	return Math.min(100, (gameStore.player.energy / gameStore.player.maxEnergy) * 100)
 })
 
 // 计算健康状态文本和颜色
@@ -27,8 +27,6 @@ const energyStatus = computed(() => {
 	if (energyPercentage.value > 30) return { text: '有些疲惫', color: '#E6A23C' }
 	return { text: '精疲力尽', color: '#F56C6C' }
 })
-
-
 
 // 计算玩家技能总和
 const totalSkillLevel = computed(() => {
@@ -87,7 +85,7 @@ const checkLevelUp = () => {
 				</span>
 				<span class="stat-value">{{ gameStore.player.level }}人</span>
 			</div>
-			<el-progress :percentage="(gameStore.player.exp / gameStore.player.expToNextLevel) * 100" :show-text="false"
+			<el-progress :percentage="Math.min(100, (gameStore.player.exp / gameStore.player.expToNextLevel) * 100)" :show-text="false"
 				:stroke-width="10" color="#8e44ad" />
 		</div>
 		<div class="player-stats">
@@ -141,7 +139,7 @@ const checkLevelUp = () => {
 			</div>
 			<div class="survival-item">
 				<span class="survival-icon">🔄</span>
-				<span>轮回次数: {{ Math.floor(gameStore.player.days / 120) }}</span>
+				<span>四季循环: {{ Math.floor(gameStore.player.days / 120) }}</span>
 			</div>
 		</div>
 	</div>

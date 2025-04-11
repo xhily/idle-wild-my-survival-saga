@@ -185,7 +185,7 @@ export const eventLibrary = [
       {
         text: '尝试挽救',
         effect: (store) => {
-          if (store.newSkills.survival >= 3) {
+          if (store.newSkills.survival.level >= 3) {
             const amount = Math.floor(store.resources.food * 0.15)
             store.consumeResource('food', amount)
             store.addToEventLog(`凭借你的生存技能，你只损失了${amount}单位食物`)
@@ -213,7 +213,7 @@ export const eventLibrary = [
       {
         text: '尝试修复',
         effect: (store) => {
-          if (store.newSkills.crafting >= 2 && store.resources.metal >= 1) {
+          if (store.newSkills.crafting.level >= 2 && store.resources.metal >= 1) {
             store.consumeResource('metal', 1)
             store.addToEventLog('你成功修复了损坏的工具')
             return '你成功修复了损坏的工具'

@@ -38,6 +38,8 @@ const selectRandomEvent = () => {
 
 // 触发随机事件
 const triggerRandomEvent = () => {
+  // 如果游戏暂停，不触发事件
+  if (gameStore.gameState == 'paused') return
   // 如果已经有活跃事件，不触发新事件
   if (activeEvent.value) return
   // 如果今天已经触发过事件，不触发新事件

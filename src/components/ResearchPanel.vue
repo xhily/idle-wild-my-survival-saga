@@ -346,7 +346,8 @@ onUnmounted(() => {
           <div>{{ getResearchSkillEffects() }}</div>
         </el-alert>
       </div>
-      <div class="research-queue" v-if="gameStore.researchActivities.length || gameStore.pendingResearchActivities.length">
+      <div class="research-queue"
+        v-if="gameStore.researchActivities.length || gameStore.pendingResearchActivities.length">
         <h4>研究队列</h4>
         <el-scrollbar max-height="260" always>
           <div class="research-list">
@@ -358,19 +359,20 @@ onUnmounted(() => {
                 </div>
               </div>
               <el-progress :percentage="getActivityProgress(activity)" :stroke-width="10" :show-text="false" />
-              <el-button type="danger" size="small" @click="cancelResearch(activity.id)"
-                style="width: 100%; margin-top: 10px;">
+              <el-button type="danger" size="small" :disabled="gameStore.gameState !== 'playing'"
+                @click="cancelResearch(activity.id)" style="width: 100%; margin-top: 10px;">
                 取消研究
               </el-button>
             </div>
-            <div v-for="activity in gameStore.pendingResearchActivities" :key="activity.id" class="research-card pending">
+            <div v-for="activity in gameStore.pendingResearchActivities" :key="activity.id"
+              class="research-card pending">
               <div class="research-header">
                 <div class="research-name">{{ activity.name }}</div>
                 <div class="research-time">等待中</div>
               </div>
               <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
-              <el-button type="danger" size="small" @click="cancelResearch(activity.id)"
-                style="width: 100%; margin-top: 10px;">
+              <el-button type="danger" size="small" :disabled="gameStore.gameState !== 'playing'"
+                @click="cancelResearch(activity.id)" style="width: 100%; margin-top: 10px;">
                 取消队列
               </el-button>
             </div>
@@ -395,7 +397,8 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="tech-actions">
-            <el-button type="primary" :loading="isLoading(selectedTech)" @click="researchTech" :disabled="!canResearch">
+            <el-button type="primary" :loading="isLoading(selectedTech)" @click="researchTech"
+              :disabled="!canResearch || gameStore.gameState !== 'playing'">
               {{ canResearch ? '研究' : '资源不足' }}
             </el-button>
           </div>

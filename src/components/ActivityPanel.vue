@@ -121,6 +121,19 @@ const startActivity = (recipeId) => {
   gameStore.saveGame()
 }
 
+// 计算当前效果
+const getSkillEffect = (recipe) => {
+  // 计算活动持续时间
+  let activityDuration = recipe.duration
+  if (recipe.category === 'gathering' && gameStore.skillTreeEffects.gatheringEfficiency > 0) {
+    activityDuration = Math.floor(activityDuration / (1 + gameStore.skillTreeEffects.gatheringEfficiency))
+  }
+  if (recipe.category === 'crafting' && gameStore.skillTreeEffects.craftingSpeed > 0) {
+    activityDuration = Math.floor(activityDuration / (1 + gameStore.skillTreeEffects.craftingSpeed))
+  }
+  return Math.max(1, activityDuration)
+}
+
 const activityTimer = (activity) => {
   activity.timer = setTimeout(() => {
     completeActivity(activity.id)
@@ -316,6 +329,7 @@ const getSkillEffectText = (recipe) => {
     // 稀有资源几率
     if (recipe.id.includes('herb') && gameStore.skillTreeEffects.rareHerbChance > 0) effects.push(`稀有草药几率 +${Math.round(gameStore.skillTreeEffects.rareHerbChance * 100)}%`)
   } else if (category === 'crafting') {
+    console.log(gameStore.skillTreeEffects)
     // 制作速度加成
     if (gameStore.skillTreeEffects.craftingSpeed > 0) effects.push(`制作速度 +${Math.round(gameStore.skillTreeEffects.craftingSpeed * 100)}%`)
     // 资源节约几率
@@ -522,7 +536,7 @@ const pendingActivities = computed(() =>
             <div v-for="recipe in gatheringActivities" :key="recipe.id" class="activity-card">
               <div class="activity-header">
                 <div class="activity-name">{{ recipe.name }}</div>
-                <div class="activity-time">{{ getActivityDuration(recipe.duration) }}</div>
+                <div class="activity-time">{{ getActivityDuration(getSkillEffect(recipe)) }}</div>
               </div>
               <div class="activity-details">
                 <div class="activity-resources">
@@ -550,7 +564,7 @@ const pendingActivities = computed(() =>
             <div v-for="recipe in craftingActivities" :key="recipe.id" class="activity-card">
               <div class="activity-header">
                 <div class="activity-name">{{ recipe.name }}</div>
-                <div class="activity-time">{{ getActivityDuration(recipe.duration) }}</div>
+                <div class="activity-time">{{ getActivityDuration(getSkillEffect(recipe)) }}</div>
               </div>
               <div class="activity-details">
                 <div class="activity-resources">

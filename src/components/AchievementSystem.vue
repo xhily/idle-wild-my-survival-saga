@@ -21,7 +21,7 @@ const lockedAchievements = computed(() => {
 
 // 成就完成百分比
 const achievementProgress = computed(() => {
-  return Math.round((unlockedAchievements.value.length / localAchievements.value.length) * 100)
+  return Math.min(100, (unlockedAchievements.value.length / localAchievements.value.length) * 100)
 })
 
 // 检查成就是否达成
