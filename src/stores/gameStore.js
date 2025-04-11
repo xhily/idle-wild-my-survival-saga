@@ -309,7 +309,7 @@ export const useGameStore = defineStore('game', {
         this.skills[skill].expToNextLevel = Math.floor(this.skills[skill].expToNextLevel * 1.5)
         this.addToEventLog(`${this.getResourceName(skill)}技能提升到${this.skills[skill]}级！`)
       }
-      return true
+      this.saveGame()
     },
     // 计算当前可用的商人
     availableMerchants() {
