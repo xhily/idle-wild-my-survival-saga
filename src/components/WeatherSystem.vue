@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
-import { ElNotification } from 'element-plus'
 import { weatherTypes, selectRandomWeather, getWeatherDuration, processWeatherEvents } from '../plugins/weatherTypes'
 
 const gameStore = useGameStore()
@@ -11,12 +10,6 @@ const currentWeather = ref(weatherTypes.clear)
 
 // 天气持续时间（小时）
 const weatherDuration = ref(6)
-
-// 下次天气变化时间
-const nextWeatherChangeTime = ref({
-  day: gameStore.gameTime.day,
-  hour: gameStore.gameTime.hour + weatherDuration.value
-})
 
 // 获取当前季节的英文名称
 const currentSeasonKey = computed(() => {
@@ -42,14 +35,6 @@ const generateWeather = () => {
           currentWeather.value = weatherTypes.auroral
           weatherDuration.value = getWeatherDuration('auroral')
           gameStore.addToEventLog(`冬季满月之夜，${weatherTypes.auroral.name}在天空中舞动，${weatherTypes.auroral.description}`)
-          return
-        } else {
-          // 其他季节满月可能带来清澈的夜空
-          currentWeather.value = weatherTypes.clear
-          weatherDuration.value = getWeatherDuration('clear')
-          gameStore.addToEventLog(`满月之夜，天空格外${weatherTypes.clear.name}，月光照亮了四周`)
-          // 满月之夜精神恢复加成
-          gameStore.player.mental = Math.min(gameStore.player.mental + 5, gameStore.player.maxMental)
           return
         }
       }
@@ -83,11 +68,26 @@ const updateWeatherEffects = () => {
     energyConsumption: effects.energyConsumption || 1.0,
     waterConsumption: effects.waterConsumption || 1.0,
     foodConsumption: effects.foodConsumption || 1.0,
-    explorationEfficiency: effects.explorationEfficiency || 1.0,
-    mentalRecovery: effects.mentalRecovery || 1.0
+    explorationEfficiency: effects.explorationEfficiency || 1.0
   }
   // 更新游戏状态中的当前天气
-  gameStore.weather.current = Object.keys(weatherTypes).find(key => weatherTypes[key] === currentWeather.value) || 'clear'
+  gameStore.weather.current = Object.keys(weatherTypes)[weatherDuration.value] || 'clear'
+}
+
+// 检查是否需要更新天气
+const checkWeatherChange = () => {
+  const currentDay = gameStore.gameTime.day
+  const currentHour = gameStore.gameTime.hour
+  const nextChangeDay = gameStore.weather.nextChangeDay
+  const nextChangeHour = gameStore.weather.nextChangeHour
+  currentWeather.value = weatherTypes[gameStore.weather.current]
+  if (currentDay >= nextChangeDay && currentHour >= nextChangeHour) {
+    updateWeatherEffects()
+    generateWeather()
+    updateNextWeatherChangeTime()
+    applyWeatherEffects()
+    gameStore.saveGame()
+  }
 }
 
 // 更新下次天气变化时间
@@ -99,22 +99,10 @@ const updateNextWeatherChangeTime = () => {
     nextHour -= 24
     nextDay += 1
   }
-  nextWeatherChangeTime.value = {
-    day: nextDay,
-    hour: nextHour
-  }
+  gameStore.weather.nextChangeDay = nextDay
+  gameStore.weather.nextChangeHour = nextHour
 }
 
-// 检查是否需要更新天气
-const checkWeatherChange = () => {
-  const currentDay = gameStore.gameTime.day
-  const currentHour = gameStore.gameTime.hour
-  if (currentDay > nextWeatherChangeTime.value.day || (currentDay === nextWeatherChangeTime.value.day && currentHour >= nextWeatherChangeTime.value.hour)) {
-    generateWeather()
-    updateNextWeatherChangeTime()
-    applyWeatherEffects()
-  }
-}
 
 // 应用天气效果
 const applyWeatherEffects = () => {
@@ -126,8 +114,7 @@ const applyWeatherEffects = () => {
     energyConsumption: 1.0,
     waterConsumption: 1.0,
     foodConsumption: 1.0,
-    explorationEfficiency: 1.0,
-    mentalRecovery: 1.0
+    explorationEfficiency: 1.0
   }
   // 根据天气类型应用基础效果
   switch (currentWeather.value.name) {
@@ -228,7 +215,7 @@ const applyWeatherEffects = () => {
         if (disasterType === '建筑损坏' && gameStore.buildings.length > 1) {
           // 随机选择一个非基础建筑
           const nonBasicBuildings = gameStore.buildings.filter(b => b.id !== 'campfire')
-          if (nonBasicBuildings.length > 0) {
+          if (nonBasicBuildings.length) {
             const randomBuilding = nonBasicBuildings[Math.floor(Math.random() * nonBasicBuildings.length)]
             gameStore.addToEventLog(`风暴损坏了你的${randomBuilding.name}，效果暂时减半`)
             // 这里可以添加建筑损坏的逻辑
@@ -238,16 +225,15 @@ const applyWeatherEffects = () => {
           const resources = ['food', 'water', 'wood', 'stone']
           const randomResource = resources[Math.floor(Math.random() * resources.length)]
           const lostAmount = Math.floor(Math.random() * 5) + 3
-          gameStore.consumeResource(randomResource, lostAmount)
-          gameStore.addToEventLog(`风暴导致你损失了${lostAmount}单位${randomResource === 'food' ? '食物' :
+          const lostAmountAmount = Math.floor(lostAmount / 100)
+          gameStore.consumeResource(randomResource, lostAmountAmount)
+          gameStore.addToEventLog(`风暴导致你损失了${lostAmountAmount}%单位${randomResource === 'food' ? '食物' :
             randomResource === 'water' ? '水' :
               randomResource === 'wood' ? '木材' : '石头'}`)
         }
       }
       break
     case '彩虹':
-      weatherEffects.mentalRecovery = 1.2 // 精神恢复+20%
-      gameStore.player.mental = Math.min(gameStore.player.mental + 5, gameStore.player.maxMental)
       // 彩虹可能带来稀有资源
       if (Math.random() < 0.25) {
         const rareResource = Math.random() < 0.7 ? 'techFragment' : 'ancientRelic'
@@ -261,14 +247,16 @@ const applyWeatherEffects = () => {
       // 冰雹可能造成资源损失
       if (Math.random() < 0.3) {
         const lostFood = Math.floor(Math.random() * 3) + 2
-        gameStore.consumeResource('food', lostFood)
-        gameStore.addToEventLog(`冰雹砸坏了一些食物储备，你损失了${lostFood}单位食物`)
+        const lostAmount = Math.floor(lostFood / 100)
+        gameStore.consumeResource('food', lostAmount)
+        gameStore.addToEventLog(`冰雹砸坏了一些食物储备，你损失了${lostAmount}%单位食物`)
       }
       // 冰雹可能造成伤害
       if (Math.random() < 0.2) {
-        const damage = Math.floor(Math.random() * 5) + 3
-        gameStore.player.health = Math.max(gameStore.player.health - damage, 0)
-        gameStore.addToEventLog(`你被冰雹砸中，受到了${damage}点伤害`)
+        const damagePercent = Math.floor(Math.random() * 5) + 3 // 3%-7%的伤害
+        const damageAmount = Math.floor(gameStore.player.health * damagePercent / 100)
+        gameStore.player.health = Math.max(gameStore.player.health - damageAmount, 0)
+        gameStore.addToEventLog(`你被冰雹砸中，受到了${damagePercent}%的伤害`)
       }
       break
     case '沙尘暴':
@@ -278,20 +266,20 @@ const applyWeatherEffects = () => {
       // 沙尘暴可能导致迷路
       if (Math.random() < 0.2) {
         const energyLoss = Math.floor(Math.random() * 10) + 5
-        gameStore.player.energy = Math.max(gameStore.player.energy - energyLoss, 0)
-        gameStore.addToEventLog(`沙尘暴中你迷失了方向，额外消耗了${energyLoss}点体力`)
+        const energyLossAmount = Math.floor(gameStore.player.energy * energyLoss / 100)
+        gameStore.player.energy = Math.max(gameStore.player.energy - energyLossAmount, 0)
+        gameStore.addToEventLog(`沙尘暴中你迷失了方向，额外消耗了${energyLossAmount}点体力`)
       }
       // 沙尘暴可能掩埋资源
       if (season === 'summer' && Math.random() < 0.15) {
         const buriedResource = Math.random() < 0.6 ? 'metal' : 'stone'
         const amount = Math.floor(Math.random() * 3) + 2
-        gameStore.addResource(buriedResource, amount)
+        const amountAmount = Math.floor(amount / 100)
+        gameStore.addResource(buriedResource, amountAmount)
         gameStore.addToEventLog(`沙尘暴过后，你发现了被掩埋的${buriedResource === 'metal' ? '金属' : '石头'}`)
       }
       break
     case '极光':
-      weatherEffects.mentalRecovery = 1.3 // 精神恢复+30%
-      gameStore.player.mental = Math.min(gameStore.player.mental + 10, gameStore.player.maxMental)
       // 极光可能带来灵感
       if (Math.random() < 0.3) {
         const techBonus = Math.floor(Math.random() * 2) + 1
@@ -300,8 +288,8 @@ const applyWeatherEffects = () => {
       }
       // 冬季极光特殊效果
       if (season === 'winter' && Math.random() < 0.2) {
-        gameStore.player.energy = Math.min(gameStore.player.energy + 15, gameStore.player.maxEnergy)
-        gameStore.addToEventLog('冬季极光的体力滋养了你的身体，恢复了一些体力')
+        gameStore.player.energy = Math.min(gameStore.player.energy + gameStore.player.energy * 0.15, gameStore.player.maxEnergy)
+        gameStore.addToEventLog('冬季极光的体力滋养了你的身体，恢复了15%体力')
       }
       break
   }
@@ -311,28 +299,11 @@ const applyWeatherEffects = () => {
 
 // 获取下次天气变化时间的格式化显示
 const formattedNextChange = computed(() => {
-  const { day, hour } = nextWeatherChangeTime.value
-  return `第${day}天 ${hour}:00`
+  return `第${gameStore.weather.nextChangeDay}天 ${gameStore.weather.nextChangeHour}:00`
 })
 
 // 监听游戏时间变化
 watch(() => [gameStore.gameTime.day, gameStore.gameTime.hour], () => checkWeatherChange())
-
-// 初始化时更新天气效果
-onMounted(() => {
-  updateWeatherEffects()
-  // 显示初始天气通知
-  ElNotification({
-    title: '当前天气',
-    message: `${currentWeather.value.name}：${currentWeather.value.description}`,
-    type: 'info',
-    duration: 4500
-  })
-})
-
-// 初始化天气
-generateWeather()
-updateNextWeatherChangeTime()
 </script>
 
 <template>
@@ -368,9 +339,6 @@ updateNextWeatherChangeTime()
           </span>
           <span v-if="currentWeather.effects && currentWeather.effects.explorationEfficiency !== 1.0">
             探索效率: x{{ currentWeather.effects.explorationEfficiency.toFixed(1) }}
-          </span>
-          <span v-if="currentWeather.effects && currentWeather.effects.mentalRecovery !== 1.0">
-            精神恢复: x{{ currentWeather.effects.mentalRecovery.toFixed(1) }}
           </span>
         </div>
       </div>
