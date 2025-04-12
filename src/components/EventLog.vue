@@ -5,18 +5,15 @@ const gameStore = useGameStore()
 </script>
 
 <template>
-  <el-scrollbar class="event-log">
-    <h3>事件日志</h3>
-    <div class="log-entries">
-      <div v-if="gameStore.eventLog.length === 0" class="empty-log">
-        没有事件记录
-      </div>
+  <h3>事件日志</h3>
+  <div class="log-entries">
+    <el-scrollbar max-height="500" class="event-log">
       <div v-for="(entry, index) in gameStore.eventLog" :key="index" class="log-entry">
         <div class="log-timestamp">第{{ entry.timestamp }}</div>
         <div class="log-message">{{ entry.message }}</div>
       </div>
-    </div>
-  </el-scrollbar>
+    </el-scrollbar>
+  </div>
 </template>
 
 <style scoped>

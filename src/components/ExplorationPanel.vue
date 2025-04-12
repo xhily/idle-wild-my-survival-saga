@@ -96,18 +96,18 @@ const startExploration = () => {
     completed: false,
     region: region.id
   }
+  // 消耗资源
+  if (gameStore.skillTreeEffects.energyConsumption < 0) {
+    const energyCost = Math.round(region.energyCost * (1 + gameStore.skillTreeEffects.energyConsumption))
+    gameStore.player.energy -= energyCost
+  } else {
+    gameStore.player.energy -= region.energyCost
+  }
+  for (const [resource, amount] of Object.entries(region.resourceCost)) {
+    gameStore.consumeResource(resource, amount)
+  }
   // 如果没有正在进行的探索活动，立即开始
   if (gameStore.explorationActivities.length < gameStore.player.level) {
-    // 消耗资源
-    if (gameStore.skillTreeEffects.energyConsumption < 0) {
-      const energyCost = Math.round(region.energyCost * (1 + gameStore.skillTreeEffects.energyConsumption))
-      gameStore.player.energy -= energyCost
-    } else {
-      gameStore.player.energy -= region.energyCost
-    }
-    for (const [resource, amount] of Object.entries(region.resourceCost)) {
-      gameStore.consumeResource(resource, amount)
-    }
     explorationActivity.startTime = Date.now()
     gameStore.explorationActivities.push(explorationActivity)
     gameStore.addToEventLog(`开始探索${region.name}`)

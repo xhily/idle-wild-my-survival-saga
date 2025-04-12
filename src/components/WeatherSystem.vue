@@ -81,7 +81,7 @@ const checkWeatherChange = () => {
   const nextChangeDay = gameStore.weather.nextChangeDay
   const nextChangeHour = gameStore.weather.nextChangeHour
   currentWeather.value = weatherTypes[gameStore.weather.current]
-  if (currentDay === nextChangeDay && currentHour >= nextChangeHour) {
+  if (currentDay >= nextChangeDay && currentHour >= nextChangeHour) {
     updateWeatherEffects()
     generateWeather()
     updateNextWeatherChangeTime()
