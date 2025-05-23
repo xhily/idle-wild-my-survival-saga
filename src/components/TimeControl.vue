@@ -73,7 +73,7 @@ const currentSeason = computed(() => {
   // 如果季节发生变化，添加事件日志
   if (seasonIndex !== previousSeasonIndex && day > 1) {
     const newSeason = seasons[seasonIndex]
-    gameStore.addToEventLog(`季节变化：${newSeason.name}已经到来，${newSeason.effect}`)
+    gameStore.addToEventLog(`季节变化：${newSeason.name}已经到来`)
     // 季节变化特殊事件
     if (seasonIndex === 0) { // 春季开始
       gameStore.addToEventLog('春回大地，植物开始萌发，草药更容易找到了')
@@ -163,7 +163,6 @@ const currentSeason = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  width: 200px;
 }
 
 .season-header {

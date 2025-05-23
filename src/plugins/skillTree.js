@@ -12,8 +12,9 @@ export const skillTree = {
         level: 1,
         maxLevel: 3,
         effects: { gatheringEfficiency: 0.15 },
-        cost: { exp: 20 },
-        requires: null
+        cost: { exp: 200 },
+        requires: null,
+        duration: 600
       },
       {
         id: 'conservation',
@@ -22,8 +23,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 2,
         effects: { gatheringEnergyCost: -0.1 },
-        cost: { exp: 40 },
-        requires: { gathering: 3 }
+        cost: { exp: 400 },
+        requires: { gathering: 3, skills: { efficient_gathering: 3 } },
+        duration: 1200
       },
       {
         id: 'rare_herb_finding',
@@ -32,8 +34,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 2,
         effects: { rareHerbChance: 0.15 },
-        cost: { exp: 50 },
-        requires: { gathering: 4, skills: { resource_detection: 1 } }
+        cost: { exp: 500 },
+        requires: { gathering: 4, skills: { conservation: 2 } },
+        duration: 1800
       },
       {
         id: 'master_gatherer',
@@ -42,8 +45,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 1,
         effects: { gatheringYield: 0.25 },
-        cost: { exp: 100 },
-        requires: { gathering: 5, skills: { efficient_gathering: 2, conservation: 1 } }
+        cost: { exp: 1000 },
+        requires: { gathering: 5, skills: { efficient_gathering: 3, conservation: 2, rare_herb_finding: 2 } },
+        duration: 2400
       }
     ]
   },
@@ -60,8 +64,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 3,
         effects: { craftingSpeed: 0.15 },
-        cost: { exp: 20 },
-        requires: null
+        cost: { exp: 200 },
+        requires: null,
+        duration: 600
       },
       {
         id: 'resource_saving',
@@ -70,8 +75,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 3,
         effects: { resourceSaving: 0.1 },
-        cost: { exp: 30 },
-        requires: { crafting: 2 }
+        cost: { exp: 300 },
+        requires: { crafting: 2, skills: { efficient_crafting: 3 } },
+        duration: 1200
       },
       {
         id: 'quality_crafting',
@@ -80,8 +86,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 2,
         effects: { extraCraftingOutput: 0.15 },
-        cost: { exp: 45 },
-        requires: { crafting: 3 }
+        cost: { exp: 450 },
+        requires: { crafting: 3, skills: { efficient_crafting: 3, resource_saving: 3 } },
+        duration: 1800
       },
       {
         id: 'tool_specialist',
@@ -90,8 +97,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 2,
         effects: { toolDurability: 0.2 },
-        cost: { exp: 50 },
-        requires: { crafting: 4, skills: { quality_crafting: 1 } }
+        cost: { exp: 500 },
+        requires: { crafting: 4, skills: { efficient_crafting: 3, resource_saving: 3, quality_crafting: 2 } },
+        duration: 2400
       },
       {
         id: 'master_craftsman',
@@ -100,8 +108,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 1,
         effects: { unlockAdvancedRecipes: true, craftingQuality: 0.3 },
-        cost: { exp: 100 },
-        requires: { crafting: 5, skills: { efficient_crafting: 2, quality_crafting: 2 } }
+        cost: { exp: 1000 },
+        requires: { crafting: 5, skills: { efficient_crafting: 3, resource_saving: 3, quality_crafting: 2, tool_specialist: 2 } },
+        duration: 3000
       }
     ]
   },
@@ -118,8 +127,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 3,
         effects: { foodConsumption: -0.1, waterConsumption: -0.1 },
-        cost: { exp: 20 },
-        requires: null
+        cost: { exp: 200 },
+        requires: null,
+        duration: 600
       },
       {
         id: 'weather_adaptation',
@@ -128,8 +138,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 2,
         effects: { weatherResistance: 0.15 },
-        cost: { exp: 30 },
-        requires: { survival: 2 }
+        cost: { exp: 300 },
+        requires: { survival: 2, skills: { efficient_metabolism: 3 } },
+        duration: 1200
       },
       {
         id: 'energy_conservation',
@@ -138,28 +149,31 @@ export const skillTree = {
         level: 0,
         maxLevel: 2,
         effects: { energyConsumption: -0.1 },
-        cost: { exp: 40 },
-        requires: { survival: 3 }
+        cost: { exp: 400 },
+        requires: { survival: 3, skills: { efficient_metabolism: 3, weather_adaptation: 2 } },
+        duration: 1800
       },
       {
         id: 'natural_healing',
         name: '自然恢复',
-        description: '健康和精神状态的自然恢复速度提高20%',
+        description: '健康的自然恢复速度提高20%',
         level: 0,
         maxLevel: 2,
-        effects: { healthRecovery: 0.2, mentalRecovery: 0.2 },
-        cost: { exp: 50 },
-        requires: { survival: 4, skills: { efficient_metabolism: 2 } }
+        effects: { healthRecovery: 0.2 },
+        cost: { exp: 500 },
+        requires: { survival: 4, skills: { efficient_metabolism: 3, weather_adaptation: 2, energy_conservation: 2 } },
+        duration: 2400
       },
       {
         id: 'survival_expert',
         name: '生存专家',
-        description: '最大健康和精神增加15%，所有生存属性提升',
+        description: '最大健康和增加15%，所有生存属性提升',
         level: 0,
         maxLevel: 1,
-        effects: { maxHealth: 0.15, maxMental: 0.15, allSurvivalStats: 0.1 },
-        cost: { exp: 100 },
-        requires: { survival: 5, skills: { weather_adaptation: 1, energy_conservation: 1 } }
+        effects: { maxHealth: 0.15, allSurvivalStats: 0.1 },
+        cost: { exp: 1000 },
+        requires: { survival: 5, skills: { efficient_metabolism: 3, weather_adaptation: 2, energy_conservation: 2, natural_healing: 2 } },
+        duration: 3000
       }
     ]
   },
@@ -176,8 +190,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 3,
         effects: { researchSpeed: 0.15 },
-        cost: { exp: 20 },
-        requires: null
+        cost: { exp: 200 },
+        requires: null,
+        duration: 600
       },
       {
         id: 'resource_recycling',
@@ -186,8 +201,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 2,
         effects: { researchResourceSaving: 0.15 },
-        cost: { exp: 45 },
-        requires: { research: 3 }
+        cost: { exp: 450 },
+        requires: { research: 3, skills: { quick_learning: 3 } },
+        duration: 1200
       },
       {
         id: 'advanced_theory',
@@ -196,8 +212,9 @@ export const skillTree = {
         level: 0,
         maxLevel: 1,
         effects: { unlockAdvancedTech: true },
-        cost: { exp: 60 },
-        requires: { research: 4, skills: { efficient_analysis: 1 } }
+        cost: { exp: 600 },
+        requires: { research: 4, skills: { quick_learning: 3, resource_recycling: 2 } },
+        duration: 1800
       },
       {
         id: 'scientific_genius',
@@ -206,9 +223,48 @@ export const skillTree = {
         level: 0,
         maxLevel: 1,
         effects: { allResearchBonus: 0.25, breakthroughChance: 0.1 },
-        cost: { exp: 100 },
-        requires: { research: 5, skills: { quick_learning: 2, advanced_theory: 1 } }
+        cost: { exp: 1000 },
+        requires: { research: 5, skills: { quick_learning: 3, resource_recycling: 2, advanced_theory: 1 } },
+        duration: 2400
       }
     ]
   }
+}
+
+export const skills = {
+  // 采集
+  gathering: {
+    name: 'gathering',
+    level: 1,
+    exp: 0,
+    expToNextLevel: 100
+  },
+  // 制作
+  crafting: {
+    name: 'crafting',
+    level: 1,
+    exp: 0,
+    expToNextLevel: 100
+  },
+  // 战斗
+  combat: {
+    name: 'combat',
+    level: 1,
+    exp: 0,
+    expToNextLevel: 100
+  },
+  // 生存
+  survival: {
+    name: 'survival',
+    level: 1,
+    exp: 0,
+    expToNextLevel: 100
+  },
+  // 研究
+  research: {
+    name: 'research',
+    level: 1,
+    exp: 0,
+    expToNextLevel: 100
+  },
 }

@@ -33,8 +33,10 @@ const questList = [
     description: '收集材料建造一个基本的庇护所，抵御恶劣天气。',
     difficulty: 2,
     objectives: {
-      wood: 30,
-      stone: 20
+      wood: 50,
+      stone: 50,
+      parts: 10,
+      tools: 10
     },
     rewards: {
       exp: 50,
@@ -54,8 +56,8 @@ const questList = [
     description: '收集各种药用植物，用于制作医疗物品。',
     difficulty: 2,
     objectives: {
-      herb: 15,
-      rare_herb: 3
+      herb: 60,
+      rare_herb: 30
     },
     rewards: {
       exp: 40,
@@ -74,7 +76,7 @@ const questList = [
     description: '制作基本工具，提高资源收集效率。',
     difficulty: 2,
     objectives: {
-      tools: 2
+      tools: 20
     },
     rewards: {
       exp: 45
@@ -91,7 +93,7 @@ const questList = [
     description: '探索周围的区域，寻找有用的资源和信息。',
     difficulty: 3,
     objectives: {
-      explorationCompleted: 3 // 完成3次探索
+      crystal: 20 // 完成10次探索
     },
     rewards: {
       exp: 60,
@@ -116,7 +118,6 @@ const questList = [
     },
     rewards: {
       exp: 100,
-      unlockTech: 'advanced_technology'
     },
     timeLimit: 240, // 240小时内完成
     unlockRequirements: {
@@ -131,13 +132,12 @@ const questList = [
     description: '收集材料建造气象站，预测天气变化。',
     difficulty: 4,
     objectives: {
-      metal: 25,
-      electronic_components: 3,
-      advanced_parts: 2
+      metal: 50,
+      electronic_components: 10,
+      advanced_parts: 10
     },
     rewards: {
-      exp: 120,
-      weather_station: 1
+      exp: 120
     },
     timeLimit: 168, // 168小时内完成
     unlockRequirements: {
@@ -153,8 +153,8 @@ const questList = [
     difficulty: 3,
     objectives: {
       crystal: 10,
-      rare_herb: 8,
-      metal: 15
+      rare_herb: 30,
+      metal: 50
     },
     rewards: {
       exp: 80,
@@ -173,13 +173,13 @@ const questList = [
     description: '建造通讯装置，尝试与外界取得联系。',
     difficulty: 5,
     objectives: {
-      electronic_components: 5,
-      crystal: 15,
-      metal: 20
+      electronic_components: 10,
+      crystal: 10,
+      metal: 50
     },
     rewards: {
       exp: 150,
-      communication_device: 1
+      techFragment: 1
     },
     timeLimit: 336, // 336小时内完成
     unlockRequirements: {
@@ -194,14 +194,13 @@ const questList = [
     description: '证明你是真正的生存大师，完成一系列挑战。',
     difficulty: 5,
     objectives: {
-      days: 60, // 生存60天
+      days: 120, // 生存60天
       completedQuests: 8 // 完成8个任务
     },
     rewards: {
       exp: 200,
       maxHealth: 20,
-      maxEnergy: 20,
-      maxMental: 20
+      maxEnergy: 20
     },
     timeLimit: null,
     unlockRequirements: {
@@ -226,7 +225,7 @@ const availableQuests = computed(() => {
       // 检查技能要求
       if (quest.unlockRequirements.skills) {
         for (const [skill, level] of Object.entries(quest.unlockRequirements.skills)) {
-          if (gameStore.skills[skill] < level) return false
+          if (gameStore.newSkills[skill].level < level) return false
         }
       }
     }
@@ -334,9 +333,19 @@ const acceptQuest = (quest) => {
     ...quest,
     acceptedAt: gameStore.gameTime.timestamp
   }
-  // 添加到进行中的任务
-  gameStore.acceptQuest(acceptedQuest)
-  ElMessage.success(`已接受任务: ${quest.name}`)
+  // 检查任务是否已经在进行中
+  if (gameStore.activeQuests.some(q => q.id === quest.id)) {
+    gameStore.addToEventLog(`任务 ${acceptedQuest.name} 已经在进行中`)
+    return
+  }
+  // 检查任务是否已经完成
+  if (gameStore.completedQuests.some(q => q.id === quest.id)) {
+    gameStore.addToEventLog(`任务 ${acceptedQuest.name} 已经完成`)
+    return
+  }
+  // 添加任务到进行中列表
+  gameStore.activeQuests.push(acceptedQuest)
+  gameStore.addToEventLog(`接受了任务: ${acceptedQuest.name}`)
 }
 
 // 完成任务
@@ -346,28 +355,66 @@ const completeQuest = (quest) => {
     return
   }
   // 添加完成时间
-  const completedQuest = {
+  const newCompletedQuest = {
     ...quest,
     completedAt: gameStore.gameTime.timestamp
   }
-  // 完成任务并获得奖励
-  gameStore.completeQuest(completedQuest)
-  ElMessage.success(`已完成任务: ${quest.name}`)
+  // 查找任务在进行中列表的索引
+  const questIndex = gameStore.activeQuests.findIndex(q => q.id === newCompletedQuest.id)
+  if (questIndex === -1) {
+    gameStore.addToEventLog(`任务 ${newCompletedQuest.name} 不在进行中`)
+    return
+  }
+  // 检查资源要求
+  for (const [resource, amount] of Object.entries(quest.objectives)) {
+    gameStore.resources[resource] -= amount
+  }
+  // 从进行中列表移除任务
+  const completedQuest = gameStore.activeQuests.splice(questIndex, 1)[0]
+  // 添加到已完成列表
+  gameStore.completedQuests.push(completedQuest)
+  // 处理各种类型的奖励
+  for (const [rewardType, amount] of Object.entries(completedQuest.rewards)) {
+    switch (rewardType) {
+      case 'exp':
+        // 增加经验值
+        gameStore.player.exp += amount
+        break
+      case 'maxHealth':
+        // 增加最大健康
+        gameStore.player.maxHealth += amount
+        gameStore.player.health += amount
+        break
+      case 'maxEnergy':
+        // 增加最大体力
+        gameStore.player.maxEnergy += amount
+        gameStore.player.energy += amount
+        break
+      default:
+        // 如果是资源类型的奖励
+        if (gameStore.resources.hasOwnProperty(rewardType)) gameStore.addResource(rewardType, amount)
+        break
+    }
+  }
+  gameStore.addToEventLog(`完成了任务: ${completedQuest.name}`)
 }
 
 // 放弃任务
 const abandonQuest = (quest) => {
-  ElMessageBox.confirm(
-    '确定要放弃这个任务吗？你将失去所有进度。',
-    '放弃任务',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
+  ElMessageBox.confirm('确定要放弃这个任务吗？你将失去所有进度。', '放弃任务', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(() => {
+    // 查找任务在进行中列表的索引
+    const questIndex = gameStore.activeQuests.findIndex(q => q.id === quest.id)
+    if (questIndex === -1) {
+      gameStore.addToEventLog(`任务 ${quest.name} 不在进行中`)
+      return
     }
-  ).then(() => {
-    gameStore.abandonQuest(quest)
-    ElMessage.info(`已放弃任务: ${quest.name}`)
+    // 从进行中列表移除任务
+    gameStore.activeQuests.splice(questIndex, 1)
+    gameStore.addToEventLog(`放弃了任务: ${quest.name}`)
   }).catch(() => { })
 }
 </script>
@@ -408,7 +455,8 @@ const abandonQuest = (quest) => {
                 <div class="quest-time-limit" v-if="quest.timeLimit">
                   时间限制: {{ formatTimeLimit(quest.timeLimit) }}
                 </div>
-                <el-button @click="acceptQuest(quest)" type="primary" size="small" class="accept-button">
+                <el-button @click="acceptQuest(quest)" :disabled="gameStore.gameState !== 'playing'" type="primary"
+                  size="small" class="accept-button">
                   接受任务
                 </el-button>
               </div>
@@ -455,10 +503,11 @@ const abandonQuest = (quest) => {
                   </div>
                 </div>
                 <el-button @click="completeQuest(quest)" type="success" size="small" class="complete-button"
-                  :disabled="!canCompleteQuest(quest)">
+                  :disabled="!canCompleteQuest(quest) || gameStore.gameState !== 'playing'">
                   完成任务
                 </el-button>
-                <el-button @click="abandonQuest(quest)" type="danger" size="small" class="abandon-button">
+                <el-button @click="abandonQuest(quest)" type="danger" size="small" class="abandon-button"
+                  :disabled="gameStore.gameState !== 'playing'">
                   放弃任务
                 </el-button>
               </div>

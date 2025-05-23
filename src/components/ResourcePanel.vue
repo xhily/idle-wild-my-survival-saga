@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { resources, resourceLimits } from '../plugins/resource'
 
 const gameStore = useGameStore()
 
@@ -51,6 +52,20 @@ const getResourcePercentage = (key) => {
   return Math.ceil(Math.min((amount / limit) * 100, 100))
 }
 
+// 重置资源上限到基础值
+const resetResourceLimits = () => {
+  for (const resource in resourceLimits) {
+    // 资源
+    if (typeof gameStore.resources[resource] !== 'number') {
+      gameStore.resources[resource] = resources[resource]
+    }
+    // 资源上限
+    if (typeof gameStore.resourceLimits[resource] !== 'number') {
+      gameStore.resourceLimits[resource] = resourceLimits[resource]
+    }
+  }
+}
+
 // 同步资源上限数据
 const refreshResourceData = () => {
   ElMessageBox.confirm('是否需要同步资源的数据?', '提示', {
@@ -59,7 +74,7 @@ const refreshResourceData = () => {
     cancelButtonText: '取消',
     lockScroll: false
   }).then(() => {
-    gameStore.resetResourceLimits()
+    resetResourceLimits()
     gameStore.saveGame()
     ElMessage.success('资源上限数据已同步')
   }).catch(() => { })
@@ -68,7 +83,7 @@ const refreshResourceData = () => {
 
 <template>
   <div class="resource-panel">
-    <h3>
+    <h3 class="resource-panel-h3">
       <span>资源</span>
       <span class="resource-panel-name" @click="refreshResourceData">
         <el-icon>
@@ -128,8 +143,14 @@ const refreshResourceData = () => {
   padding: 10px;
 }
 
+.resource-panel-h3 {
+  display: flex;
+}
+
 .resource-panel-name {
   margin-left: 10px;
+  display: flex;
+  align-items: center;
 }
 
 .resource-section {

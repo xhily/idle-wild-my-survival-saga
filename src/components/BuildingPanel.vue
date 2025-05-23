@@ -1,9 +1,18 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { availableBuildings } from '../plugins/recipes'
+import { resourceLimits } from '../plugins/resource'
 
 const gameStore = useGameStore()
+
+// 建筑计时器
+const buildingTimer = ref(null)
+// 建筑状态更新定时器
+const buildingUpdateTimer = ref(null)
+// 活动状态响应式数据
+const buildingProgress = ref({})
+const buildingRemainingTime = ref({})
 
 // 建筑列表
 const buildings = computed(() => {
@@ -17,7 +26,7 @@ const canSeeBuilding = (building) => {
   if (!firstLevel.requirements) return true
   // 检查是否满足所有技能要求
   for (const [skill, level] of Object.entries(firstLevel.requirements)) {
-    if (gameStore.skills[skill] < level) return false
+    if (gameStore.newSkills[skill].level < level) return false
   }
   return true
 }
@@ -37,7 +46,7 @@ const canBuildOrUpgrade = (building) => {
   const nextLevel = building.levels[currentLevel]
   // 检查技能要求
   for (const [skill, level] of Object.entries(nextLevel.requirements)) {
-    if (gameStore.skills[skill] < level) return false
+    if (gameStore.newSkills[skill].level < level) return false
   }
   // 检查资源要求
   for (const [resource, amount] of Object.entries(nextLevel.cost)) {
@@ -50,8 +59,216 @@ const canBuildOrUpgrade = (building) => {
 const buildOrUpgrade = (building) => {
   const currentLevel = getBuildingLevel(building.id)
   const level = currentLevel ? currentLevel + 1 : 1
+  // 查找建筑配置
+  const buildingConfig = availableBuildings.find(b => b.id === building.id)
+  if (!buildingConfig) {
+    gameStore.addToEventLog(`未找到建筑: ${building.id}`)
+    return
+  }
+  // 获取指定等级的配置
+  const levelConfig = buildingConfig.levels.find(l => l.level === level)
+  if (!levelConfig) {
+    gameStore.addToEventLog(`未找到建筑等级配置: ${building.id} 等级 ${level}`)
+    return
+  }
+  // 检查技能要求
+  for (const [skill, requiredLevel] of Object.entries(levelConfig.requirements)) {
+    if (gameStore.newSkills[skill].level < requiredLevel) {
+      gameStore.addToEventLog(`你的${skill}技能等级不足，需要达到${requiredLevel}级`)
+      return
+    }
+  }
+  // 检查资源要求
+  for (const [resource, amount] of Object.entries(levelConfig.cost)) {
+    if (gameStore.resources[resource] < amount) {
+      gameStore.addToEventLog(`资源不足: ${gameStore.getResourceName(resource)}`)
+      return
+    }
+  }
+  // 创建建筑活动
+  const buildingActivity = {
+    id: `building_${building.id}_${Date.now()}`,
+    buildingId: building.id,
+    name: `${building.name} ${currentLevel ? '升级' : '建造'}`,
+    duration: levelConfig.buildTime * 1000, // 转换为毫秒
+    level,
+    cost: levelConfig.cost,
+    completed: false
+  }
+  // 检查是否有正在进行的建筑活动
+  if (gameStore.buildingActivities.length < gameStore.player.level) {
+    // 消耗资源
+    for (const [resource, amount] of Object.entries(levelConfig.cost)) {
+      gameStore.consumeResource(resource, amount)
+    }
+    buildingActivity.startTime = Date.now()
+    gameStore.buildingActivities.push(buildingActivity)
+    startBuildingTimer()
+    gameStore.addToEventLog(`开始${buildingActivity.name}`)
+    // 设置定时器完成建筑
+    buildingTimer.value = setTimeout(() => completeBuilding(buildingActivity.id), buildingActivity.duration)
+  } else {
+    gameStore.pendingBuildingActivities.push(buildingActivity)
+    gameStore.addToEventLog(`已将${buildingActivity.name}加入等待队列`)
+  }
+  gameStore.saveGame()
+}
+
+// 完成建筑
+const completeBuilding = (activityId) => {
+  const activityIndex = gameStore.buildingActivities.findIndex(a => a.id === activityId)
+  if (activityIndex === -1) return
+  const activity = gameStore.buildingActivities[activityIndex]
+  const buildingConfig = availableBuildings.find(b => b.id === activity.buildingId)
+  // 从当前活动中移除
+  gameStore.buildingActivities.splice(activityIndex, 1)
   // 应用建筑效果
-  gameStore.buildNewBuilding(building.id, level)
+  const existingBuildingIndex = gameStore.buildings.findIndex(b => b.id === activity.buildingId)
+  if (existingBuildingIndex !== -1) {
+    // 升级建筑
+    gameStore.buildings[existingBuildingIndex] = {
+      id: activity.buildingId,
+      name: buildingConfig.name,
+      level: activity.level,
+      effects: { ...buildingConfig.levels[activity.level - 1].effects }
+    }
+    gameStore.addToEventLog(`${buildingConfig.name}已升级到等级${activity.level}`)
+  } else {
+    // 新建建筑
+    gameStore.buildings.push({
+      id: activity.buildingId,
+      name: buildingConfig.name,
+      level: activity.level,
+      effects: { ...buildingConfig.levels[activity.level - 1].effects }
+    })
+    gameStore.addToEventLog(`建造了${buildingConfig.name}(等级${activity.level})`)
+  }
+  // 重新初始化建筑效果
+  initBuildingEffects()
+  // 检查是否有等待中的建筑活动
+  const nextBuilding = gameStore.pendingBuildingActivities.shift()
+  if (nextBuilding) {
+    // 消耗资源
+    for (const [resource, amount] of Object.entries(nextBuilding.cost)) {
+      gameStore.consumeResource(resource, amount)
+    }
+    nextBuilding.startTime = Date.now()
+    gameStore.buildingActivities.push(nextBuilding)
+    gameStore.addToEventLog(`开始${nextBuilding.name}`)
+    // 设置定时器
+    buildingTimer.value = setTimeout(() => completeBuilding(nextBuilding.id), nextBuilding.duration)
+  }
+}
+
+// 取消建筑活动
+const cancelBuilding = (activityId) => {
+  // 检查当前活动
+  const currentIndex = gameStore.buildingActivities.findIndex(a => a.id === activityId)
+  if (currentIndex !== -1) {
+    const activity = gameStore.buildingActivities[currentIndex]
+    // 返还资源
+    for (const [resource, amount] of Object.entries(activity.cost)) {
+      gameStore.addResource(resource, amount)
+    }
+    // 清除定时器
+    if (buildingTimer.value) {
+      clearTimeout(buildingTimer.value)
+      buildingTimer.value = null
+    }
+    gameStore.buildingActivities.splice(currentIndex, 1)
+    gameStore.saveGame()
+    gameStore.addToEventLog(`取消了${activity.name}并返还了资源`)
+    // 检查并启动等待队列中的下一个建筑活动
+    const nextBuilding = gameStore.pendingBuildingActivities.shift()
+    if (nextBuilding) {
+      // 消耗资源
+      for (const [resource, amount] of Object.entries(nextBuilding.cost)) {
+        gameStore.consumeResource(resource, amount)
+      }
+      nextBuilding.startTime = Date.now()
+      gameStore.buildingActivities.push(nextBuilding)
+      gameStore.addToEventLog(`开始${nextBuilding.name}`)
+      // 设置定时器
+      buildingTimer.value = setTimeout(() => completeBuilding(nextBuilding.id), nextBuilding.duration)
+    }
+    return true
+  }
+  // 检查等待队列
+  const pendingIndex = gameStore.pendingBuildingActivities.findIndex(a => a.id === activityId)
+  if (pendingIndex !== -1) {
+    const activity = gameStore.pendingBuildingActivities[pendingIndex]
+    gameStore.pendingBuildingActivities.splice(pendingIndex, 1)
+    gameStore.addToEventLog(`取消了等待中的${activity.name}`)
+    gameStore.saveGame()
+    return true
+  }
+  return false
+}
+
+// 获取建筑活动剩余时间
+const getBuildingRemainingTime = (activity) => {
+  if (buildingRemainingTime.value[activity.id] !== undefined) return buildingRemainingTime.value[activity.id]
+  const now = Date.now()
+  const elapsed = now - activity.startTime
+  const remaining = Math.max(0, activity.duration - elapsed)
+  const seconds = Math.ceil(remaining / 1000)
+  return seconds < 60 ? `${seconds}秒` : `${Math.floor(seconds / 60)}分${seconds % 60}秒`
+}
+
+// 获取建筑活动进度
+const getBuildingProgress = (activity) => {
+  if (buildingProgress.value[activity.id] !== undefined) return buildingProgress.value[activity.id]
+  const now = Date.now()
+  const elapsed = now - activity.startTime
+  return Math.min(100, (elapsed / activity.duration) * 100)
+}
+
+// 更新建筑活动状态
+const updateBuildingStatus = () => {
+  gameStore.buildingActivities.forEach(activity => {
+    const now = Date.now()
+    const elapsed = now - activity.startTime
+    const progress = Math.min(100, (elapsed / activity.duration) * 100)
+    // 检查是否已完成
+    if (progress >= 100) {
+      completeBuilding(activity.id)
+      return
+    }
+    buildingProgress.value[activity.id] = progress
+    const remaining = Math.max(0, activity.duration - elapsed)
+    const seconds = Math.ceil(remaining / 1000)
+    buildingRemainingTime.value[activity.id] = seconds < 60 ?
+      `${seconds}秒` : `${Math.floor(seconds / 60)}分${seconds % 60}秒`
+  })
+}
+
+// 启动建筑状态更新定时器
+const startBuildingTimer = () => {
+  if (buildingUpdateTimer.value) return
+  buildingUpdateTimer.value = setInterval(() => {
+    if (gameStore.buildingActivities.length) {
+      updateBuildingStatus()
+    }
+  }, 1000)
+}
+
+const initBuildingEffects = () => {
+  // 遍历所有建筑应用永久效果
+  for (const building of gameStore.buildings) {
+    if (!building.effects) continue
+    // 应用存储上限效果
+    if (building.effects.storageMultiplier) {
+      for (const resource in resourceLimits) {
+        gameStore.resourceLimits[resource] = resourceLimits[resource] * building.effects.storageMultiplier
+      }
+    }
+    // 应用最大健康效果
+    if (building.effects.maxHealth) gameStore.player.maxHealth += building.effects.maxHealth
+    // 应用最大体力效果
+    if (building.effects.maxEnergy) gameStore.player.maxEnergy += building.effects.maxEnergy
+    // 制作效率
+    if (building.effects.craftingSpeed) gameStore.skillTreeEffects.craftingSpeed += building.effects.craftingSpeed
+  }
 }
 
 // 获取建筑状态文本
@@ -87,12 +304,11 @@ const getBuildingEffectsText = (building) => {
 const formatEffectText = (effect, value) => {
   const effectTexts = {
     energyRecovery: `体力恢复 +${value}/小时`,
-    mentalRecovery: `精神恢复 +${value}/小时`,
     maxHealth: `健康上限 +${value}`,
     storageMultiplier: `存储上限 x${value}`,
-    craftingEfficiency: `制作效率 x${value}`,
-    foodPerDay: `食物 +${value}/天`,
-    waterPerDay: `水 +${value}/天`,
+    craftingSpeed: `制作效率 x${value}`,
+    foodPerDay: `食物 +${value}/小时`,
+    waterPerDay: `水 +${value}/小时`,
     herbPerDay: `草药 +${value}/天`,
     medicinePerDay: `药品 +${value}/天`,
     toolsPerDay: `工具 +${value}/天`,
@@ -104,10 +320,60 @@ const formatEffectText = (effect, value) => {
   }
   return effectTexts[effect] || `${effect}: ${value}`
 }
+
+// 检查建筑是否正在建造或升级中
+const isBuilding = (buildingId) => {
+  return gameStore.buildingActivities.some(activity => activity.buildingId === buildingId) ||
+    gameStore.pendingBuildingActivities.some(activity => activity.id === buildingId)
+}
+
+// 组件挂载时启动定时器
+onMounted(() => startBuildingTimer())
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (buildingUpdateTimer.value) {
+    clearInterval(buildingUpdateTimer.value)
+    buildingUpdateTimer.value = null
+  }
+  if (buildingTimer.value) {
+    clearTimeout(buildingTimer.value)
+  }
+})
 </script>
 
 <template>
   <div class="building-panel">
+    <div class="building-queue"
+      v-if="gameStore.buildingActivities.length || gameStore.pendingBuildingActivities.length">
+      <h4>建筑队列</h4>
+      <el-scrollbar max-height="260" always>
+        <div class="building-list">
+          <div v-for="activity in gameStore.buildingActivities" :key="activity.id" class="building-card in-progress">
+            <div class="building-header">
+              <div class="building-name">{{ activity.name }}</div>
+              <div class="building-time">剩余: {{ getBuildingRemainingTime(activity) }}</div>
+            </div>
+            <el-progress :percentage="getBuildingProgress(activity)" :stroke-width="10" :show-text="false" />
+            <el-button type="danger" size="small" :disabled="gameStore.gameState !== 'playing'"
+              @click="cancelBuilding(activity.id)" style="width: 100%; margin-top: 10px;">
+              取消建造
+            </el-button>
+          </div>
+          <div v-for="activity in gameStore.pendingBuildingActivities" :key="activity.id" class="building-card pending">
+            <div class="building-header">
+              <div class="building-name">{{ activity.name }}</div>
+              <div class="building-time">等待中</div>
+            </div>
+            <el-progress :percentage="0" :stroke-width="10" :show-text="false" status="warning" />
+            <el-button type="danger" size="small" :disabled="gameStore.gameState !== 'playing'"
+              @click="cancelBuilding(activity.id)" style="width: 100%; margin-top: 10px;">
+              取消队列
+            </el-button>
+          </div>
+        </div>
+      </el-scrollbar>
+    </div>
     <h3>建筑</h3>
     <div class="buildings-list">
       <el-collapse>
@@ -136,8 +402,9 @@ const formatEffectText = (effect, value) => {
                 </el-descriptions-item>
               </template>
             </el-descriptions>
-            <el-button type="primary" style="width: 100%;" :disabled="!canBuildOrUpgrade(building)"
-              @click="buildOrUpgrade(building)" class="build-button">
+            <el-button type="primary" style="width: 100%;"
+              :disabled="!canBuildOrUpgrade(building) || gameStore.gameState !== 'playing'"
+              :loading="isBuilding(building.id)" @click="buildOrUpgrade(building)" class="build-button">
               {{ getBuildingLevel(building.id) === 0 ? '建造' : '升级' }}
             </el-button>
           </div>
@@ -148,6 +415,44 @@ const formatEffectText = (effect, value) => {
 </template>
 
 <style scoped>
+.building-queue {
+  margin-bottom: 20px;
+}
+
+.building-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  margin: 10px;
+}
+
+.building-card {
+  background-color: var(--el-bg-color);
+  border-radius: 4px;
+  padding: 12px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.building-card.pending {
+  border-left: 4px solid #E6A23C;
+  opacity: 0.8;
+}
+
+.building-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.building-name {
+  font-weight: bold;
+}
+
+.building-time {
+  color: var(--el-text-color-secondary);
+  font-size: 0.9em;
+}
+
 .building-panel {
   background-color: var(--el-bg-color-overlay);
   border-radius: 4px;
